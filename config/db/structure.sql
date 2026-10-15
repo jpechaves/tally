@@ -45,7 +45,8 @@ CREATE TABLE `imports`(
   `rows_updated` integer DEFAULT(0) NOT NULL,
   `rows_unchanged` integer DEFAULT(0) NOT NULL,
   `rows_missing` integer DEFAULT(0) NOT NULL,
-  `warnings` text DEFAULT('[]') NOT NULL, `error` text,
+  `warnings` text DEFAULT('[]') NOT NULL,
+  `error` text,
   `created_at` text DEFAULT((strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))) NOT NULL,
   `updated_at` text DEFAULT((strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))) NOT NULL,
   CONSTRAINT `imports_status` CHECK(status IN('applied', 'duplicate_file', 'rejected'))
@@ -139,14 +140,10 @@ CREATE TABLE `categories`(
 CREATE UNIQUE INDEX `categories_parent_name` ON `categories`(
   `parent_id`,
   `name`
-) WHERE(
-  `parent_id` IS NOT NULL
-);
+) WHERE(`parent_id` IS NOT NULL);
 CREATE UNIQUE INDEX `categories_top_name` ON `categories`(
   `name`
-) WHERE(
-  `parent_id` IS NULL
-);
+) WHERE(`parent_id` IS NULL);
 CREATE TABLE `category_rules`(
   `id` integer NOT NULL PRIMARY KEY AUTOINCREMENT,
   `priority` integer DEFAULT(100) NOT NULL,
