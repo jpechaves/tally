@@ -19,7 +19,14 @@ RSpec.configure do |config|
 
   config.before :suite do
     all_databases.call.each do |db|
-      DatabaseCleaner[:sequel, db: db].clean_with :truncation, except: ["schema_migrations"]
+      # Tables reference each other (counterparties <-> categories), so no delete order
+      # satisfies every foreign key. Switch the checks off while emptying them.
+      db.synchronize do
+        db.run("PRAGMA foreign_keys = OFF")
+        DatabaseCleaner[:sequel, db: db].clean_with :truncation, except: ["schema_migrations"]
+      ensure
+        db.run("PRAGMA foreign_keys = ON")
+      end
     end
   end
 

@@ -27,6 +27,7 @@ CREATE TABLE `counterparties`(
   `is_self` integer DEFAULT(0) NOT NULL,
   `created_at` text DEFAULT((strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))) NOT NULL,
   `updated_at` text DEFAULT((strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))) NOT NULL,
+  `default_category_id` integer REFERENCES `categories`,
   CONSTRAINT `counterparties_document_kind` CHECK(document_kind IN('cnpj', 'cpf_masked')),
   CONSTRAINT `counterparties_is_self` CHECK(is_self IN(0, 1))
 ) STRICT;
@@ -102,6 +103,9 @@ CREATE TABLE `transactions`(
   `raw_json` text,
   `created_at` text DEFAULT((strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))) NOT NULL,
   `updated_at` text DEFAULT((strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))) NOT NULL,
+  `category_id` integer REFERENCES `categories`,
+  `category_source` text DEFAULT('none') NOT NULL,
+  `category_rule_id` integer REFERENCES `category_rules`,
   CONSTRAINT `transactions_amount` CHECK(amount_cents <> 0),
   CONSTRAINT `transactions_kind` CHECK(kind IN('purchase', 'refund', 'fee', 'income', 'transfer', 'bill_payment')),
   CONSTRAINT `transactions_installment` CHECK((installment_number IS NULL) =(installment_total IS NULL)),
@@ -118,6 +122,58 @@ CREATE INDEX `transactions_transfer_id_index` ON `transactions`(`transfer_id`);
 CREATE INDEX `transactions_card_statement_id_index` ON `transactions`(
   `card_statement_id`
 );
+CREATE TABLE `categories`(
+  `id` integer NOT NULL PRIMARY KEY AUTOINCREMENT,
+  `name` text NOT NULL,
+  `parent_id` integer REFERENCES `categories`,
+  `kind` text NOT NULL,
+  `nature` text,
+  `max_cut_pct` integer,
+  `archived_at` text,
+  `created_at` text DEFAULT((strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))) NOT NULL,
+  `updated_at` text DEFAULT((strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))) NOT NULL,
+  CONSTRAINT `categories_kind` CHECK(kind IN('expense', 'income')),
+  CONSTRAINT `categories_nature` CHECK(nature IN('fixed', 'essential', 'discretionary')),
+  CONSTRAINT `categories_max_cut_pct` CHECK(max_cut_pct BETWEEN 0 AND 100)
+) STRICT;
+CREATE UNIQUE INDEX `categories_parent_name` ON `categories`(
+  `parent_id`,
+  `name`
+) WHERE(
+  `parent_id` IS NOT NULL
+);
+CREATE UNIQUE INDEX `categories_top_name` ON `categories`(
+  `name`
+) WHERE(
+  `parent_id` IS NULL
+);
+CREATE TABLE `category_rules`(
+  `id` integer NOT NULL PRIMARY KEY AUTOINCREMENT,
+  `priority` integer DEFAULT(100) NOT NULL,
+  `field` text NOT NULL,
+  `operator` text NOT NULL,
+  `pattern` text NOT NULL,
+  `amount_min_cents` integer,
+  `amount_max_cents` integer,
+  `category_id` integer NOT NULL REFERENCES `categories`,
+  `origin` text NOT NULL,
+  `hits` integer DEFAULT(0) NOT NULL,
+  `disabled_at` text,
+  `created_at` text DEFAULT((strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))) NOT NULL,
+  `updated_at` text DEFAULT((strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))) NOT NULL,
+  CONSTRAINT `category_rules_field` CHECK(field IN('counterparty_document', 'counterparty_name', 'description', 'bank_category', 'kind')),
+  CONSTRAINT `category_rules_operator` CHECK(operator IN('equals', 'contains', 'starts_with', 'regex')),
+  CONSTRAINT `category_rules_origin` CHECK(origin IN('seed', 'learned', 'manual'))
+) STRICT;
+CREATE INDEX `category_rules_priority_id_index` ON `category_rules`(
+  `priority`,
+  `id`
+);
+CREATE INDEX `transactions_category_id_occurred_on_index` ON `transactions`(
+  `category_id`,
+  `occurred_on`
+);
 INSERT INTO schema_migrations (filename) VALUES
 ('20261015000000_create_accounts.rb'),
-('20261015100000_create_import_tables.rb');
+('20261015100000_create_import_tables.rb'),
+('20261016000000_create_categories.rb');

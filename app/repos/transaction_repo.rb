@@ -19,18 +19,21 @@ module Tally
       def rows(ids) = transactions.dataset.where(id: ids).order(:id).all
 
       # A page of transactions, newest first, with account and counterparty names.
-      def list(account_id: nil, month: nil, import_id: nil, missing: false, limit: 500)
+      def list(account_id: nil, month: nil, import_id: nil, missing: false, id: nil, limit: 500)
         scope = transactions.dataset
           .join(:accounts, id: :account_id)
           .left_join(:counterparties, id: Sequel[:transactions][:counterparty_id])
           .left_join(Sequel[:accounts].as(:counter_accounts), id: Sequel[:transactions][:counter_account_id])
+          .left_join(:categories, id: Sequel[:transactions][:category_id])
           .select_all(:transactions)
           .select_append(
             Sequel[:accounts][:name].as(:account_name),
             Sequel[:counterparties][:name].as(:counterparty_name),
             Sequel[:counterparties][:document].as(:counterparty_document),
-            Sequel[:counter_accounts][:name].as(:counter_account_name)
+            Sequel[:counter_accounts][:name].as(:counter_account_name),
+            Sequel[:categories][:name].as(:category_name)
           )
+        scope = scope.where(Sequel[:transactions][:id] => id) if id
         scope = scope.where(Sequel[:transactions][:account_id] => account_id) if account_id
         if month
           scope = scope.where(Sequel.function(:substr, Sequel[:transactions][:occurred_on], 1, 7) => month)
@@ -50,6 +53,53 @@ module Tally
 
       def ids_for_counterparty(counterparty_id)
         transactions.dataset.where(counterparty_id:).select_map(:id)
+      end
+
+      # --- Categories -----------------------------------------------------------------
+
+      CATEGORIZER_COLUMNS = %i[
+        id kind amount_cents description raw_description bank_category category_id category_source category_rule_id
+      ].freeze
+
+      # Rows the categorizer may change (every one but manual), with what it looks at.
+      # @param ids [Array<Integer>, nil] nil for every row
+      def for_categorizing(ids: nil)
+        scope = transactions.dataset.exclude(Sequel[:transactions][:category_source] => "manual")
+          .left_join(:counterparties, id: :counterparty_id)
+          .select(*CATEGORIZER_COLUMNS.map { Sequel[:transactions][_1] })
+          .select_append(
+            Sequel[:counterparties][:name].as(:counterparty_name),
+            Sequel[:counterparties][:document].as(:counterparty_document),
+            Sequel[:counterparties][:default_category_id]
+          )
+        scope = scope.where(Sequel[:transactions][:id] => ids) if ids
+        scope.order(Sequel[:transactions][:id]).all
+      end
+
+      def set_category(ids, category_id:, category_source:, category_rule_id: nil)
+        transactions.dataset.where(id: ids)
+          .update(category_id:, category_source:, category_rule_id:, updated_at: Repos.now)
+      end
+
+      # What the review list shows: rows that count as spending or income and have no
+      # category yet, or only the bank's suggestion. Rows a re-import flagged as missing
+      # are left out.
+      def to_review
+        transactions.dataset
+          .exclude(Sequel[:transactions][:kind] => "transfer")
+          .where(Sequel[:transactions][:category_source] => %w[none bank], missing_since_import_id: nil)
+          .join(:accounts, id: :account_id)
+          .left_join(:counterparties, id: Sequel[:transactions][:counterparty_id])
+          .left_join(:categories, id: Sequel[:transactions][:category_id])
+          .select_all(:transactions)
+          .select_append(
+            Sequel[:accounts][:name].as(:account_name),
+            Sequel[:counterparties][:name].as(:counterparty_name),
+            Sequel[:counterparties][:document].as(:counterparty_document),
+            Sequel[:categories][:name].as(:category_name)
+          )
+          .order(Sequel.desc(Sequel[:transactions][:occurred_on]), Sequel.desc(Sequel[:transactions][:id]))
+          .all
       end
 
       # --- Writing --------------------------------------------------------------------

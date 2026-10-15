@@ -14,7 +14,7 @@ module Tally
     # 2. Parse and check. A file that fails is logged as rejected, and nothing else is
     #    written.
     # 3. In one DB transaction: upsert each row by (account, external_id), flag rows the
-    #    file no longer has, pair transfers, and log the import with its counts.
+    #    file no longer has, pair transfers, categorize, and log the import with its counts.
     # 4. Keep the original file under the import storage folder, named by its SHA-256.
     #
     # Every outcome is an `imports` row: Success(import) when applied or a duplicate,
@@ -26,11 +26,12 @@ module Tally
         "repos.counterparty_repo",
         "repos.import_repo",
         "repos.transaction_repo",
-        "operations.pair_transfers"
+        "operations.pair_transfers",
+        "operations.categorize"
       ]
 
       # Fields that come from the bank and are updated on re-import. Everything else
-      # (memo, and in milestone 3 a manual category) belongs to you and is never touched.
+      # (memo, the category) belongs to you or to the categorizer, and is never touched.
       BANK_FIELDS = %i[
         occurred_on purchased_on amount_cents kind description raw_description bank_category
         location installment_number installment_total purchase_key counterparty_id
@@ -96,6 +97,7 @@ module Tally
           **(card_statement_id ? {card_statement_id:} : {period: statement.period_start..statement.period_end})
         )
         pair_transfers.(touched_ids: ids)
+        categorize.(ids:)
 
         import_repo.update(import.id, rows_inserted: counts[:inserted], rows_updated: counts[:updated],
           rows_unchanged: counts[:unchanged], rows_missing: missing)
