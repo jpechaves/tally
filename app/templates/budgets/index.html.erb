@@ -1,0 +1,85 @@
+<main>
+  <h1>Budgets</h1>
+  <%= render "report/month_picker", path: "/budgets", months: months, month: month %>
+  <% if budget_month.lines.empty? %>
+    <p>No budgets for <%= month %> yet. <a href="/plan">Make a savings plan</a> and accept it, and its limits become your budgets.</p>
+  <% else %>
+    <div class="cards">
+      <% if plan %><div>Target<strong><%= money(plan[:target_cents]) %></strong><span class="note">a month</span></div><% end %>
+      <div>Saved so far<strong><%= money(budget_month.saved_cents) %></strong><span class="note"><%= money(budget_month.income_cents) %> in, <%= money(budget_month.spending_cents) %> out</span></div>
+      <% unless budget_month.complete? %>
+        <div>Projected<strong class="<%= budget_month.on_track? ? "down" : "up" %>"><%= money(budget_month.projected_saved_cents) %></strong>
+          <span class="note"><%= budget_month.on_track? ? "on track" : "short of the target" %></span></div>
+      <% end %>
+    </div>
+    <p class="note">
+      <% if budget_month.complete? %>
+        <%= month %> is over.
+      <% else %>
+        <%= (budget_month.elapsed * 100).round %>% of <%= month %> has gone by. The projection assumes the income the plan expects
+        and that each budget is spent in full.
+      <% end %>
+      Card purchases count in the month they were made, installments in the month of their bill.
+      <% if next_installments_cents.positive? %><%= money(next_installments_cents) %> of installments is already committed to next month.<% end %>
+    </p>
+
+    <% if (score = budget_month.score) %>
+      <p class="notice"><%= score[:hit] ? "Target reached" : "Target missed" %>: saved <%= money(score[:saved_cents]) %> against
+        <%= money(score[:target_cents]) %> (<%= money(score[:difference_cents]) %>).
+        <% unless score[:over].empty? %>Over budget: <%= score[:over].map { "#{_1.name} (#{money(-_1.left_cents)})" }.join(", ") %>.<% end %></p>
+    <% end %>
+
+    <table class="rows">
+      <thead><tr><th>Category</th><th class="num">Spent</th><th class="num">Limit</th><th class="num">Left</th><th class="num">Pace</th><th></th></tr></thead>
+      <tbody>
+        <% budget_month.lines.each do |line| %>
+          <tr>
+            <td><%= line.parent_name ? "#{line.parent_name} › " : "" %><%= line.name %></td>
+            <td class="num"><%= money(line.spent_cents) %></td>
+            <td class="num">
+              <form action="/budgets" method="post" class="inline">
+                <input type="hidden" name="category_id" value="<%= line.category_id %>">
+                <input type="hidden" name="month" value="<%= month %>">
+                <input name="amount" class="amount" value="<%= amount_field(line.limit_cents) %>" aria-label="limit">
+              </form>
+            </td>
+            <td class="num<%= line.over? ? " up" : "" %>"><%= money(line.left_cents) %></td>
+            <td class="num<%= line.ahead_of_pace? ? " up" : "" %>"><%= line.pace_pct ? "#{line.pace_pct}%" : "" %></td>
+            <td class="warning"><%= line.over? ? "over" : (line.ahead_of_pace? ? "ahead of pace" : "") %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+    <p class="note">Pace: spent against what the limit allows by today; over 110% is flagged. Edit a limit and press Enter:
+      it applies from <%= month %> on. Spending outside these budgets this month: <%= money(budget_month.unbudgeted_cents) %>.</p>
+  <% end %>
+
+  <h2>Add a budget</h2>
+  <form action="/budgets" method="post" class="inline">
+    <input type="hidden" name="month" value="<%= month %>">
+    <select name="category_id" required>
+      <% expense_categories.each do |category| %><option value="<%= category[:id] %>"><%= category[:label] %></option><% end %>
+    </select>
+    <label>R$ <input name="amount" class="amount" required></label>
+    <button type="submit">Save</button>
+  </form>
+
+  <% unless scores.empty? %>
+    <h2>Month-end scores</h2>
+    <table class="rows">
+      <thead><tr><th>Month</th><th class="num">Saved</th><th class="num">Target</th><th>Result</th><th>Over budget</th></tr></thead>
+      <tbody>
+        <% scores.each do |value, score| %>
+          <% next unless score %>
+          <tr>
+            <td><a href="/budgets?month=<%= value %>"><%= value %></a></td>
+            <td class="num"><%= money(score[:saved_cents]) %></td>
+            <td class="num"><%= money(score[:target_cents]) %></td>
+            <td class="<%= score[:hit] ? "down" : "up" %>"><%= score[:hit] ? "reached" : "missed by #{money(-score[:difference_cents])}" %></td>
+            <td><%= score[:over].map(&:name).join(", ") %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+</main>
