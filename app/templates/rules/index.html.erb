@@ -2,7 +2,7 @@
   <h1><%= t("rules.index.title") %></h1>
   <% if error_code %><p class="error"><%= t("errors.#{error_code}", default: error_code.to_s) %></p><% end %>
   <p><%= t("rules.index.intro") %></p>
-  <table class="rows">
+  <div class="scroll"><table class="rows">
     <thead><tr><th class="num"><%= t("rules.index.priority") %></th><th><%= t("rules.index.when") %></th><th><%= t("rules.index.amount") %></th><th><%= t("rules.index.category") %></th><th><%= t("rules.index.origin") %></th><th class="num"><%= t("common.rows") %></th><th></th></tr></thead>
     <tbody>
       <% rules.each do |rule| %>
@@ -17,7 +17,7 @@
         </tr>
       <% end %>
     </tbody>
-  </table>
+  </table></div>
 
   <h2><%= t("rules.index.add") %></h2>
   <form action="/rules" method="post" class="inline">

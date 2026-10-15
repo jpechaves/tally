@@ -133,6 +133,18 @@ RSpec.describe "Savings plan and budgets", :db, type: :request do
     expect(last_response.body).to include("Pick a month and a spending category.")
   end
 
+  it "projects next month from complete months only, not the partly imported current one" do
+    post "/budgets", category_id: category_id("Delivery").to_s, month: "2026-09", amount: "10.00"
+    projected = -> { get("/budgets", month: "2026-09") && last_response.body[%r{Projected<strong[^>]*>(.*?)</strong>}, 1] }
+    before = projected.()
+
+    row = db[:transactions].where(raw_description: "Compra no débito via NuPay - iFood").first
+    db[:transactions].insert(row.except(:id).merge(occurred_on: "2026-08-10", amount_cents: -500_000,
+      raw_description: "Loja exemplo", description: "Loja exemplo", category_id: nil, external_id: "partial-month"))
+
+    expect(projected.()).to eq(before)
+  end
+
   it "says there are no budgets before a plan" do
     get "/budgets"
 

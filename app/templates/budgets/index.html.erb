@@ -32,7 +32,7 @@
         <% unless score[:over].empty? %><%= t("budgets.index.over_budget", names: score[:over].map { "#{category_name(_1.name)} (#{money(-_1.left_cents)})" }.join(", ")) %><% end %></p>
     <% end %>
 
-    <table class="rows">
+    <div class="scroll"><table class="rows">
       <thead><tr><th><%= t("budgets.index.category") %></th><th class="num"><%= t("budgets.index.spent") %></th><th class="num"><%= t("budgets.index.limit") %></th><th class="num"><%= t("budgets.index.left") %></th><th class="num"><%= t("budgets.index.pace") %></th><th></th></tr></thead>
       <tbody>
         <% budget_month.lines.each do |line| %>
@@ -55,7 +55,7 @@
           </tr>
         <% end %>
       </tbody>
-    </table>
+    </table></div>
     <p class="note"><%= t("budgets.index.pace_note", month: month_label(month), amount: money(budget_month.unbudgeted_cents)) %></p>
   <% end %>
 
@@ -71,7 +71,7 @@
 
   <% unless scores.empty? %>
     <h2><%= t("budgets.index.scores") %></h2>
-    <table class="rows">
+    <div class="scroll"><table class="rows">
       <thead><tr><th><%= t("budgets.index.month") %></th><th class="num"><%= t("budgets.index.saved") %></th><th class="num"><%= t("budgets.index.target") %></th><th><%= t("budgets.index.result") %></th><th><%= t("budgets.index.over_column") %></th></tr></thead>
       <tbody>
         <% scores.each do |value, score| %>
@@ -85,6 +85,6 @@
           </tr>
         <% end %>
       </tbody>
-    </table>
+    </table></div>
   <% end %>
 </main>

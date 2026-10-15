@@ -26,7 +26,7 @@
 
   <% unless dismissed.empty? %>
     <h2><%= t("cuts.index.dismissed") %></h2>
-    <table class="rows">
+    <div class="scroll"><table class="rows">
       <% dismissed.each do |item| %>
         <tr>
           <td><%= item[:title] %></td>
@@ -34,6 +34,6 @@
           <td><form action="/cuts/<%= item[:id] %>/restore" method="post"><input type="hidden" name="month" value="<%= month %>"><button type="submit"><%= t("cuts.index.restore") %></button></form></td>
         </tr>
       <% end %>
-    </table>
+    </table></div>
   <% end %>
 </main>

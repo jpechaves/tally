@@ -11,7 +11,7 @@
   <% if imports.empty? %>
     <p><%= t("imports.index.empty") %></p>
   <% else %>
-    <table>
+    <div class="scroll"><table>
       <thead>
         <tr><th><%= t("imports.index.when") %></th><th><%= t("imports.file") %></th><th><%= t("imports.source") %></th><th><%= t("imports.account") %></th><th><%= t("imports.status") %></th>
           <th class="num"><%= t("imports.new") %></th><th class="num"><%= t("imports.updated") %></th><th class="num"><%= t("imports.unchanged") %></th><th class="num"><%= t("imports.missing") %></th></tr>
@@ -31,6 +31,6 @@
           </tr>
         <% end %>
       </tbody>
-    </table>
+    </table></div>
   <% end %>
 </main>

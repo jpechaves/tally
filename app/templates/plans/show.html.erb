@@ -19,7 +19,7 @@
     data-target="<%= plan[:target_cents] %>" data-decimal="<%= Tally::Money.decimal_mark(locale) %>"
     data-locale="<%= locale == "en" ? "en-US" : "pt-BR" %>" data-currency="R$" data-reaches="<%= t("plans.show.reaches") %>"
     data-short="<%= t("plans.show.short") %>" data-confirm-short="<%= t("plans.show.confirm_short") %>">
-    <table class="rows">
+    <div class="scroll"><table class="rows">
       <thead><tr><th><%= t("plans.show.category") %></th><th><%= t("plans.show.nature") %></th><th class="num"><%= t("plans.show.today") %></th><th class="num"><%= t("plans.show.may_cut") %></th><th class="num"><%= t("plans.show.new_limit") %></th><th class="num"><%= t("plans.show.cut") %></th></tr></thead>
       <tbody>
         <% lines.each do |line| %>
@@ -39,7 +39,7 @@
           </tr>
         <% end %>
       </tbody>
-    </table>
+    </table></div>
     <p><%= t("plans.show.would_save_html", amount: money(saved_today_cents + cuts_cents)) %>
       <span id="verdict"><%= saved_today_cents + cuts_cents >= plan[:target_cents] ? t("plans.show.reaches") : t("plans.show.short") %></span>.</p>
     <% if plan[:status] == "draft" %>

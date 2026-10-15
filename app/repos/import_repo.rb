@@ -13,11 +13,13 @@ module Tally
         imports.where(file_sha256: sha, status: "applied").order(:id).first
       end
 
-      # The newest applied import of the same account and period (a card bill, or an
-      # account statement's dates): the version of that statement in effect now.
+      # The newest applied import of the same statement: same account and source, and a
+      # period within this one's (a copy with rows removed and another name has a shorter
+      # period). The version of that statement in effect now.
       def latest_applied_like(import)
-        imports.where(status: "applied", account_id: import.account_id, period_start: import.period_start,
-          period_end: import.period_end).order(:id).last
+        imports.where(status: "applied", account_id: import.account_id, source: import.source)
+          .where { (period_start >= import.period_start) & (period_end <= import.period_end) }
+          .order(:id).last
       end
 
       def create(warnings: [], **attributes)

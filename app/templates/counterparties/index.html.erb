@@ -1,7 +1,7 @@
 <main>
   <h1><%= t("counterparties.index.title") %></h1>
   <p><%= t("counterparties.index.intro") %></p>
-  <table>
+  <div class="scroll"><table>
     <thead><tr><th><%= t("counterparties.index.name") %></th><th><%= t("counterparties.index.document") %></th><th><%= t("counterparties.index.bank") %></th><th class="num"><%= t("common.rows") %></th><th class="num"><%= t("common.net") %></th><th></th></tr></thead>
     <tbody>
       <% counterparties.each do |party| %>
@@ -22,5 +22,5 @@
         </tr>
       <% end %>
     </tbody>
-  </table>
+  </table></div>
 </main>

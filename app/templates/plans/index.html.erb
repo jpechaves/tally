@@ -21,7 +21,7 @@
 
   <% unless plans.empty? %>
     <h2><%= t("plans.index.plans") %></h2>
-    <table class="rows">
+    <div class="scroll"><table class="rows">
       <thead><tr><th><%= t("plans.index.made") %></th><th class="num"><%= t("plans.index.target") %></th><th><%= t("plans.index.baseline") %></th><th><%= t("plans.index.starts") %></th><th><%= t("plans.index.status") %></th></tr></thead>
       <tbody>
         <% plans.each do |item| %>
@@ -34,6 +34,6 @@
           </tr>
         <% end %>
       </tbody>
-    </table>
+    </table></div>
   <% end %>
 </main>

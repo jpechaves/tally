@@ -2,14 +2,14 @@
   <p><a href="/imports">← <%= t("layout.nav.imports") %></a></p>
   <h1><%= import.file_name %></h1>
 
-  <table>
+  <div class="scroll"><table>
     <tr><th scope="row"><%= t("imports.status") %></th><td class="status-<%= import.status %>"><%= status_label(:import, import.status) %></td></tr>
     <tr><th scope="row"><%= t("imports.source") %></th><td><%= source_label(import.source) %></td></tr>
     <% if account %><tr><th scope="row"><%= t("imports.account") %></th><td><%= account.name %></td></tr><% end %>
     <% if import.period_start %><tr><th scope="row"><%= t("imports.show.period") %></th><td><%= t("common.range", from: date(import.period_start), to: date(import.period_end)) %></td></tr><% end %>
     <tr><th scope="row"><%= t("imports.show.imported") %></th><td><%= timestamp(import.created_at) %></td></tr>
     <tr><th scope="row">SHA-256</th><td><code><%= import.file_sha256 %></code></td></tr>
-  </table>
+  </table></div>
 
   <% if import.status == "rejected" %>
     <p class="error"><%= t("imports.show.rejected", error: import.error) %></p>

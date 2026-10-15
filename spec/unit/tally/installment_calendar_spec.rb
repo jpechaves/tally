@@ -43,4 +43,40 @@ RSpec.describe Tally::InstallmentCalendar do
     expect(calendar.months).to eq("2026-11" => 150_414)
     expect(calendar.purchases.map { [_1.description, _1.left_from("2026-11")] }).to eq([["VOO EXEMPLO", 1]])
   end
+
+  it "treats installments paid in advance as the same purchase, finished at n/n" do
+    rows = [
+      insight_row("2026-07-02", -80.00, "CURSO EXEMPLO", installment_number: 3, installment_total: 10, bill_due_on: "2026-07-09"),
+      insight_row("2026-08-02", -80.00, "CURSO EXEMPLO", installment_number: 4, installment_total: 10, bill_due_on: "2026-08-09"),
+      *(5..10).map do |number|
+        insight_row("2026-08-03", -78.00, "CURSO EXEMPLO", installment_number: number, installment_total: 10, bill_due_on: "2026-08-09")
+      end,
+      # Paid early on one bill, with installments left after it.
+      insight_row("2026-08-02", -30.00, "FONE EXEMPLO", installment_number: 2, installment_total: 6, bill_due_on: "2026-08-09"),
+      insight_row("2026-08-03", -30.00, "FONE EXEMPLO", installment_number: 3, installment_total: 6, bill_due_on: "2026-08-09")
+    ]
+    calendar = described_class.new(rows, from: "2026-09")
+
+    expect(calendar.purchases.map { [_1.description, _1.number, _1.ends] }).to eq([["FONE EXEMPLO", 3, "2026-11"]])
+  end
+
+  it "links installments by bill when they post on either side of a month's start" do
+    rows = [
+      insight_row("2026-07-31", -45.00, "MALA EXEMPLO", installment_number: 1, installment_total: 4, bill_due_on: "2026-08-09"),
+      insight_row("2026-09-01", -45.00, "MALA EXEMPLO", installment_number: 2, installment_total: 4, bill_due_on: "2026-09-09")
+    ]
+    calendar = described_class.new(rows, from: "2026-10")
+
+    expect(calendar.purchases.map { [_1.number, _1.ends] }).to eq([[2, "2026-11"]])
+  end
+
+  it "keeps a purchase seen only mid-way apart from an older one it can't follow" do
+    rows = [
+      insight_row("2026-01-02", -60.00, "SOFA EXEMPLO", installment_number: 1, installment_total: 3, bill_due_on: "2026-01-09"),
+      insight_row("2026-09-02", -60.00, "SOFA EXEMPLO", installment_number: 2, installment_total: 3, bill_due_on: "2026-09-09")
+    ]
+    calendar = described_class.new(rows, from: "2026-10")
+
+    expect(calendar.purchases.map { [_1.number, _1.ends] }).to eq([[2, "2026-10"]])
+  end
 end
