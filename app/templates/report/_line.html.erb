@@ -1,0 +1,8 @@
+<tr class="<%= css %>">
+  <td><%= line.name %></td>
+  <td class="num"><%= money(line.cents) %></td>
+  <td class="num"><%= line.share %>%</td>
+  <td class="num"><%= money(line.average_cents) %></td>
+  <td class="num<% if line.change %> <%= line.change.positive? ? "up" : "down" %><% end %>"><%= line.change ? "#{"+" if line.change.positive?}#{line.change}%" : "" %></td>
+  <td class="num"><%= line.rows %></td>
+</tr>

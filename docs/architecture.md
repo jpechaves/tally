@@ -253,6 +253,10 @@ savings_plan_lines              -- the per-category proposal you reviewed
   proposed_cents    INTEGER NOT NULL   -- the new monthly limit (you can edit it)
   UNIQUE(savings_plan_id, category_id)
 
+dismissed_suggestions           -- cut suggestions you dismissed (milestone 4)
+  key           TEXT NOT NULL UNIQUE   -- "recurring:counterparty:12", "big:category:7", "duplicate:<payee>:<amount>"
+  title         TEXT NOT NULL
+
 budgets                         -- monthly limit per category; written when a plan is accepted, or by hand
   category_id      INTEGER NOT NULL REFERENCES categories(id)
   month            TEXT NOT NULL   -- YYYY-MM
@@ -493,7 +497,8 @@ Only after version 1 is correct and in daily use. Each one only **suggests**; no
 - **Milestone 1 (skeleton)**: done. Hanami app, SQLite pragmas, `Money`, basic auth, `accounts` table, CI, privacy pre-commit check.
 - **Milestone 2 (import)**: done. The three importers with synthetic golden files (and an optional local check against real statements in `data/statements/`), upsert by `(account, external_id)`, import history, transfer pairing with mirror rows for Itaú conta and Nubank RDB, "This is me" for Pix to yourself, import / accounts / transactions / counterparties pages, and `rake tally:import[...]`.
 - **Milestone 3 (categorization)**: done. 52 seed categories with nature and maximum cut, generic seed rules for public merchants (`lib/tally/categories.rb`), the categorizer (counterparty default, rules, Itaú's category as a suggestion), Pix to people as Transferências (Pix), the review list grouped by payee with "always" (counterparty default or learned rule), per-transaction category and memo, categories and rules pages. Your own rules go in your database, or in a gitignored `data/seeds.rb`.
-- **Next, milestone 4 (where the money goes and what to cut)**.
+- **Milestone 4 (where the money goes and what to cut)**: done. Monthly report (income, spending, saved against the 3-month average; by category, nature and payee; the month's installments), cut suggestions for the seven signals of §8.3 with dismissals (`dismissed_suggestions` table), and the installment calendar from each purchase's latest installment, next to what Itaú prints as committed. Installments after the first are left out of "big", "growth", "recurring" and "duplicate": they are already committed and repeat by design. New installment purchases are one suggestion per month.
+- **Next, milestone 5 (savings planner and budgets)**. Milestone 6 (Pi deployment) waits until milestones 2 to 5 have been tried by hand.
 
 ## 17. Public repository: keeping personal data out
 

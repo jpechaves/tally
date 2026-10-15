@@ -5,7 +5,7 @@ Personal finance tracker in Ruby ([Hanami 3](https://hanakai.org)) and SQLite. I
 - [docs/architecture.md](docs/architecture.md): goals, data model, money rules, milestones
 - [docs/statement-import.md](docs/statement-import.md): statement formats, re-import, categorization
 
-**Status:** milestone 3 (categorization): statement import (Nubank account and card CSVs, Itaú card bill PDFs, re-imports that update instead of duplicating, transfers between your accounts), plus categories with a nature, generic rules, and a review list grouped by payee. The monthly report and cut suggestions are next.
+**Status:** milestone 4 (insights): statement import (Nubank account and card CSVs, Itaú card bill PDFs, re-imports that update instead of duplicating, transfers between your accounts), categories with a nature, generic rules and a review list grouped by payee, plus a monthly report, cut suggestions and an installment calendar. The savings planner and budgets are next.
 
 ## Requirements
 
@@ -60,6 +60,14 @@ Itaú bill fixtures are generated: after changing `spec/support/statements/itau_
 Imports categorize rows as they arrive: generic rules for public merchants (iFood, Uber, pharmacies, streaming…), Pix to people as Transferências (Pix), and Itaú's own category as a suggestion. Open **Review** for the rest: rows are grouped by payee, biggest first, and one pick with "always" covers that payee's past and future rows. **Categories** sets each category's nature (fixed, essential, discretionary) and how far the savings planner may cut it; **Rules** lists every rule with how many rows it covers.
 
 The categories and generic rules are seeded by `bin/hanami db seed` (and on the first import). Rules about your own payees stay in your database; to keep some in a file, put them in `data/seeds.rb` (gitignored), which the seed loads.
+
+## Where the money goes
+
+- **Report**: a month's income, spending and what was saved, next to the 3-month average; spending by category, by nature and by payee; the month's card installments and when each ends.
+- **Cuts**: suggestions ranked by an estimate in R$ per month: big discretionary categories, growth, recurring charges, many small purchases, fees and interest, possible duplicate charges, new installment purchases. Dismiss one and it stays hidden; the dismissed list can bring it back.
+- **Installments**: what is already committed to the coming card bills, month by month, and the money freed as purchases end.
+
+Everything is plain sums over your categorized rows, so each number can be traced back to them. Transfers between your accounts never count.
 
 ## Money
 
