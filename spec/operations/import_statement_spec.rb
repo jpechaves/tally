@@ -106,9 +106,15 @@ RSpec.describe Tally::Operations::ImportStatement, :db do
       boleto = row("Nubank conta", "Pagamento de boleto efetuado - FINANCEIRA EXEMPLO SOCIEDADE DE CREDITO")
       expect(boleto[:missing_since_import_id]).to eq(result.value!.id)
 
-      # The original file again: the row comes back and is no longer flagged.
-      import("NU_12345678_01JUL2026_31JUL2026.csv", fixture("NU_12345678_01JUL2026_31JUL2026.csv") + "\n")
+      # The original file again, the very same bytes: it is applied, not skipped as a
+      # duplicate, so the row comes back and the edit is undone.
+      again = import("NU_12345678_01JUL2026_31JUL2026.csv")
+      expect(again.value!).to have_attributes(status: "applied", rows_updated: 1)
       expect(row("Nubank conta", boleto[:raw_description])[:missing_since_import_id]).to be_nil
+      expect(energy.first).to include(amount_cents: -18_743)
+
+      # And once more: now it is the version in effect, so it is a duplicate.
+      expect(import("NU_12345678_01JUL2026_31JUL2026.csv").value!.status).to eq("duplicate_file")
     end
 
     it "only flags missing rows on the same card bill" do

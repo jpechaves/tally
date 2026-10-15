@@ -10,9 +10,9 @@ module Tally
           transaction_repo.months
         end
 
-        # The month asked for, or the latest one with rows.
+        # The month asked for, or the latest complete one with rows (Insights.default_month).
         expose :month do |months, requested_month: nil|
-          requested_month || months.first
+          requested_month || Tally::Insights.default_month(months)
         end
 
         expose :report do |month|
