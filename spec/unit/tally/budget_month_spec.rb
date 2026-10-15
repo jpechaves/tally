@@ -38,6 +38,19 @@ RSpec.describe Tally::BudgetMonth do
     expect(september.score).to be_nil
   end
 
+  it "expects the usual spending outside the budgets for the rest of the month" do
+    september = described_class.new(rows, month: "2026-09", budgets: {11 => 500_00, 12 => 2_000_00}, categories:,
+      today: Date.new(2026, 9, 15), expected_income_cents: 10_000_00, expected_unbudgeted_cents: 3_000_00)
+
+    # R$ 100 spent outside the budgets so far, R$ 3.000 usual: R$ 2.900 still to come
+    expect(september.unbudgeted_left_cents).to eq(290_000)
+    expect(september.projected_saved_cents).to eq(1_000_000 - 110_000 - 150_000 - 290_000)
+
+    over = described_class.new(rows, month: "2026-09", budgets: {11 => 500_00, 12 => 2_000_00}, categories:,
+      today: Date.new(2026, 9, 15), expected_income_cents: 10_000_00, expected_unbudgeted_cents: 50_00)
+    expect(over.unbudgeted_left_cents).to eq(0)
+  end
+
   it "scores the month once it is over" do
     september = month(Date.new(2026, 10, 2), target: 9_000_00)
 

@@ -3,6 +3,7 @@
 module Tally
   class Routes < Hanami::Routes
     root to: "home.show"
+    get "/scripts/:name.js", to: "scripts.show", as: :script
 
     get "/imports", to: "imports.index", as: :imports
     post "/imports", to: "imports.create"
