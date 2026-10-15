@@ -9,7 +9,8 @@ module Tally
         def handle(request, response)
           halt 404 if insight_repo.restore(request.params[:id].to_i).zero?
 
-          response.redirect_to routes.path(:cuts)
+          month = request.params[:month].to_s[/\A\d{4}-\d{2}\z/]
+          response.redirect_to month ? "#{routes.path(:cuts)}?month=#{month}" : routes.path(:cuts)
         end
       end
     end

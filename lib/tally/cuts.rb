@@ -15,7 +15,8 @@ module Tally
     RECURRING_TOLERANCE_PCT = 10
     SMALL_CENTS = 5_000
     SMALL_MIN_COUNT = 8
-    DUPLICATE_DAYS = 2
+    DUPLICATE_DAYS = 1
+    DUPLICATE_MAX_CHARGES = 3
     DEBT_PARENT = "Dívidas"
 
     SIGNALS = {
@@ -100,14 +101,16 @@ module Tally
 
     # The same payee this month and in 3 of the last 4 months, each month within 10% of
     # the typical (median) amount: subscriptions, gym, phone, a monthly Pix. The estimate
-    # is this month's charge.
+    # is this month's charge. Fees are left out: the fees signal nets them against their
+    # discounts (a card fee and its "Redução Mensalidade").
     def recurring
       return [] unless @rows.any?
 
       months = Insights.previous_months(@month, RECURRING_MONTHS - 1) + [@month]
 
-      single(@rows).group_by { Insights.payee_key(_1) }.filter_map do |key, rows|
-        totals = months.to_h { |m| [m, Insights.spent_cents(single(@by_month.fetch(m, [])).select { Insights.payee_key(_1) == key })] }
+      charges = ->(rows) { single(rows).reject { _1[:kind] == "fee" } }
+      charges.(@rows).group_by { Insights.payee_key(_1) }.filter_map do |key, rows|
+        totals = months.to_h { |m| [m, Insights.spent_cents(charges.(@by_month.fetch(m, [])).select { Insights.payee_key(_1) == key })] }
           .select { |_, cents| cents.positive? }
         next if totals.size < RECURRING_MIN_MONTHS
 
@@ -156,11 +159,14 @@ module Tally
       )]
     end
 
-    # The same payee and amount twice within 2 days. Dismissing it (two memberships, say)
-    # keeps that payee and amount quiet.
+    # The same payee and amount twice on the same or the next day. A payee charging that
+    # amount more than 3 times in the month (parking every day) is a habit, not a mistake.
+    # Dismissing it (two memberships, say) keeps that payee and amount quiet.
     def duplicates
       single(@rows).select { _1[:kind] == "purchase" }.group_by { [Insights.payee_key(_1), _1[:amount_cents]] }
         .filter_map do |(key, amount), rows|
+          next if rows.size > DUPLICATE_MAX_CHARGES
+
           dates = rows.map { Date.iso8601(_1[:occurred_on]) }.sort
           next unless dates.each_cons(2).any? { |a, b| (b - a) <= DUPLICATE_DAYS }
 
