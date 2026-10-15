@@ -73,7 +73,7 @@ date,title,amount
 - UTF-8, header `date,title,amount`. `date` is ISO (`YYYY-MM-DD`), unlike the account CSV.
 - `amount` is quoted with a **comma decimal and dot thousands** (`"1.401,78"`), **positive = charge**, and negatives are written with a space (`"- 7,06"`). `Money.parse` drops the space, and the importer flips the sign so charges are negative on the card account like every other outflow.
 - **No transaction ID.** The upsert key is derived like Itaú's: `sha256(card | bill due date | date | title | amount | k)`. `k` matters here: bills can contain truly identical rows (for example two memberships at the same gym charged the same amount on the same day), and `k` numbers them so they stay separate.
-- **The bill's due date comes from the file name** (`Nubank_2026-09-09.csv`). If the file was renamed, the importer infers it from the date range and asks for confirmation.
+- **The bill's due date comes from the file name** (`Nubank_2026-09-09.csv`). A file without it is rejected with a message asking you to rename it, rather than guessing which bill it is.
 - No summary line, so the check is against the account statement instead: **the sum of a bill's charges must equal the "Pagamento de fatura" that paid it** (once that account month is imported). A mismatch is a warning, not a rejection, because a bill can be paid partially, and IOF rounding inside the bank can leave a one-centavo gap. The importer never invents a balancing row.
 
 Title patterns:
@@ -81,7 +81,7 @@ Title patterns:
 | Pattern | kind | Notes |
 |---|---|---|
 | `Pagamento recebido` | transfer ← Nubank conta | other leg of the account's "Pagamento de fatura" |
-| `… - Parcela N/M` | purchase, installment N of M | `purchase_key` links the installments across bills |
+| `… - Parcela N/M` | purchase, installment N of M | `purchase_key` links the installments across bills. The export has no purchase date, so the key is merchant + installment count + installment amount |
 | `Pix no Crédito - NAME - N/M` | purchase (a Pix paid with the card), installments | |
 | `IOF de "X"` / `IOF de volta de X` | fee / refund of that fee | international purchases; Nubank refunds the IOF, so the pair nets to zero and both link to purchase X |
 | `Estorno de "X"` | refund | linked to X when found |
@@ -94,8 +94,8 @@ Title patterns:
 The bill has a cover page with the summary and a boleto, then pages of transactions laid out in **two or three columns per page**. A plain text dump interleaves the columns, so the parser works from word positions:
 
 1. Run `pdftotext -bbox <file> -` (poppler-utils), which outputs every word with its coordinates.
-   Then **rejoin split words**: some bills draw text with tight letter spacing, so poppler splits words into fragments (`DAT A`, `LOJ A EXEM PLO`, `1.234 ,56`). Fragments less than 1,25 pt apart are glued back together; real spaces are 1,4 pt or more. Measured on real bills, the gaps split cleanly into two groups (0,2–1,2 pt inside words, 1,3–3 pt between words).
-2. On each page, find the x position of each `DATA` column header. Those positions are the column boundaries, and they differ from page to page.
+   Then **rejoin split words**: some bills draw text with tight letter spacing, so poppler splits words into fragments (`DAT A`, `LOJ A EXEM PLO`, `1.234 ,56`). Fragments less than 1,25 pt apart are glued back together; real spaces are 1,4 pt or more. Measured on real bills, the gaps split cleanly into two groups (0,2–1,2 pt inside words, 1,3–3 pt between words). But a bill *without* fragments puts its words only 1,2 pt apart, so the rejoin only runs on pages that look fragmented (more than 20% of the gaps under 1 pt).
+2. On each page, find each `DATA … VALOR EM R$` column header. A column runs from its `DATA` to just past its `R$`, and the positions differ from page to page. Ending the column at `R$` matters: the last column often has another table beside it (limits, interest rates) whose lines would otherwise merge with the rows.
 3. Within each column, group words into lines by y position. A line that starts with `DD/MM` and ends with an amount (`1.234,56` or `-64,66`) is a transaction. The line below it holds the bank's category and city (`vestuário Sao Paulo`).
 4. Use section headings to decide what each row is: `Pagamentos efetuados` (payments), `Lançamentos: compras e saques` (purchases, possibly under a cardholder name such as `MARIA E SOUZA`), `Lançamentos: produtos e serviços` (fees and credits), and `Compras parceladas - próximas faturas` (future installments, not transactions of this bill).
 5. Read the summary figures: total of this bill, previous bill, payments, `Lançamentos no cartão`, `Lançamentos produtos e serviços`, next bill, later bills, credit limit, closing date, due date.
@@ -110,7 +110,7 @@ payment parsed (negated)    == previous bill's "Total desta fatura"
 
 The last line is a second check that the bills chain without gaps.
 
-The future-installments list matched "Próxima fatura" on most bills, but on one the prototype over-collected, because another table follows that list on the page. So the importer treats future installments as optional information: it stores them only when they sum to the printed "Próxima fatura", and otherwise keeps the printed totals and logs a warning. It never rejects a bill over this.
+The future-installments list matched "Próxima fatura" on most bills, but on one the prototype over-collected, because another table sits beside that list on the page (bounding columns at `R$`, step 2, fixed it). The importer still treats future installments as optional information: it stores the printed "Próxima fatura" and "Demais faturas", and logs a warning if the list doesn't add up to the first. It never rejects a bill over this.
 
 **These equalities are the importer's safety check.** If the parsed rows don't add up to the printed totals to the cent, the import is rejected and nothing is written. That covers layout changes, a missed column, or a misread amount.
 
@@ -118,7 +118,7 @@ Details the parser handles:
 - **Dates have no year.** The year comes from the closing date: a row dated after the closing month belongs to the previous year. For example, `23/11` on a bill closing 2026-10-02 is 2025-11-23.
 - **Installments** appear as `LOJA EXEMPLO 11/12` (installment 11 of 12). The parser stores `installment_number` and `installment_total`, and strips the suffix from the description. It also builds `purchase_key` from merchant, purchase date, installment amount and total count, so the 12 rows of that purchase are linked across bills.
 - **Negative rows**: `CANCELAMENTO DE COMPRA`, `CANCELAMENTO PARCIAL DE`, and merchant refunds such as `LOJA EXEMPLO -114,50` become refunds, as positive amounts on the card account.
-- **Fees**: the card's monthly fee (`Mensalidade - Plano do`) and its discount (`Redução Mensalidade`, a negative row) become `fee` rows in a "Tarifas bancárias" category.
+- **Fees**: the card's monthly fee (`Mensalidade - Plano do`) and its discount (`Redução Mensalidade`, a negative row) both become `fee` rows (a "Tarifas bancárias" category comes in milestone 3). The line under them (`Anuidade Diferenciada`) is kept in the raw row.
 - **Payments**: `Pagamento via conta -1.234,56` is the card side of a transfer from the Itaú checking account.
 - **The bank's category** (`vestuário`, `supermercado`, `viagem`, `saúde`, `restaurante`, `lazer`, `educação`, `serviços`, `casa`, `eletronicos`, `outros`) is stored in `bank_category`, and the city in `location`. Itaú's categories are rough (online marketplace purchases are often "vestuário"), so they are only a fallback hint (§6).
 - Merchant names are cut at about 23 characters and often have the city glued on (`PADARIA EXEMPLOSAO PAULO`). The raw text is kept, and a cleaned `description` drops known city suffixes.
@@ -146,6 +146,14 @@ The import runs as one operation (`ImportStatement`), inside a single DB transac
 7. Save the original file under `storage/imports/<sha256>.<ext>` so any import can be re-run or audited later.
 8. Record the counts (`inserted`, `updated`, `unchanged`, `missing`) and show them.
 
+**Transfers** (milestone 2, `PairTransfers`): a row marked as a transfer knows the other account (`counter_account_id`).
+- When both accounts are imported (Nubank conta's "Pagamento de fatura" and the card's "Pagamento recebido"), the other leg is the row in that account with the opposite amount, pointing back, within 5 days. Both get the same `transfer_id`.
+- The two account rows of a "Pix no Crédito" (same UUID, +X and −X) are paired with each other.
+- When the other account has no statement (Itaú conta, Nubank RDB), a **mirror row** is written there (`external_id = mirror:<row id>`), so its balance is a plain `SUM`. A re-import that changes the amount updates the mirror.
+- Otherwise (the other side not imported yet, or the dollar Conta Global) the row stays a one-leg transfer: still never spending or income.
+
+**Cross-source checks** are on the Accounts page: each Nubank card bill against the account's "Pagamento de fatura" (between 20 days before and 5 days after the due date), and each Itaú bill against the payment printed on the next bill. A difference is a warning, never a rejection. The Itaú account's balance is flagged when it drifts more than `PASS_THROUGH_TOLERANCE_CENTS` (default R$ 50) from zero.
+
 Overlapping files work too: a Nubank export for 15 Jun to 15 Jul followed by one for July only updates the shared rows and inserts the rest.
 
 ## 5. Which date counts for budgets
@@ -162,7 +170,7 @@ The goal is to fill in as much as possible automatically, then make the remainin
 
 Each new row goes through these steps in order. The first one that matches sets the category and `category_source`:
 
-1. **Transfers are never spending.** RDB moves, Itaú `Pagamento via conta`, and Pix to a counterparty marked `is_self` are marked as transfers and get no category. `Pagamento de fatura` (account) and `Pagamento recebido` (card) are the two legs of one transfer. Your own name and masked CPF are set as `is_self` in your local database.
+1. **Transfers are never spending.** RDB moves, Itaú `Pagamento via conta`, and Pix to a counterparty marked `is_self` are marked as transfers and get no category. `Pagamento de fatura` (account) and `Pagamento recebido` (card) are the two legs of one transfer. You mark your own name and masked CPF with "This is me" on the Counterparties page, which sets `is_self` in your local database and turns your past Pix to yourself into transfers too. A Pix to yourself at Itaú becomes a transfer to "Itaú conta".
 2. **Counterparty default**: if the counterparty has a `default_category_id`, use it.
 3. **Rules** from `category_rules`, lowest `priority` first, matching on CNPJ, counterparty name, description, bank category, kind, and optional amount range.
 4. **Bank hint**: map Itaú's `bank_category` to an app category (`supermercado` → Alimentação > Supermercado, `restaurante` → Alimentação > Restaurantes, `viagem` → Transporte > Viagens, `saúde` → Saúde, …). These rows are marked `category_source = 'bank'`, so they show as "suggested".

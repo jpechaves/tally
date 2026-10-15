@@ -1,0 +1,25 @@
+<main>
+  <h1>Transactions</h1>
+  <form action="/transactions" method="get" class="filters">
+    <select name="account">
+      <option value="">All accounts</option>
+      <% accounts.each do |account| %>
+        <option value="<%= account.id %>"<%= " selected" if account.id == account_id %>><%= account.name %></option>
+      <% end %>
+    </select>
+    <select name="month">
+      <option value="">All months</option>
+      <% months.each do |value| %>
+        <option value="<%= value %>"<%= " selected" if value == month %>><%= value %></option>
+      <% end %>
+    </select>
+    <button type="submit">Show</button>
+  </form>
+
+  <% if rows.empty? %>
+    <p>No transactions.</p>
+  <% else %>
+    <p><%= rows.size %> rows, net <%= money(total_cents) %>.</p>
+    <%= render "transactions/table", rows: rows %>
+  <% end %>
+</main>

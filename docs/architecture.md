@@ -162,6 +162,7 @@ accounts                        -- created in milestone 1
   currency              TEXT NOT NULL DEFAULT 'BRL'
   opening_balance_cents INTEGER NOT NULL DEFAULT 0
   archived_at           TEXT NULL
+  mirror_transfers      INTEGER NOT NULL DEFAULT 0   -- no statement of its own: transfers are mirrored into it (milestone 2)
 
 categories
   name          TEXT NOT NULL
@@ -178,6 +179,7 @@ counterparties                  -- who the money went to / came from
   document_kind   TEXT NULL     -- cnpj | cpf_masked
   bank_name, bank_code, branch, account_number  TEXT NULL
   is_self         INTEGER NOT NULL DEFAULT 0     -- you, at another bank → transfer
+  match_key       TEXT NOT NULL UNIQUE           -- "document|NAME": UNIQUE(document, name) would let NULL documents repeat
   default_category_id INTEGER NULL REFERENCES categories(id)
   UNIQUE(document, name)
 
@@ -191,6 +193,7 @@ transactions
   category_source   TEXT NOT NULL DEFAULT 'none'   -- none | bank | rule | manual (manual is never overwritten)
   category_rule_id  INTEGER NULL REFERENCES category_rules(id)
   transfer_id       INTEGER NULL REFERENCES transfers(id)
+  counter_account_id INTEGER NULL REFERENCES accounts(id)   -- transfers: the other account, known before its leg is imported
   counterparty_id   INTEGER NULL REFERENCES counterparties(id)
   description       TEXT NOT NULL     -- cleaned
   raw_description   TEXT NOT NULL     -- exactly as in the statement
@@ -487,7 +490,8 @@ Only after version 1 is correct and in daily use. Each one only **suggests**; no
 ## 16. Status
 
 - **Milestone 1 (skeleton)**: done. Hanami app, SQLite pragmas, `Money`, basic auth, `accounts` table, CI, privacy pre-commit check.
-- **Next, milestone 2 (import)**: the three importers with synthetic golden files (checked locally against real statements in `data/`), upsert, transfers.
+- **Milestone 2 (import)**: done. The three importers with synthetic golden files (and an optional local check against real statements in `data/statements/`), upsert by `(account, external_id)`, import history, transfer pairing with mirror rows for Itaú conta and Nubank RDB, "This is me" for Pix to yourself, import / accounts / transactions / counterparties pages, and `rake tally:import[...]`.
+- **Next, milestone 3 (categorization)**.
 
 ## 17. Public repository: keeping personal data out
 

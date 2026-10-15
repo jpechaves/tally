@@ -1,0 +1,147 @@
+# frozen_string_literal: true
+
+require "digest"
+require "fileutils"
+require "json"
+
+module Tally
+  module Operations
+    # Imports one statement file (docs/statement-import.md, section 4):
+    #
+    # 1. The same bytes already applied: logged as duplicate_file, nothing else.
+    # 2. Parse and check. A file that fails is logged as rejected, and nothing else is
+    #    written.
+    # 3. In one DB transaction: upsert each row by (account, external_id), flag rows the
+    #    file no longer has, pair transfers, and log the import with its counts.
+    # 4. Keep the original file under the import storage folder, named by its SHA-256.
+    #
+    # Every outcome is an `imports` row: Success(import) when applied or a duplicate,
+    # Failure(import) when rejected.
+    class ImportStatement < Tally::Operation
+      include Deps[
+        "settings",
+        "repos.account_repo",
+        "repos.counterparty_repo",
+        "repos.import_repo",
+        "repos.transaction_repo",
+        "operations.pair_transfers"
+      ]
+
+      # Fields that come from the bank and are updated on re-import. Everything else
+      # (memo, and in milestone 3 a manual category) belongs to you and is never touched.
+      BANK_FIELDS = %i[
+        occurred_on purchased_on amount_cents kind description raw_description bank_category
+        location installment_number installment_total purchase_key counterparty_id
+        counter_account_id card_statement_id raw_json
+      ].freeze
+
+      EXTENSIONS = {"itau_card_pdf" => "pdf"}.freeze
+
+      def call(file_name:, content:)
+        content = content.b
+        file = {file_name: File.basename(file_name.to_s), file_sha256: Digest::SHA256.hexdigest(content),
+                file_size: content.bytesize}
+
+        if (previous = import_repo.applied_with_sha(file[:file_sha256]))
+          return import_repo.create(**file, status: "duplicate_file", source: previous.source,
+            account_id: previous.account_id, period_start: previous.period_start, period_end: previous.period_end)
+        end
+
+        statement = begin
+          Importers.parse(file[:file_name], content)
+        rescue Importers::Error => e
+          step Failure(import_repo.create(**file, status: "rejected", source: source_of(content), error: e.message))
+        end
+
+        import = transaction { apply(statement, file) }
+        store(content, file[:file_sha256], statement.source)
+        import
+      end
+
+      private
+
+      def apply(statement, file)
+        account = account_repo.ensure(statement.account_name)
+        import = import_repo.create(**file, status: "applied", source: statement.source, account_id: account.id,
+          period_start: statement.period_start.iso8601, period_end: statement.period_end.iso8601,
+          warnings: statement.warnings)
+
+        card_statement_id = if statement.card_statement
+          transaction_repo.upsert_card_statement(account_id: account.id, import_id: import.id,
+            figures: statement.card_statement)
+        end
+
+        counts = Hash.new(0)
+        ids = statement.rows.map do |row|
+          attributes = attributes(row, card_statement_id)
+          existing = transaction_repo.by_external_id(account.id, row.external_id)
+
+          if existing.nil?
+            counts[:inserted] += 1
+            transaction_repo.insert(**attributes, account_id: account.id, external_id: row.external_id,
+              first_import_id: import.id, last_import_id: import.id)
+          else
+            changes = attributes.slice(*BANK_FIELDS).reject { |field, value| existing[field] == value }
+            counts[changes.empty? ? :unchanged : :updated] += 1
+            transaction_repo.update(existing[:id], **changes, last_import_id: import.id, missing_since_import_id: nil)
+            existing[:id]
+          end
+        end
+
+        missing = transaction_repo.flag_missing(
+          account_id: account.id, import_id: import.id, keep_ids: ids,
+          **(card_statement_id ? {card_statement_id:} : {period: statement.period_start..statement.period_end})
+        )
+        pair_transfers.(touched_ids: ids)
+
+        import_repo.update(import.id, rows_inserted: counts[:inserted], rows_updated: counts[:updated],
+          rows_unchanged: counts[:unchanged], rows_missing: missing)
+      end
+
+      def attributes(row, card_statement_id)
+        counterparty = row.counterparty && counterparty_repo.upsert(**row.counterparty)
+        kind = row.kind
+        counter_account = row.counter_account
+
+        # A Pix between you and yourself at another bank is a transfer, not spending.
+        if counterparty&.is_self == 1 && %w[purchase income].include?(kind)
+          kind = "transfer"
+          counter_account = Importers.self_account_for(counterparty)
+        end
+
+        {
+          occurred_on: row.occurred_on.iso8601,
+          purchased_on: row.purchased_on&.iso8601,
+          amount_cents: row.amount.cents,
+          kind:,
+          description: row.description,
+          raw_description: row.raw_description,
+          bank_category: row.bank_category,
+          location: row.location,
+          installment_number: row.installment_number,
+          installment_total: row.installment_total,
+          purchase_key: row.purchase_key,
+          counterparty_id: counterparty&.id,
+          counter_account_id: counter_account && account_repo.ensure(counter_account).id,
+          card_statement_id:,
+          raw_json: JSON.generate(row.raw)
+        }
+      end
+
+      def store(content, sha, source)
+        dir = File.expand_path(settings.import_storage_dir, Hanami.app.root)
+        path = File.join(dir, "#{sha}.#{EXTENSIONS.fetch(source, "csv")}")
+        return if File.exist?(path)
+
+        FileUtils.mkdir_p(dir)
+        File.binwrite(path, content)
+      end
+
+      def source_of(content)
+        Importers.for(content).class::SOURCE
+      rescue Importers::Error
+        "unknown"
+      end
+    end
+  end
+end

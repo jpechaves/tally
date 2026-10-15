@@ -1,0 +1,45 @@
+<main>
+  <h1>Accounts</h1>
+  <table>
+    <thead><tr><th>Account</th><th>Kind</th><th class="num">Rows</th><th class="num">Balance</th><th></th></tr></thead>
+    <tbody>
+      <% accounts.each do |entry| %>
+        <% account = entry[:account] %>
+        <tr>
+          <td><a href="/transactions?account=<%= account.id %>"><%= account.name %></a></td>
+          <td><%= account.kind.tr("_", " ") %><%= account.mirror_transfers == 1 ? " (from transfers)" : "" %></td>
+          <td class="num"><%= entry[:rows] %></td>
+          <td class="num"><%= account.currency == "BRL" ? money(entry[:balance_cents]) : "—" %></td>
+          <td>
+            <% if account.name == "Itaú conta" && entry[:balance_cents].abs > tolerance_cents %>
+              <span class="warning">The Pix sent to this account and the bills it paid differ by more than <%= money(tolerance_cents) %>.</span>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+  <p class="note">Card balances only cover the bills imported so far. Itaú conta and Nubank RDB have no statements:
+    their balance is the sum of the transfers into and out of them.</p>
+
+  <h2>Bill checks</h2>
+  <% if checks.empty? %>
+    <p>No card bills imported yet.</p>
+  <% else %>
+    <table>
+      <thead><tr><th>Bill</th><th>Due</th><th class="num">Bill total</th><th>Paid by</th><th class="num">Paid</th><th>Result</th></tr></thead>
+      <tbody>
+        <% checks.each do |check| %>
+          <tr>
+            <td><%= check[:account] %></td>
+            <td><%= check[:due_on] %></td>
+            <td class="num"><%= money(check[:total_cents]) %></td>
+            <td><%= check[:paid_by] %></td>
+            <td class="num"><%= money(check[:paid_cents]) %></td>
+            <td class="check-<%= check[:status] %>"><%= check[:message] %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+</main>
