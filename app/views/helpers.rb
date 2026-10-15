@@ -9,6 +9,12 @@ module Tally
         cents.nil? ? "" : Tally::Money.new(cents).format
       end
 
+      # 123456 -> "1234,56", for a form field that Money.parse reads back exactly.
+      def amount_field(cents)
+        units, rest = cents.abs.divmod(100)
+        "#{"-" if cents.negative?}#{units},#{rest.to_s.rjust(2, "0")}"
+      end
+
       # "2026-09-02T10:11:12.123Z" -> "2026-09-02 10:11"
       def timestamp(text)
         text.to_s.sub("T", " ")[0, 16]

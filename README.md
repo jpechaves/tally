@@ -5,7 +5,7 @@ Personal finance tracker in Ruby ([Hanami 3](https://hanakai.org)) and SQLite. I
 - [docs/architecture.md](docs/architecture.md): goals, data model, money rules, milestones
 - [docs/statement-import.md](docs/statement-import.md): statement formats, re-import, categorization
 
-**Status:** milestone 4 (insights): statement import (Nubank account and card CSVs, Itaú card bill PDFs, re-imports that update instead of duplicating, transfers between your accounts), categories with a nature, generic rules and a review list grouped by payee, plus a monthly report, cut suggestions and an installment calendar. The savings planner and budgets are next.
+**Status:** milestone 5 (planner and budgets): statement import (Nubank account and card CSVs, Itaú card bill PDFs, re-imports that update instead of duplicating, transfers between your accounts), categories with a nature, generic rules and a review list grouped by payee, a monthly report, cut suggestions and an installment calendar, plus the "save X a month" planner, budgets and an on-track dashboard. Raspberry Pi deployment is next.
 
 ## Requirements
 
@@ -66,6 +66,11 @@ The categories and generic rules are seeded by `bin/hanami db seed` (and on the 
 - **Report**: a month's income, spending and what was saved, next to the 3-month average; spending by category, by nature and by payee; the month's card installments and when each ends.
 - **Cuts**: suggestions ranked by an estimate in R$ per month: big discretionary categories, growth, recurring charges, many small purchases, fees and interest, possible duplicate charges, new installment purchases. Dismiss one and it stays hidden; the dismissed list can bring it back.
 - **Installments**: what is already committed to the coming card bills, month by month, and the money freed as purchases end.
+
+## Saving and budgets
+
+- **Plan**: enter how much you want to save each month. The planner averages the last three complete months, works out the gap, and spreads it over your categories by how far each may be cut (fixed 0%, essential 15%, discretionary 50%). Edit any line, watch the total, and accept: the limits become your budgets from the month you picked.
+- **Budgets**: each category's spending against its limit and pace, a projection to the end of the month, and once a month is over, its score: the target against what you actually saved, and which categories went over.
 
 Everything is plain sums over your categorized rows, so each number can be traced back to them. Transfers between your accounts never count.
 

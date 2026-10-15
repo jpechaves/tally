@@ -179,8 +179,51 @@ CREATE TABLE `dismissed_suggestions`(
   `title` text NOT NULL,
   `created_at` text DEFAULT((strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))) NOT NULL
 ) STRICT;
+CREATE TABLE `savings_plans`(
+  `id` integer NOT NULL PRIMARY KEY AUTOINCREMENT,
+  `target_cents` integer NOT NULL,
+  `baseline_from` text NOT NULL,
+  `baseline_to` text NOT NULL,
+  `baseline_income_cents` integer NOT NULL,
+  `baseline_spending_cents` integer NOT NULL,
+  `starts_month` text NOT NULL,
+  `status` text DEFAULT('draft') NOT NULL,
+  `shortfall_cents` integer DEFAULT(0) NOT NULL,
+  `created_at` text DEFAULT((strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))) NOT NULL,
+  `updated_at` text DEFAULT((strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))) NOT NULL,
+  CONSTRAINT `savings_plans_target` CHECK(target_cents > 0),
+  CONSTRAINT `savings_plans_status` CHECK(status IN('draft', 'active', 'replaced'))
+) STRICT;
+CREATE TABLE `savings_plan_lines`(
+  `id` integer NOT NULL PRIMARY KEY AUTOINCREMENT,
+  `savings_plan_id` integer NOT NULL REFERENCES `savings_plans` ON DELETE CASCADE,
+  `category_id` integer NOT NULL REFERENCES `categories`,
+  `baseline_cents` integer NOT NULL,
+  `max_cut_cents` integer NOT NULL,
+  `proposed_cents` integer NOT NULL,
+  CONSTRAINT `savings_plan_lines_proposed` CHECK(proposed_cents >= 0)
+) STRICT;
+CREATE UNIQUE INDEX `savings_plan_lines_savings_plan_id_category_id_index` ON `savings_plan_lines`(
+  `savings_plan_id`,
+  `category_id`
+);
+CREATE TABLE `budgets`(
+  `id` integer NOT NULL PRIMARY KEY AUTOINCREMENT,
+  `category_id` integer NOT NULL REFERENCES `categories`,
+  `month` text NOT NULL,
+  `amount_cents` integer NOT NULL,
+  `savings_plan_id` integer REFERENCES `savings_plans`,
+  `created_at` text DEFAULT((strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))) NOT NULL,
+  `updated_at` text DEFAULT((strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))) NOT NULL,
+  CONSTRAINT `budgets_amount` CHECK(amount_cents >= 0)
+) STRICT;
+CREATE UNIQUE INDEX `budgets_category_id_month_index` ON `budgets`(
+  `category_id`,
+  `month`
+);
 INSERT INTO schema_migrations (filename) VALUES
 ('20261015000000_create_accounts.rb'),
 ('20261015100000_create_import_tables.rb'),
 ('20261016000000_create_categories.rb'),
-('20261017000000_create_dismissed_suggestions.rb');
+('20261017000000_create_dismissed_suggestions.rb'),
+('20261018000000_create_savings_plans_and_budgets.rb');

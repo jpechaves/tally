@@ -1,0 +1,90 @@
+<main>
+  <h1>Save <%= money(plan[:target_cents]) %> a month</h1>
+  <p class="note"><%= plan[:status] == "draft" ? "Draft" : plan[:status].capitalize %> · baseline <%= plan[:baseline_from] %> to
+    <%= plan[:baseline_to] %> · budgets from <%= plan[:starts_month] %></p>
+  <div class="cards">
+    <div>Income<strong><%= money(plan[:baseline_income_cents]) %></strong><span class="note">a month, on average</span></div>
+    <div>Spending<strong><%= money(plan[:baseline_spending_cents]) %></strong><span class="note">a month, on average</span></div>
+    <div>Saved today<strong><%= money(saved_today_cents) %></strong></div>
+    <div>Gap<strong><%= gap_cents.positive? ? money(gap_cents) : "none" %></strong></div>
+  </div>
+
+  <% if !gap_cents.positive? %>
+    <p class="notice">You already save <%= money(saved_today_cents) %> a month, <%= money(-gap_cents) %> more than the target.
+      Consider moving the extra to savings (the Nubank RDB) each month. Accepting still writes today's spending as budgets,
+      to keep it there.</p>
+  <% elsif plan[:shortfall_cents].positive? %>
+    <p class="notice">Cutting everything the categories allow saves <%= money(cuts_cents) %> a month, <%= money(plan[:shortfall_cents]) %>
+      short of the gap. The other levers are below.</p>
+  <% end %>
+
+  <form action="/plan/<%= plan[:id] %>/accept" method="post" id="plan">
+    <table class="rows">
+      <thead><tr><th>Category</th><th>Nature</th><th class="num">Today</th><th class="num">May cut</th><th class="num">New limit</th><th class="num">Cut</th></tr></thead>
+      <tbody>
+        <% lines.each do |line| %>
+          <tr>
+            <td><%= line[:parent_name] ? "#{line[:parent_name]} › " : "" %><%= line[:name] %></td>
+            <td><%= line[:nature] %></td>
+            <td class="num"><%= money(line[:baseline_cents]) %></td>
+            <td class="num"><%= money(line[:max_cut_cents]) %></td>
+            <td class="num">
+              <% if plan[:status] == "draft" %>
+                <input name="proposed[<%= line[:category_id] %>]" class="amount" value="<%= amount_field(line[:proposed_cents]) %>" data-baseline="<%= line[:baseline_cents] %>">
+              <% else %>
+                <%= money(line[:proposed_cents]) %>
+              <% end %>
+            </td>
+            <td class="num" data-cut><%= money(line[:baseline_cents] - line[:proposed_cents]) %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+    <p>With these limits you would save <strong id="new-saved"><%= money(saved_today_cents + cuts_cents) %></strong> a month:
+      <span id="verdict"><%= saved_today_cents + cuts_cents >= plan[:target_cents] ? "reaches the target" : "short of the target" %></span>.</p>
+    <% if plan[:status] == "draft" %>
+      <button type="submit">Accept and write budgets from <%= plan[:starts_month] %></button>
+    <% end %>
+  </form>
+
+  <% if gap_cents.positive? %>
+    <h2>Other levers</h2>
+    <% unless fixed_lines.empty? %>
+      <p>Fixed costs can't be trimmed month to month, but a contract can be renegotiated or switched:</p>
+      <ul>
+        <% fixed_lines.each do |line| %><li><%= line[:name] %>: <%= money(line[:baseline_cents]) %> a month</li><% end %>
+      </ul>
+    <% end %>
+    <% unless ending_installments.empty? %>
+      <p>Installments ending soon free money without cutting anything:</p>
+      <ul>
+        <% ending_installments.each do |purchase| %>
+          <li><%= purchase.description %>: <%= money(purchase.cents) %> a month, last one in <%= purchase.ends %></li>
+        <% end %>
+      </ul>
+    <% end %>
+  <% end %>
+
+  <script>
+    (() => {
+      const form = document.getElementById("plan");
+      const inputs = form.querySelectorAll("input[data-baseline]");
+      if (!inputs.length) return;
+      const today = <%= saved_today_cents %>, target = <%= plan[:target_cents] %>;
+      const cents = (text) => Math.round(parseFloat(text.replace(/\./g, "").replace(",", ".")) * 100);
+      const brl = (c) => (c < 0 ? "-" : "") + "R$ " + (Math.abs(c) / 100).toLocaleString("pt-BR", {minimumFractionDigits: 2});
+      const update = () => {
+        let cuts = 0;
+        inputs.forEach((input) => {
+          const value = cents(input.value);
+          const cut = isNaN(value) ? 0 : Number(input.dataset.baseline) - value;
+          cuts += cut;
+          input.closest("tr").querySelector("[data-cut]").textContent = brl(cut);
+        });
+        document.getElementById("new-saved").textContent = brl(today + cuts);
+        document.getElementById("verdict").textContent = today + cuts >= target ? "reaches the target" : "short of the target";
+      };
+      inputs.forEach((input) => input.addEventListener("input", update));
+    })();
+  </script>
+</main>
