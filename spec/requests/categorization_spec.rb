@@ -55,7 +55,8 @@ RSpec.describe "Categorizing", :db, type: :request do
   it "shows categories in the transaction list" do
     get "/transactions"
 
-    expect(last_response.body).to include("<td>Combustível</td>", %(title="the bank's suggestion">Supermercado?</td>))
+    expect(last_response.body).to include("<td>Combustível</td>", %(<td class="suggested" title="the bank's suggestion">Supermercado?</td>))
+    expect(last_response.body).not_to match(/<t[rd][a-z]/)
   end
 
   it "edits a category's nature and maximum cut, and adds one" do
@@ -71,6 +72,11 @@ RSpec.describe "Categorizing", :db, type: :request do
     post "/categories", name: "Cuidador", parent_id: category_id("Saúde").to_s
     follow_redirect!
     expect(last_response.body).to include("There is already a category with that name there.")
+
+    post "/categories/#{category_id("Cuidador")}", name: "Cuidador", archived: "1"
+    get "/categories"
+    expect(last_response.body).to include(%(<tr class="missing">))
+    expect(last_response.body).not_to match(/<t[rd][a-z]/)
   end
 
   it "adds and removes a rule" do
