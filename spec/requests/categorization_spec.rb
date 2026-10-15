@@ -39,6 +39,37 @@ RSpec.describe "Categorizing", :db, type: :request do
     expect(last_response.body).not_to include("ENERGIA EXEMPLO S.A. ·")
   end
 
+  it "pages the groups to review, counting the rows of all of them" do
+    stub_const("Tally::Views::Review::Index::PER_PAGE", 2)
+    groups = Tally::Review.groups(Hanami.app["repos.transaction_repo"].to_review)
+    pages = (groups.size + 1) / 2
+    rows = groups.sum { _1.rows.size }
+    headings = ->(body) { body.scan(%(<section class="group">)).size }
+
+    get "/review"
+    body = last_response.body
+    expect(body.scan(/(\d+) rows have no category and (\d+) only/).flatten.sum(&:to_i)).to eq(rows)
+    expect(body).to include("in #{groups.size} groups", "Page 1 of #{pages}", %(href="/review?page=2">Next))
+    expect(body).not_to include("Previous")
+    expect(headings.(body)).to eq(2)
+
+    get "/review", page: "2"
+    expect(last_response.body).to include("Page 2 of #{pages}", %(href="/review?page=1">), %(name="page" value="2"))
+    expect(last_response.body).to include("#{groups[2].label} ·").and(satisfy { headings.(_1) == 2 })
+
+    # Saving a group stays on its page; the next groups move up into it.
+    group = groups[2]
+    post "/review", ids: group.ids.join(","), category_id: category_id("Lazer").to_s, page: "2"
+    expect(last_response.headers["Location"]).to end_with("/review?page=2&saved=#{group.ids.size}")
+    follow_redirect!
+    expect(last_response.body).to include("Page 2 of", "#{groups[4].label} ·")
+    expect(last_response.body).not_to include("#{group.label} ·")
+
+    last = groups.size / 2 # one group fewer now
+    get "/review", page: "99"
+    expect(last_response.body).to include("Page #{last} of #{last}")
+  end
+
   it "shows a transaction and saves your category and memo" do
     id = row("POSTO EXEMPLO")[:id]
     get "/transactions/#{id}"

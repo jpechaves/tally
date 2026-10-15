@@ -19,7 +19,8 @@ module Tally
           )
           halt 422, t("errors.could_not_save", reason: result.failure) if result.failure?
 
-          response.redirect_to "#{routes.path(:review)}?saved=#{result.value!}"
+          # Back to the same page: the groups after the saved one move up into it.
+          response.redirect_to "#{routes.path(:review)}?page=#{Review.page(params[:page])}&saved=#{result.value!}"
         end
       end
     end
