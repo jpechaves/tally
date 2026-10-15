@@ -5,12 +5,13 @@ Personal finance tracker in Ruby ([Hanami 3](https://hanakai.org)) and SQLite. I
 - [docs/architecture.md](docs/architecture.md): goals, data model, money rules, milestones
 - [docs/statement-import.md](docs/statement-import.md): statement formats, re-import, categorization
 
-**Status:** milestone 1 (skeleton): the app, SQLite settings, the `Money` value object and basic auth. Statement import is next.
+**Status:** milestone 2 (statement import): Nubank account and card CSVs and Itaú card bill PDFs, re-imports that update instead of duplicating, transfers between your accounts. Categorization is next.
 
 ## Requirements
 
 - Ruby 3.3 or newer
 - SQLite 3.37 or newer, including the `sqlite3` command (macOS ships it; on Debian/Raspberry Pi OS: `sudo apt install sqlite3`)
+- poppler's `pdftotext`, to read Itaú bills (`brew install poppler`; `sudo apt install poppler-utils`)
 
 ## Getting started
 
@@ -31,6 +32,28 @@ Settings come from environment variables, loaded from `.env` files in developmen
 | `DATABASE_URL` | `sqlite://db/tally.sqlite` | Use a path under `data/` for the live database. |
 | `BASIC_AUTH_USERNAME`, `BASIC_AUTH_PASSWORD` | unset | Optional in development. In production the app answers 503 until both are set. |
 | `HANAMI_MAX_THREADS` | `2` | Puma threads; 2 suits the Pi Zero 2 W. |
+| `IMPORT_STORAGE_DIR` | `storage/imports` | Where each imported file is kept, named by its SHA-256. Gitignored. |
+| `PASS_THROUGH_TOLERANCE_CENTS` | `5000` | How far the Itaú account's balance may drift from zero before the Accounts page warns. |
+
+## Importing statements
+
+Open **Import** and upload one or more files, or import from the command line:
+
+```sh
+bundle exec rake "tally:import[data/statements/*]"
+```
+
+| File | Name it like |
+|---|---|
+| Nubank account CSV | as exported: `NU_<account>_01JUN2026_30JUN2026.csv` (the period comes from the name) |
+| Nubank card bill CSV | `Nubank_2026-09-09.csv`, the bill's due date |
+| Itaú card bill PDF | anything |
+
+Importing a file again updates its rows instead of duplicating them, flags rows that disappeared, and never touches what you edited. Itaú bills must add up to their printed totals to the cent, or they are rejected. Then open **Counterparties** and press "This is me" next to your own name, so a Pix between your accounts counts as a transfer. Details: [docs/statement-import.md](docs/statement-import.md).
+
+To check the parsers against your real statements without committing them, put them in `data/statements/` (gitignored) and run `bundle exec rspec spec/local`.
+
+Itaú bill fixtures are generated: after changing `spec/support/statements/itau_bills.rb`, run `bundle exec ruby spec/support/statements/build_fixtures.rb`.
 
 ## Money
 

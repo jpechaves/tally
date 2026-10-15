@@ -1,0 +1,17 @@
+Data,Valor,Identificador,Descrição
+01/07/2026,8500.00,5f1c2a7e-0b3d-4e9a-8c71-2d4f6a8b0c11,Transferência Recebida - EMPRESA EXEMPLO LTDA - 12.345.678/0001-90 - BANCO EXEMPLO S.A. (0001) Agência: 1234 Conta: 56789-0
+02/07/2026,-187.43,0b6f3a52-1d2e-4c8f-9a7b-5e4d3c2b1a00,Transferência enviada pelo Pix - ENERGIA EXEMPLO S.A. - 98.765.432/0001-10 - BCO DO BRASIL S.A. (0001) Agência: 3309 Conta: 12345-6
+03/07/2026,-150.00,7a2b9c4d-3e5f-4a6b-8c7d-9e0f1a2b3c44,Transferência enviada pelo Pix - JOSE DA SILVA EXEMPLO - •••.123.456-•• - NU PAGAMENTOS - IP (0260) Agência: 1 Conta: 1234567-8
+04/07/2026,-2000.00,1c3e5a7b-9d2f-4b6a-8e0c-2a4c6e8a0b55,Aplicação RDB
+05/07/2026,-1765.75,2d4f6b8c-0e1a-4c3b-9d5e-7f9a1b3c5d66,Pagamento de fatura
+06/07/2026,-1500.00,3e5a7c9d-1f2b-4d4c-8e6f-0a2b4c6d8e77,Transferência enviada pelo Pix - MARIA E SOUZA - •••.987.654-•• - ITAÚ UNIBANCO S.A. (0341) Agência: 1234 Conta: 98765-4
+08/07/2026,-635.20,4f6b8d0e-2a3c-4e5d-9f7a-1b3c5d7e9f88,Pagamento de boleto efetuado - FINANCEIRA EXEMPLO SOCIEDADE DE CREDITO
+10/07/2026,-45.90,5a7c9e1f-3b4d-4f6e-8a8b-2c4d6e8f0a99,Compra no débito via NuPay - iFood
+12/07/2026,300.00,6b8d0f2a-4c5e-4a7f-9b9c-3d5e7f9a1baa,Transferência recebida pelo Pix - ANA EXEMPLO - •••.555.444-•• - PICPAY (0380) Agência: 1 Conta: 7654321-0
+14/07/2026,-73.35,7c9e1a3b-5d6f-4b8a-8cad-4e6f8a0b2cbb,Transferência enviada pelo Pix - 11.222.333 MEI EXEMPLO - 11.222.333/0001-44 - ADYEN DO BRASIL IP LTDA. Agência: 1 Conta: 123456789-0
+15/07/2026,400.00,8d0f2b4c-6e7a-4c9b-9dbe-5f7a9b1c3dcc,Valor adicionado na conta por cartão de crédito - Valor adicionado para Pix no Crédito
+15/07/2026,-400.00,8d0f2b4c-6e7a-4c9b-9dbe-5f7a9b1c3dcc,Transferência enviada pelo Pix - SECRETARIA EXEMPLO - 33.444.555/0001-66 - BCO DO BRASIL S.A. (0001) Agência: 1234 Conta: 55555-5
+18/07/2026,500.00,9e1a3c5d-7f8b-4dac-8ecf-6a8b0c2d4edd,Resgate RDB
+20/07/2026,-1000.00,0f2b4d6e-8a9c-4ebd-9fd0-7b9c1d3e5fee,Conversão para Conta Global
+22/07/2026,120.00,1a3c5e7f-9bad-4fce-8ae1-8cad2e4f6aff,Transferência Recebida - COMPANHIA AEREA EXEMPLO S/A.
+25/07/2026,-12.34,2b4d6f8a-0cbe-4adf-9bf2-9dbe3f5a7b10,"Cobrança exemplo, com vírgula"

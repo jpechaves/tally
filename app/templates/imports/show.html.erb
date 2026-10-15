@@ -1,0 +1,38 @@
+<main>
+  <p><a href="/imports">← Imports</a></p>
+  <h1><%= import.file_name %></h1>
+
+  <table>
+    <tr><th scope="row">Status</th><td class="status-<%= import.status %>"><%= import.status.tr("_", " ") %></td></tr>
+    <tr><th scope="row">Source</th><td><%= source_label(import.source) %></td></tr>
+    <% if account %><tr><th scope="row">Account</th><td><%= account.name %></td></tr><% end %>
+    <% if import.period_start %><tr><th scope="row">Period</th><td><%= import.period_start %> to <%= import.period_end %></td></tr><% end %>
+    <tr><th scope="row">Imported</th><td><%= timestamp(import.created_at) %></td></tr>
+    <tr><th scope="row">SHA-256</th><td><code><%= import.file_sha256 %></code></td></tr>
+  </table>
+
+  <% if import.status == "rejected" %>
+    <p class="error">Rejected, nothing was written: <%= import.error %></p>
+  <% elsif import.status == "duplicate_file" %>
+    <p>This exact file was already imported, so nothing changed.</p>
+  <% else %>
+    <p><strong><%= import.rows_inserted %></strong> new, <strong><%= import.rows_updated %></strong> updated,
+      <strong><%= import.rows_unchanged %></strong> unchanged, <strong><%= import.rows_missing %></strong> missing.</p>
+  <% end %>
+
+  <% if warnings.any? %>
+    <h2>Warnings</h2>
+    <ul><% warnings.each do |warning| %><li><%= warning %></li><% end %></ul>
+  <% end %>
+
+  <% if missing.any? %>
+    <h2>No longer in the file</h2>
+    <p>These rows were in an earlier import of the same period or bill but not in this file. They are kept, not deleted.</p>
+    <%= render "transactions/table", rows: missing %>
+  <% end %>
+
+  <% if rows.any? %>
+    <h2>Rows last seen in this file</h2>
+    <%= render "transactions/table", rows: rows %>
+  <% end %>
+</main>
