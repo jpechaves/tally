@@ -1,9 +1,14 @@
 # frozen_string_literal: true
 
 require "rack/mock"
+require "securerandom"
 
 RSpec.describe Tally::BasicAuth do
   let(:inner) { ->(_env) { [200, {"content-type" => "text/plain"}, ["ok"]] } }
+
+  # Generated per run, so no credential-looking literal lives in the repository.
+  let(:username) { "user-#{SecureRandom.hex(4)}" }
+  let(:password) { SecureRandom.hex(16) }
 
   def request(middleware, username: nil, password: nil)
     headers = {}
@@ -12,10 +17,10 @@ RSpec.describe Tally::BasicAuth do
   end
 
   context "with credentials configured" do
-    subject(:middleware) { described_class.new(inner, username: "casa", password: "s3gredo", required: true) }
+    subject(:middleware) { described_class.new(inner, username: username, password: password, required: true) }
 
     it "lets the right credentials through" do
-      expect(request(middleware, username: "casa", password: "s3gredo").status).to eq(200)
+      expect(request(middleware, username: username, password: password).status).to eq(200)
     end
 
     it "asks for credentials when none are given" do
@@ -26,8 +31,8 @@ RSpec.describe Tally::BasicAuth do
     end
 
     it "rejects a wrong password or username" do
-      expect(request(middleware, username: "casa", password: "nope").status).to eq(401)
-      expect(request(middleware, username: "other", password: "s3gredo").status).to eq(401)
+      expect(request(middleware, username: username, password: "wrong").status).to eq(401)
+      expect(request(middleware, username: "other", password: password).status).to eq(401)
     end
   end
 
@@ -48,8 +53,8 @@ RSpec.describe Tally::BasicAuth do
   end
 
   it "refuses to serve when only one of the two settings is set" do
-    middleware = described_class.new(inner, username: "casa", required: false)
+    middleware = described_class.new(inner, username: username, required: false)
 
-    expect(request(middleware, username: "casa", password: "").status).to eq(503)
+    expect(request(middleware, username: username, password: "").status).to eq(503)
   end
 end
