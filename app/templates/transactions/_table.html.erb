@@ -9,7 +9,7 @@
         <td><%= row[:account_name] %></td>
         <td title="<%= row[:raw_description] %>"><a href="/transactions/<%= row[:id] %>"><%= row[:description] %></a></td>
         <td><%= row[:kind].tr("_", " ") %><% if row[:kind] == "transfer" %><%= row[:counter_account_name] ? " ↔ #{row[:counter_account_name]}" : "" %><%= row[:transfer_id] ? "" : " (one leg)" %><% end %></td>
-        <td<% if row[:category_source] == "bank" %> class="suggested" title="the bank's suggestion"<% end %>><%= category_label(row) %></td>
+        <% if row[:category_source] == "bank" %><td class="suggested" title="the bank's suggestion"><% else %><td><% end %><%= category_label(row) %></td>
         <td class="details"><%= [
           row[:installment_total] && "#{row[:installment_number]}/#{row[:installment_total]}",
           row[:purchased_on] && "bought #{row[:purchased_on]}",
