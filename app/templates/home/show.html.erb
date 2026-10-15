@@ -1,0 +1,11 @@
+<main>
+  <h1>Tally</h1>
+  <p>Household spending, budgets and savings. Statement import comes next.</p>
+
+  <h2>Database</h2>
+  <table>
+    <% database.each do |label, value| %>
+      <tr><th scope="row"><%= label %></th><td><%= value %></td></tr>
+    <% end %>
+  </table>
+</main>
