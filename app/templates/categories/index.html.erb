@@ -1,55 +1,54 @@
 <main>
-  <h1>Categories</h1>
-  <% if error_message %><p class="error"><%= error_message %></p><% end %>
-  <p>The nature of each expense category tells the savings planner how far it may cut it: fixed 0%, essential up to
-    15%, discretionary up to 50%. Change the nature or the maximum cut to match your household.</p>
+  <h1><%= t("categories.index.title") %></h1>
+  <% if error_code %><p class="error"><%= t("errors.#{error_code}", default: error_code.to_s) %></p><% end %>
+  <p><%= t("categories.index.intro") %></p>
   <table class="rows">
-    <thead><tr><th>Category</th><th>Nature</th><th class="num">Max cut %</th><th class="num">Rows</th><th class="num">Net</th><th>Archived</th><th></th></tr></thead>
+    <thead><tr><th><%= t("categories.index.category") %></th><th><%= t("categories.index.nature") %></th><th class="num"><%= t("categories.index.max_cut") %></th><th class="num"><%= t("common.rows") %></th><th class="num"><%= t("common.net") %></th><th><%= t("categories.index.archived") %></th><th></th></tr></thead>
     <tbody>
       <% categories.each do |category| %>
         <% form = "category-#{category[:id]}" %>
         <tr class="<%= "missing" if category[:archived_at] %>">
-          <td><%= category[:parent_id] ? "#{category[:parent_name]} › " : "" %><input name="name" value="<%= category[:name] %>" form="<%= form %>" size="22"></td>
+          <td><%= category[:parent_id] ? "#{category_name(category[:parent_name])} › " : "" %><input name="name" value="<%= category_name(category[:name]) %>" form="<%= form %>" size="22"></td>
           <td>
             <% if category[:kind] == "expense" %>
               <select name="nature" form="<%= form %>">
-                <option value="">none</option>
+                <option value=""><%= t("categories.index.no_nature") %></option>
                 <% natures.each do |nature| %>
-                  <option value="<%= nature %>"<%= " selected" if nature == category[:nature] %>><%= nature %></option>
+                  <option value="<%= nature %>"<%= " selected" if nature == category[:nature] %>><%= nature_label(nature) %></option>
                 <% end %>
               </select>
             <% else %>
-              income
+              <%= status_label(:category, "income") %>
             <% end %>
           </td>
           <td class="num"><% if category[:kind] == "expense" %><input name="max_cut_pct" type="number" min="0" max="100" value="<%= category[:max_cut_pct] %>" form="<%= form %>" style="width: 4em"><% end %></td>
           <td class="num"><%= category[:rows] %></td>
           <td class="num"><%= money(category[:total_cents]) %></td>
           <td><input type="checkbox" name="archived" value="1" form="<%= form %>"<%= " checked" if category[:archived_at] %>></td>
-          <td><form id="<%= form %>" action="/categories/<%= category[:id] %>" method="post"><button type="submit">Save</button></form></td>
+          <td><form id="<%= form %>" action="/categories/<%= category[:id] %>" method="post"><button type="submit"><%= t("common.save") %></button></form></td>
         </tr>
       <% end %>
     </tbody>
   </table>
 
-  <h2>Add a category</h2>
+  <h2><%= t("categories.index.add") %></h2>
   <form action="/categories" method="post" class="inline">
-    <input name="name" placeholder="Name" required>
+    <input name="name" placeholder="<%= t("categories.index.name") %>" required>
     <select name="parent_id">
-      <option value="">Top level</option>
+      <option value=""><%= t("categories.index.top_level") %></option>
       <% parents.each do |parent| %>
-        <option value="<%= parent[:id] %>">under <%= parent[:name] %></option>
+        <option value="<%= parent[:id] %>"><%= t("categories.index.under", parent: category_name(parent[:name])) %></option>
       <% end %>
     </select>
     <select name="kind">
-      <option value="expense">expense</option>
-      <option value="income">income</option>
+      <option value="expense"><%= status_label(:category, "expense") %></option>
+      <option value="income"><%= status_label(:category, "income") %></option>
     </select>
     <select name="nature">
-      <option value="">nature (expenses)</option>
-      <% natures.each do |nature| %><option value="<%= nature %>"><%= nature %></option><% end %>
+      <option value=""><%= t("categories.index.nature_prompt") %></option>
+      <% natures.each do |nature| %><option value="<%= nature %>"><%= nature_label(nature) %></option><% end %>
     </select>
-    <button type="submit">Add</button>
+    <button type="submit"><%= t("common.add") %></button>
   </form>
-  <p class="note">Under a parent, the kind comes from the parent.</p>
+  <p class="note"><%= t("categories.index.kind_note") %></p>
 </main>

@@ -5,7 +5,7 @@ module Tally
   # and its history and suggests something with an estimate in cents per month. They are
   # suggestions, not judgments: each has a key, and a dismissed key stays hidden.
   class Cuts
-    Suggestion = Data.define(:key, :signal, :title, :detail, :monthly_cents, :ids)
+    Suggestion = Data.define(:key, :signal, :facts, :monthly_cents, :ids)
 
     BIG_SHARE_PCT = 5
     GROWTH_PCT = 25
@@ -17,17 +17,9 @@ module Tally
     SMALL_MIN_COUNT = 8
     DUPLICATE_DAYS = 1
     DUPLICATE_MAX_CHARGES = 3
-    DEBT_PARENT = "Dívidas"
+    DEBT_NAMES = Categories.names("Dívidas").freeze
 
-    SIGNALS = {
-      "big" => "Big discretionary category",
-      "growth" => "Growing",
-      "recurring" => "Recurring charge",
-      "small" => "Many small purchases",
-      "fees" => "Fees and interest",
-      "duplicate" => "Possible duplicate charge",
-      "installments" => "New installments"
-    }.freeze
+    SIGNALS = %w[big growth recurring small fees duplicate installments].freeze
 
     # @param rows [Array<Hash>] rows of `month` and the months before it
     # @param dismissed [Enumerable<String>] keys you dismissed
@@ -47,8 +39,6 @@ module Tally
 
     private
 
-    def money(cents) = Money.new(cents).format
-
     # Rows by category, without installments after the first: those are already
     # committed, and cutting the category can't save them.
     def by_category
@@ -58,8 +48,6 @@ module Tally
     # Rows that aren't installments: an installment repeats every month by design, so it
     # is neither a recurring charge nor a duplicate.
     def single(rows) = rows.reject { _1[:installment_total] }
-
-    def purchases(count) = count == 1 ? "1 purchase" : "#{count} purchases"
 
     # Discretionary categories over 5% of the month's spending. The estimate is what the
     # category's maximum cut would save.
@@ -71,8 +59,8 @@ module Tally
 
         Suggestion.new(
           key: "big:category:#{id}", signal: "big",
-          title: "#{first[:category_name]}: #{purchases(rows.size)}, #{money(cents)}",
-          detail: "#{Insights.share(cents, @spending)}% of the month. Cutting it by #{first[:max_cut_pct]}% saves this much.",
+          facts: {name: first[:category_name], count: rows.size, cents:, share: Insights.share(cents, @spending),
+                  pct: first[:max_cut_pct].to_i},
           monthly_cents: cents * first[:max_cut_pct].to_i / 100, ids: rows.map { _1[:id] }
         )
       end
@@ -92,8 +80,8 @@ module Tally
 
         Suggestion.new(
           key: "growth:category:#{id}:#{@month}", signal: "growth",
-          title: "#{rows.first[:category_name]}: #{money(cents)}, up from #{money(average)} a month",
-          detail: "#{((growth * 100.0) / average).round}% over the average of #{history.first} to #{history.last}.",
+          facts: {name: rows.first[:category_name], cents:, average_cents: average,
+                  pct: ((growth * 100.0) / average).round, from: history.first, to: history.last},
           monthly_cents: growth, ids: rows.map { _1[:id] }
         )
       end
@@ -122,8 +110,7 @@ module Tally
 
         Suggestion.new(
           key: "recurring:#{key}", signal: "recurring",
-          title: "#{Insights.payee_label(rows.first)}: #{money(current)} a month",
-          detail: "Charged in #{totals.size} of the last #{RECURRING_MONTHS} months. Still worth it?",
+          facts: {payee: Insights.payee_label(rows.first), cents: current, months: totals.size, window: RECURRING_MONTHS},
           monthly_cents: current, ids: rows.map { _1[:id] }
         )
       end
@@ -138,8 +125,7 @@ module Tally
           cents = Insights.spent_cents(rows)
           Suggestion.new(
             key: "small:#{key}", signal: "small",
-            title: "#{Insights.payee_label(rows.first)}: #{rows.size} charges, #{money(cents)}",
-            detail: "Small amounts add up: #{money(cents / rows.size)} on average.",
+            facts: {payee: Insights.payee_label(rows.first), count: rows.size, cents:, average_cents: cents / rows.size},
             monthly_cents: cents, ids: rows.map { _1[:id] }
           )
         end
@@ -147,14 +133,13 @@ module Tally
 
     # Card fees, IOF, interest and financing: money that buys nothing.
     def fees
-      rows = @rows.select { _1[:kind] == "fee" || _1[:parent_name] == DEBT_PARENT || _1[:category_name] == DEBT_PARENT }
+      rows = @rows.select { _1[:kind] == "fee" || DEBT_NAMES.include?(_1[:parent_name]) || DEBT_NAMES.include?(_1[:category_name]) }
       cents = Insights.spent_cents(rows)
       return [] unless cents.positive?
 
       [Suggestion.new(
         key: "fees:#{@month}", signal: "fees",
-        title: "Fees, interest and financing: #{money(cents)}",
-        detail: "#{rows.size} rows. Ask for the card fee to be waived, or pay debts down early.",
+        facts: {cents:, count: rows.size},
         monthly_cents: cents, ids: rows.map { _1[:id] }
       )]
     end
@@ -172,8 +157,8 @@ module Tally
 
           Suggestion.new(
             key: "duplicate:#{key}:#{amount}", signal: "duplicate",
-            title: "#{Insights.payee_label(rows.first)}: #{money(-amount)} charged #{rows.size} times",
-            detail: "On #{rows.map { _1[:occurred_on] }.sort.uniq.join(", ")}. Check that it isn't a double charge.",
+            facts: {payee: Insights.payee_label(rows.first), cents: -amount, count: rows.size,
+                    dates: rows.map { _1[:occurred_on] }.sort.uniq},
             monthly_cents: -amount * (rows.size - 1), ids: rows.map { _1[:id] }
           )
         end
@@ -187,11 +172,10 @@ module Tally
 
       cents = Insights.spent_cents(rows)
       later = rows.sum { -_1[:amount_cents] * (_1[:installment_total] - 1) }
-      names = rows.sort_by { _1[:amount_cents] }.first(5).map { "#{_1[:description]} (#{_1[:installment_total]}×)" }
+      biggest = rows.sort_by { _1[:amount_cents] }.first(5).map { "#{_1[:description]} (#{_1[:installment_total]}×)" }
       [Suggestion.new(
         key: "installments:#{@month}", signal: "installments",
-        title: "#{purchases(rows.size)} in installments: #{money(cents)} this month",
-        detail: "Commits #{money(later)} more to the next bills. Biggest: #{names.join(", ")}.",
+        facts: {count: rows.size, cents:, later_cents: later, biggest:},
         monthly_cents: cents, ids: rows.map { _1[:id] }
       )]
     end

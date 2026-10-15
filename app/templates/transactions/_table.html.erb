@@ -1,18 +1,18 @@
 <table class="rows">
   <thead>
-    <tr><th>Date</th><th>Account</th><th>Description</th><th>Kind</th><th>Category</th><th>Details</th><th class="num">Amount</th></tr>
+    <tr><th><%= t("transactions.table.date") %></th><th><%= t("transactions.table.account") %></th><th><%= t("transactions.table.description") %></th><th><%= t("transactions.table.kind") %></th><th><%= t("transactions.table.category") %></th><th><%= t("transactions.table.details") %></th><th class="num"><%= t("transactions.table.amount") %></th></tr>
   </thead>
   <tbody>
     <% rows.each do |row| %>
       <tr class="<%= "missing" if row[:missing_since_import_id] %>">
-        <td><%= row[:occurred_on] %></td>
+        <td><%= date(row[:occurred_on]) %></td>
         <td><%= row[:account_name] %></td>
         <td title="<%= row[:raw_description] %>"><a href="/transactions/<%= row[:id] %>"><%= row[:description] %></a></td>
-        <td><%= row[:kind].tr("_", " ") %><% if row[:kind] == "transfer" %><%= row[:counter_account_name] ? " ↔ #{row[:counter_account_name]}" : "" %><%= row[:transfer_id] ? "" : " (one leg)" %><% end %></td>
-        <% if row[:category_source] == "bank" %><td class="suggested" title="the bank's suggestion"><% else %><td><% end %><%= category_label(row) %></td>
+        <td><%= kind_label(row[:kind]) %><% if row[:kind] == "transfer" %><%= row[:counter_account_name] ? " ↔ #{row[:counter_account_name]}" : "" %><%= row[:transfer_id] ? "" : " #{t("transactions.table.one_leg")}" %><% end %></td>
+        <% if row[:category_source] == "bank" %><td class="suggested" title="<%= t("transactions.table.bank_suggestion") %>"><% else %><td><% end %><%= category_label(row) %></td>
         <td class="details"><%= [
           row[:installment_total] && "#{row[:installment_number]}/#{row[:installment_total]}",
-          row[:purchased_on] && "bought #{row[:purchased_on]}",
+          row[:purchased_on] && t("transactions.table.bought", date: date(row[:purchased_on])),
           row[:bank_category], row[:location], row[:counterparty_document]
         ].compact.join(" · ") %></td>
         <td class="num"><%= money(row[:amount_cents]) %></td>

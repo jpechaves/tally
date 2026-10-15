@@ -1,8 +1,8 @@
 <form action="<%= path %>" method="get" class="filters">
   <select name="month">
     <% months.each do |value| %>
-      <option value="<%= value %>"<%= " selected" if value == month %>><%= value %></option>
+      <option value="<%= value %>"<%= " selected" if value == month %>><%= month_label(value) %></option>
     <% end %>
   </select>
-  <button type="submit">Show</button>
+  <button type="submit"><%= t("common.show") %></button>
 </form>

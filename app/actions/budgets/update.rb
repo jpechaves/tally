@@ -10,15 +10,15 @@ module Tally
         def handle(request, response)
           month = request.params[:month].to_s[/\A\d{4}-(0[1-9]|1[0-2])\z/]
           category = category_repo.find(request.params[:category_id].to_i)
-          return back(response, month, "invalid_category") unless month && category && category[:kind] == "expense"
+          return back(response, month, "month_and_category") unless month && category && category[:kind] == "expense"
 
-          amount = Tally::Money.parse(request.params[:amount].to_s, decimal: ",").cents
-          return back(response, month, "invalid_amount") if amount.negative?
+          amount = parse_amount(request.params[:amount].to_s).cents
+          return back(response, month, "invalid_limit") if amount.negative?
 
           plan_repo.set_budget(category[:id], month, amount)
           back(response, month)
         rescue Tally::Money::ParseError
-          back(response, month, "invalid_amount")
+          back(response, month, "invalid_limit")
         end
 
         private

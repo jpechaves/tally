@@ -1,34 +1,31 @@
 <main>
-  <h1>Save <%= money(plan[:target_cents]) %> a month</h1>
-  <p class="note"><%= plan[:status] == "draft" ? "Draft" : plan[:status].capitalize %> · baseline <%= plan[:baseline_from] %> to
-    <%= plan[:baseline_to] %> · budgets from <%= plan[:starts_month] %></p>
+  <h1><%= t("plans.show.title", amount: money(plan[:target_cents])) %></h1>
+  <p class="note"><%= status_label(:plan, plan[:status]) %> · <%= t("plans.show.baseline", from: month_label(plan[:baseline_from]), to: month_label(plan[:baseline_to])) %> ·
+    <%= t("plans.show.budgets_from", month: month_label(plan[:starts_month])) %></p>
   <div class="cards">
-    <div>Income<strong><%= money(plan[:baseline_income_cents]) %></strong><span class="note">a month, on average</span></div>
-    <div>Spending<strong><%= money(plan[:baseline_spending_cents]) %></strong><span class="note">a month, on average</span></div>
-    <div>Saved today<strong><%= money(saved_today_cents) %></strong></div>
-    <div>Gap<strong><%= gap_cents.positive? ? money(gap_cents) : "none" %></strong></div>
+    <div><%= t("plans.show.income") %><strong><%= money(plan[:baseline_income_cents]) %></strong><span class="note"><%= t("plans.show.on_average") %></span></div>
+    <div><%= t("plans.show.spending") %><strong><%= money(plan[:baseline_spending_cents]) %></strong><span class="note"><%= t("plans.show.on_average") %></span></div>
+    <div><%= t("plans.show.saved_today") %><strong><%= money(saved_today_cents) %></strong></div>
+    <div><%= t("plans.show.gap") %><strong><%= gap_cents.positive? ? money(gap_cents) : t("plans.show.no_gap") %></strong></div>
   </div>
 
   <% if !gap_cents.positive? %>
-    <p class="notice">You already save <%= money(saved_today_cents) %> a month, <%= money(-gap_cents) %> more than the target.
-      Consider moving the extra to savings (the Nubank RDB) each month. Accepting still writes today's spending as budgets,
-      to keep it there.</p>
+    <p class="notice"><%= t("plans.show.already_there", saved: money(saved_today_cents), extra: money(-gap_cents)) %></p>
   <% elsif plan[:shortfall_cents].positive? %>
-    <p class="notice">Cutting everything the categories allow saves <%= money(cuts_cents) %> a month, <%= money(plan[:shortfall_cents]) %>
-      short of the gap. The other levers are below.</p>
+    <p class="notice"><%= t("plans.show.shortfall", cuts: money(cuts_cents), shortfall: money(plan[:shortfall_cents])) %></p>
   <% end %>
 
   <form action="/plan/<%= plan[:id] %>/accept" method="post" id="plan" data-today="<%= saved_today_cents %>"
-    data-target="<%= plan[:target_cents] %>" data-decimal="," data-locale="pt-BR" data-currency="R$"
-    data-reaches="reaches the target" data-short="short of the target"
-    data-confirm-short="These limits save less than the target. Accept them anyway?">
+    data-target="<%= plan[:target_cents] %>" data-decimal="<%= Tally::Money.decimal_mark(locale) %>"
+    data-locale="<%= locale == "en" ? "en-US" : "pt-BR" %>" data-currency="R$" data-reaches="<%= t("plans.show.reaches") %>"
+    data-short="<%= t("plans.show.short") %>" data-confirm-short="<%= t("plans.show.confirm_short") %>">
     <table class="rows">
-      <thead><tr><th>Category</th><th>Nature</th><th class="num">Today</th><th class="num">May cut</th><th class="num">New limit</th><th class="num">Cut</th></tr></thead>
+      <thead><tr><th><%= t("plans.show.category") %></th><th><%= t("plans.show.nature") %></th><th class="num"><%= t("plans.show.today") %></th><th class="num"><%= t("plans.show.may_cut") %></th><th class="num"><%= t("plans.show.new_limit") %></th><th class="num"><%= t("plans.show.cut") %></th></tr></thead>
       <tbody>
         <% lines.each do |line| %>
           <tr>
-            <td><%= line[:parent_name] ? "#{line[:parent_name]} › " : "" %><%= line[:name] %></td>
-            <td><%= line[:nature] %></td>
+            <td><%= category_path(line[:parent_name], line[:name]) %></td>
+            <td><%= nature_label(line[:nature]) %></td>
             <td class="num"><%= money(line[:baseline_cents]) %></td>
             <td class="num"><%= money(line[:max_cut_cents]) %></td>
             <td class="num">
@@ -43,26 +40,26 @@
         <% end %>
       </tbody>
     </table>
-    <p>With these limits you would save <strong id="new-saved"><%= money(saved_today_cents + cuts_cents) %></strong> a month:
-      <span id="verdict"><%= saved_today_cents + cuts_cents >= plan[:target_cents] ? "reaches the target" : "short of the target" %></span>.</p>
+    <p><%= t("plans.show.would_save_html", amount: money(saved_today_cents + cuts_cents)) %>
+      <span id="verdict"><%= saved_today_cents + cuts_cents >= plan[:target_cents] ? t("plans.show.reaches") : t("plans.show.short") %></span>.</p>
     <% if plan[:status] == "draft" %>
-      <button type="submit">Accept and write budgets from <%= plan[:starts_month] %></button>
+      <button type="submit"><%= t("plans.show.accept", month: month_label(plan[:starts_month])) %></button>
     <% end %>
   </form>
 
   <% if gap_cents.positive? %>
-    <h2>Other levers</h2>
+    <h2><%= t("plans.show.levers") %></h2>
     <% unless fixed_lines.empty? %>
-      <p>Fixed costs can't be trimmed month to month, but a contract can be renegotiated or switched:</p>
+      <p><%= t("plans.show.fixed_lever") %></p>
       <ul>
-        <% fixed_lines.each do |line| %><li><%= line[:name] %>: <%= money(line[:baseline_cents]) %> a month</li><% end %>
+        <% fixed_lines.each do |line| %><li><%= t("plans.show.per_month", name: category_name(line[:name]), amount: money(line[:baseline_cents])) %></li><% end %>
       </ul>
     <% end %>
     <% unless ending_installments.empty? %>
-      <p>Installments ending soon free money without cutting anything:</p>
+      <p><%= t("plans.show.installments_lever") %></p>
       <ul>
         <% ending_installments.each do |purchase| %>
-          <li><%= purchase.description %>: <%= money(purchase.cents) %> a month, last one in <%= purchase.ends %></li>
+          <li><%= t("plans.show.installment_ends", name: purchase.description, amount: money(purchase.cents), month: month_label(purchase.ends)) %></li>
         <% end %>
       </ul>
     <% end %>

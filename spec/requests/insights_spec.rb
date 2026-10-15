@@ -26,11 +26,11 @@ RSpec.describe "Report, cuts and installments", :db, type: :request do
 
     expect(last_response.status).to eq(200)
     body = last_response.body
-    expect(body).to include("Income<strong>R$ 8.920,00</strong>", "Averages over 2026-06.")
+    expect(body).to include("Income<strong>R$ 8,920.00</strong>", "Averages over Jun 2026.")
     expect(body).not_to match(/<t[rd][a-z]/)
-    expect(body).to include("<td>Transferências (Pix)</td>", "<td>Delivery</td>", "<td>Sem categoria</td>")
-    expect(body).to include("R$ 1.559,30 of this month's spending, 3 installments.")
-    expect(body).to match(%r{<td>Hotel Exemplo .*?</td>\s*<td>2/6</td>\s*<td>2026-11</td>}m)
+    expect(body).to include("<td>Transfers (Pix)</td>", "<td>Food delivery</td>", "<td>No category</td>")
+    expect(body).to include("R$ 1,559.30 of this month&#39;s spending, 3 installments.")
+    expect(body).to match(%r{<td>Hotel Exemplo .*?</td>\s*<td>2/6</td>\s*<td>Nov 2026</td>}m)
     expect(body).not_to include("Pagamento de fatura")
   end
 
@@ -48,17 +48,17 @@ RSpec.describe "Report, cuts and installments", :db, type: :request do
 
   it "suggests cuts and lets you dismiss and bring them back" do
     get "/cuts", month: "2026-09"
-    expect(last_response.body).to include("Fees, interest and financing: R$ 52,50", "Possible duplicate charge")
+    expect(last_response.body).to include("Fees, interest and financing: R$ 52.50", "Possible duplicate charge")
 
     parking = db[:counterparties].where(name: "ESTACIONAMENTO EXEMPLO").get(:id)
     key = "duplicate:counterparty:#{parking}:-1400"
     expect(last_response.body).to include(%(value="#{key}"))
-    post "/cuts/dismiss", key:, title: "ESTACIONAMENTO EXEMPLO: R$ 14,00 charged 2 times", month: "2026-09"
+    post "/cuts/dismiss", key:, title: "ESTACIONAMENTO EXEMPLO: R$ 14.00 charged 2 times", month: "2026-09"
     expect(last_response.headers["Location"]).to end_with("/cuts?month=2026-09")
 
     follow_redirect!
     expect(last_response.body).not_to include(%(value="#{key}"))
-    expect(last_response.body).to include("Dismissed", "ESTACIONAMENTO EXEMPLO: R$ 14,00 charged 2 times")
+    expect(last_response.body).to include("Dismissed", "ESTACIONAMENTO EXEMPLO: R$ 14.00 charged 2 times")
 
     post "/cuts/#{db[:dismissed_suggestions].get(:id)}/restore", month: "2026-09"
     expect(last_response.headers["Location"]).to end_with("/cuts?month=2026-09")
@@ -71,8 +71,8 @@ RSpec.describe "Report, cuts and installments", :db, type: :request do
     get "/installments"
 
     body = last_response.body
-    expect(body).to include("R$ 840,00 already committed to card bills from 2027-01 on, from 1 purchases.")
-    expect(body).to match(%r{<td>2027-02</td>\s*<td class="num">R\$ 120,00</td>})
-    expect(body).to match(%r{<td>Itaú cartão</td>\s*<td>2027-01-09</td>\s*<td class="num">R\$ 120,00</td>\s*<td class="num">R\$ 840,00</td>})
+    expect(body).to include("R$ 840.00 already committed to card bills from Jan 2027 on, from 1 purchase.")
+    expect(body).to match(%r{<td>Feb 2027</td>\s*<td class="num">R\$ 120\.00</td>})
+    expect(body).to match(%r{<td>Itaú cartão</td>\s*<td>Jan 9, 2027</td>\s*<td class="num">R\$ 120\.00</td>\s*<td class="num">R\$ 840\.00</td>})
   end
 end

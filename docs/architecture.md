@@ -17,7 +17,7 @@ Companion: [statement-import.md](statement-import.md) (parsers, re-import rules,
 - **Stack:** Ruby 3.3+, Hanami 3.0 (ROM, dry-rb), SQLite, server-rendered pages. Runs on the Pi Zero 2 W; you open it from a laptop or phone over home Wi-Fi.
 - **Precision and reliability:** whole centavos in integer columns, the database rejects anything else; WAL with full sync, nightly backup off the SD card.
 - **Deterministic first:** version 1 uses only rules and arithmetic. Smarter features (learned categorization, unusual-spending alerts, optional AI advice) come later as suggestions you approve. See §14 and §15.
-- **Milestones:** skeleton → import → categorization → insights → savings planner and budgets → Pi deployment → phase 2 smart suggestions (§12).
+- **Milestones:** skeleton → import → categorization → insights → savings planner and budgets → localization (Portuguese and English) → Pi deployment → phase 2 smart suggestions (§12).
 
 ## 1. Goals and constraints
 
@@ -434,7 +434,9 @@ lib/tally/
   importers/    nubank_account_csv.rb, nubank_card_csv.rb, itau_card_pdf.rb
   categorizer.rb
   insights/     baseline.rb, cut_signals.rb, recurring.rb, planner.rb   (pure: data in, numbers out)
+  locales.rb    the languages Tally speaks
 config/db/migrate/, config/providers/db.rb
+config/i18n/                pt-BR.yml and en.yml: every word on the pages (§12, milestone 6)
 spec/fixtures/statements/   (synthetic only: fake names and amounts in the real formats)
 data/                       (gitignored: real statements, the database, rules from your data)
 ```
@@ -448,9 +450,10 @@ Actions validate input and call one operation. Operations hold the rules and the
 3. **Categorization**: seed categories with nature, generic seed rules (your own rules stay local), review list grouped by payee, rules learned from your choices.
 4. **Where the money goes and what to cut**: monthly report, cut suggestions, installment calendar.
 5. **Savings planner and budgets**: "save X a month" planner, accepted plan writes budgets, on-track dashboard, month-end score.
-6. **Pi deployment**: systemd, backups, integrity check, memory measurement.
-7. **Later**: named savings goals with deadlines, split transactions, SVG charts.
-8. **Phase 2, smart suggestions**: local classifier, rule suggestions, unusual-spending alerts, forecasts, optional AI (§15).
+6. **Localization**: the app in Brazilian Portuguese (the default) and English. Every page, message and cut suggestion comes from `config/i18n`; amounts, dates and months follow the language (R$ 1.234,56 and 02/09/2026, or R$ 1,234.56 and Sep 2, 2026), and forms read amounts with its decimal mark. Each browser picks its language with a switch in the menu, kept in a cookie; `DEFAULT_LOCALE` sets the default and the language new databases get their starting categories in.
+7. **Pi deployment**: systemd, backups, integrity check, memory measurement.
+8. **Later**: named savings goals with deadlines, split transactions, SVG charts.
+9. **Phase 2, smart suggestions**: local classifier, rule suggestions, unusual-spending alerts, forecasts, optional AI (§15).
 
 ## 13. Decisions so far
 
@@ -460,6 +463,7 @@ Actions validate input and call one operation. Operations hold the rules and the
 - BRL only for now.
 - Pix sent to people is its own category, Transferências (Pix), counted as spending.
 - Version 1 is deterministic (rules + arithmetic); smart features come later and only suggest.
+- Two languages: Brazilian Portuguese (default) and English, with Hanami's built-in i18n. What you type stays as typed: rules, memos and categories you name or rename are data, not translated. Starting categories are named in the default language when a database is seeded, and show in the page's language whichever language seeded them; saving one under its translated name keeps the stored name. Importer diagnostics (a rejected file's reason, parser warnings) are stored with the import and stay in English.
 
 ## 14. Version 1 is deterministic
 
@@ -500,7 +504,8 @@ Only after version 1 is correct and in daily use. Each one only **suggests**; no
 - **Milestone 3 (categorization)**: done. 52 seed categories with nature and maximum cut, generic seed rules for public merchants (`lib/tally/categories.rb`), the categorizer (counterparty default, rules, Itaú's category as a suggestion), Pix to people as Transferências (Pix), the review list grouped by payee with "always" (counterparty default or learned rule), per-transaction category and memo, categories and rules pages. Your own rules go in your database, or in a gitignored `data/seeds.rb`.
 - **Milestone 4 (where the money goes and what to cut)**: done. Monthly report (income, spending, saved against the 3-month average; by category, nature and payee; the month's installments), cut suggestions for the seven signals of §8.3 with dismissals (`dismissed_suggestions` table), and the installment calendar from each purchase's latest installment, next to what Itaú prints as committed. Installments after the first are left out of "big", "growth", "recurring" and "duplicate": they are already committed and repeat by design. New installment purchases are one suggestion per month.
 - **Milestone 5 (savings planner and budgets)**: done. The "save X a month" planner over the last three complete months (`Tally::Planner`, with the worked example of §8.4 as a test), a draft you edit line by line with a live total, accepting writes the budgets from its first month and replaces the previous plan, the on-track dashboard with pace and projection (`Tally::BudgetMonth`), editable limits, and month-end scores. A budget row applies from its month until the category's next row.
-- **Next, milestone 6 (Pi deployment)**, after milestones 2 to 5 have been tried by hand.
+- **Milestone 6 (localization)**: done. Brazilian Portuguese and English for every page, form error and cut suggestion (`config/i18n`, with a spec that keeps both files in step), a language switch in the menu remembered per browser, locale-aware amounts, dates and months, form amounts read with the language's decimal mark, and starting categories named in the default language (`DEFAULT_LOCALE`). Cut suggestions and bill checks now carry facts instead of English sentences, so the page words them.
+- **Next, milestone 7 (Pi deployment)**, after milestones 2 to 6 have been tried by hand.
 
 ## 17. Public repository: keeping personal data out
 

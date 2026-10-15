@@ -29,7 +29,7 @@ module Tally
         # "-50,00" -> -5000; blank -> nil
         def cents(text)
           text = text.to_s.strip
-          text.empty? ? nil : Tally::Money.parse(text, decimal: ",").cents
+          text.empty? ? nil : parse_amount(text).cents
         end
       end
     end

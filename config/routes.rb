@@ -5,6 +5,8 @@ module Tally
     root to: "home.show"
     get "/scripts/:name.js", to: "scripts.show", as: :script
 
+    post "/locale", to: "locale.update", as: :locale
+
     get "/imports", to: "imports.index", as: :imports
     post "/imports", to: "imports.create"
     get "/imports/:id", to: "imports.show", as: :import

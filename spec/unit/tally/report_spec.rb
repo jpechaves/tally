@@ -38,7 +38,7 @@ RSpec.describe Tally::Report do
     expect(food).to have_attributes(name: "Alimentação", cents: 115_000, average_cents: 100_000, change: 15.0, rows: 3)
     expect(food.children.map { [_1.name, _1.cents, _1.average_cents, _1.change] })
       .to eq([["Supermercado", 80_000, 80_000, 0.0], ["Delivery", 35_000, 20_000, 75.0]])
-    expect(report.categories.map(&:name)).to eq(["Alimentação", "Moradia", "Sem categoria"])
+    expect(report.categories.map(&:name)).to eq(["Alimentação", "Moradia", nil])
     expect(report.categories.sum(&:cents)).to eq(report.spending_cents)
   end
 

@@ -21,7 +21,7 @@ module Tally
         categorizer = Categorizer.new(
           rules: category_rule_repo.active,
           categories: category_repo.kinds,
-          bank_hints: Categories::BANK_HINTS.transform_values { category_repo.id_by_name(_1) }.compact
+          bank_hints: Categories::BANK_HINTS.transform_values { category_repo.id_by_name(Categories.names(_1)) }.compact
         )
 
         transaction do

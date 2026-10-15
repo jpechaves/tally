@@ -7,7 +7,7 @@ module Tally
         include Deps["routes", "operations.create_plan"]
 
         def handle(request, response)
-          target = Tally::Money.parse(request.params[:target].to_s, decimal: ",").cents
+          target = parse_amount(request.params[:target].to_s).cents
           starts = request.params[:starts_month].to_s[/\A\d{4}-(0[1-9]|1[0-2])\z/] || Date.today.next_month.strftime("%Y-%m")
           result = create_plan.(target_cents: target, starts_month: starts)
 

@@ -1,40 +1,38 @@
 <main>
-  <h1>Rules</h1>
-  <% if error_message %><p class="error"><%= error_message %></p><% end %>
-  <p>Rules run lowest priority first, and the first match picks the category. A counterparty's default (set from the
-    review list) comes before any rule. Text is compared without accents and ignoring case. Seed rules are generic;
-    rules about your own payees stay in your database only.</p>
+  <h1><%= t("rules.index.title") %></h1>
+  <% if error_code %><p class="error"><%= t("errors.#{error_code}", default: error_code.to_s) %></p><% end %>
+  <p><%= t("rules.index.intro") %></p>
   <table class="rows">
-    <thead><tr><th class="num">Priority</th><th>When</th><th>Amount</th><th>Category</th><th>Origin</th><th class="num">Rows</th><th></th></tr></thead>
+    <thead><tr><th class="num"><%= t("rules.index.priority") %></th><th><%= t("rules.index.when") %></th><th><%= t("rules.index.amount") %></th><th><%= t("rules.index.category") %></th><th><%= t("rules.index.origin") %></th><th class="num"><%= t("common.rows") %></th><th></th></tr></thead>
     <tbody>
       <% rules.each do |rule| %>
         <tr>
           <td class="num"><%= rule[:priority] %></td>
-          <td><%= fields.fetch(rule[:field], rule[:field]) %> <%= operators.fetch(rule[:operator], rule[:operator]) %> <code><%= rule[:pattern] %></code></td>
-          <td class="details"><%= [rule[:amount_min_cents] && "from #{money(rule[:amount_min_cents])}", rule[:amount_max_cents] && "up to #{money(rule[:amount_max_cents])}"].compact.join(" ") %></td>
-          <td><%= rule[:category_name] %></td>
-          <td><%= rule[:origin] %></td>
+          <td><%= t("rules.fields.#{rule[:field]}", default: rule[:field]) %> <%= t("rules.operators.#{rule[:operator]}", default: rule[:operator]) %> <code><%= rule[:pattern] %></code></td>
+          <td class="details"><%= [rule[:amount_min_cents] && t("rules.index.from", amount: money(rule[:amount_min_cents])), rule[:amount_max_cents] && t("rules.index.up_to", amount: money(rule[:amount_max_cents]))].compact.join(" ") %></td>
+          <td><%= category_name(rule[:category_name]) %></td>
+          <td><%= status_label(:rule, rule[:origin]) %></td>
           <td class="num"><%= rule[:hits] %></td>
-          <td><form action="/rules/<%= rule[:id] %>/disable" method="post"><button type="submit">Remove</button></form></td>
+          <td><form action="/rules/<%= rule[:id] %>/disable" method="post"><button type="submit"><%= t("common.remove") %></button></form></td>
         </tr>
       <% end %>
     </tbody>
   </table>
 
-  <h2>Add a rule</h2>
+  <h2><%= t("rules.index.add") %></h2>
   <form action="/rules" method="post" class="inline">
     <select name="field">
-      <% fields.each do |value, label| %><option value="<%= value %>"><%= label %></option><% end %>
+      <% fields.each do |value| %><option value="<%= value %>"><%= t("rules.fields.#{value}") %></option><% end %>
     </select>
     <select name="operator">
-      <% operators.each do |value, label| %><option value="<%= value %>"><%= label %></option><% end %>
+      <% operators.each do |value| %><option value="<%= value %>"><%= t("rules.operators.#{value}") %></option><% end %>
     </select>
-    <input name="pattern" placeholder="text to match" required>
+    <input name="pattern" placeholder="<%= t("rules.index.pattern") %>" required>
     <%= render "categories/select", name: "category_id", selected: nil, categories: categories, blank: nil, form: nil %>
-    <input name="amount_min" placeholder="min amount" size="10">
-    <input name="amount_max" placeholder="max amount" size="10">
-    <input name="priority" type="number" min="0" value="100" style="width: 5em" title="priority">
-    <button type="submit">Add</button>
+    <input name="amount_min" placeholder="<%= t("rules.index.amount_min") %>" size="10">
+    <input name="amount_max" placeholder="<%= t("rules.index.amount_max") %>" size="10">
+    <input name="priority" type="number" min="0" value="100" style="width: 5em" title="<%= t("rules.index.priority") %>">
+    <button type="submit"><%= t("common.add") %></button>
   </form>
-  <p class="note">Every row that isn't set by hand is categorized again when you add or remove a rule.</p>
+  <p class="note"><%= t("rules.index.note") %></p>
 </main>

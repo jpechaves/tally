@@ -9,10 +9,14 @@ module Tally
     # - Itaú card: the bill's total equals the payment printed on the next bill, so the
     #   bills chain without gaps.
     #
+    # Each check has a status ("ok", "warning", "unknown") and the difference in cents; the
+    # page words them. `paid_by` is the paying account's name, or nil for the next bill.
+    #
     # A difference is a warning, not an error: a bill can be paid partially, and IOF
     # rounding at the bank can leave a one-centavo gap.
     class BillCheckRepo < Tally::DB::Repo
       PAYMENT_WINDOW = (-20..5)
+      NUBANK_ACCOUNT = "Nubank conta"
 
       def all
         names = accounts.to_a.to_h { [_1.id, _1.name] }
@@ -21,9 +25,9 @@ module Tally
         statements.group_by { _1[:account_id] }.flat_map do |account_id, bills|
           bills.each_with_index.map do |bill, index|
             paid_by, paid = if names[account_id] == "Nubank cartão"
-              ["Nubank conta", account_payment(bill)]
+              [NUBANK_ACCOUNT, account_payment(bill)]
             else
-              ["next bill", bills[index + 1]&.fetch(:payments_cents)]
+              [nil, bills[index + 1]&.fetch(:payments_cents)]
             end
             check(names[account_id], bill, paid_by, paid)
           end
@@ -33,7 +37,7 @@ module Tally
       private
 
       def account_payment(bill)
-        account = accounts.where(name: "Nubank conta").one or return nil
+        account = accounts.where(name: NUBANK_ACCOUNT).one or return nil
         due = Date.iso8601(bill[:due_on])
         rows = transactions.dataset.where(account_id: account.id, raw_description: "Pagamento de fatura")
           .where(occurred_on: (due + PAYMENT_WINDOW.begin).iso8601..(due + PAYMENT_WINDOW.end).iso8601)
@@ -42,15 +46,13 @@ module Tally
 
       def check(account, bill, paid_by, paid)
         total = bill[:total_cents]
-        status, message = if paid.nil?
-          ["unknown", "payment not imported yet"]
-        elsif paid == total
-          ["ok", "paid in full"]
-        else
-          ["warning", "differs by #{Money.new((paid - total).abs).format}"]
+        status = if paid.nil? then "unknown"
+        elsif paid == total then "ok"
+        else "warning"
         end
 
-        {account:, due_on: bill[:due_on], total_cents: total, paid_by:, paid_cents: paid, status:, message:}
+        {account:, due_on: bill[:due_on], total_cents: total, paid_by:, paid_cents: paid, status:,
+         difference_cents: paid && (paid - total).abs}
       end
     end
   end

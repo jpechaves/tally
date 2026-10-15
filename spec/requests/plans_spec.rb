@@ -20,19 +20,19 @@ RSpec.describe "Savings plan and budgets", :db, type: :request do
     get "/plan"
     expect(last_response.body).to include(%(<option value="2026-09" selected>))
 
-    post "/plan", target: "2.500,00", starts_month: "2026-09"
+    post "/plan", target: "2,500.00", starts_month: "2026-09"
     plan = db[:savings_plans].first
     expect(plan).to include(status: "draft", baseline_from: "2026-05", baseline_to: "2026-07", target_cents: 250_000)
     expect(last_response.headers["Location"]).to end_with("/plan/#{plan[:id]}")
 
     follow_redirect!
     body = last_response.body
-    expect(body).to include("Save R$ 2.500,00 a month", "Transferências (Pix)", %(name="proposed[#{category_id("Delivery")}]"))
+    expect(body).to include("Save R$ 2,500.00 a month", "Transfers (Pix)", %(name="proposed[#{category_id("Delivery")}]"))
 
     delivery = db[:savings_plan_lines].where(category_id: category_id("Delivery")).first
     expect(delivery).to include(baseline_cents: 2_407) # (45,90 + 47,80 - 21,50) / 3, with the card's iFood refund netted
 
-    post "/plan/#{plan[:id]}/accept", proposed: {category_id("Delivery").to_s => "10,00"}
+    post "/plan/#{plan[:id]}/accept", proposed: {category_id("Delivery").to_s => "10.00"}
     expect(last_response.headers["Location"]).to end_with("/budgets?month=2026-09")
     expect(db[:savings_plans].where(id: plan[:id]).get(:status)).to eq("active")
     expect(db[:budgets].where(category_id: category_id("Delivery")).first).to include(month: "2026-09", amount_cents: 1_000)
@@ -44,7 +44,7 @@ RSpec.describe "Savings plan and budgets", :db, type: :request do
 
   it "replaces the active plan with the next one accepted" do
     2.times do
-      post "/plan", target: "1.000,00", starts_month: "2026-09"
+      post "/plan", target: "1,000.00", starts_month: "2026-09"
       post "/plan/#{db[:savings_plans].max(:id)}/accept"
     end
 
@@ -57,39 +57,39 @@ RSpec.describe "Savings plan and budgets", :db, type: :request do
     expect(last_response.body).to include("Enter how much to save each month")
 
     allow(Date).to receive(:today).and_return(Date.new(2030, 1, 1))
-    post "/plan", target: "100,00"
+    post "/plan", target: "100.00"
     follow_redirect!
     expect(last_response.body).to include("There are no rows in the last three complete months")
   end
 
   it "tracks the month against its budgets, and scores it once it's over" do
     db[:transactions].where(raw_description: "Compra no débito via NuPay - iFood").update(occurred_on: "2026-09-10")
-    post "/plan", target: "1.000,00", starts_month: "2026-09"
-    post "/plan/#{db[:savings_plans].max(:id)}/accept", proposed: {category_id("Delivery").to_s => "10,00"}
+    post "/plan", target: "1,000.00", starts_month: "2026-09"
+    post "/plan/#{db[:savings_plans].max(:id)}/accept", proposed: {category_id("Delivery").to_s => "10.00"}
 
     allow(Date).to receive(:today).and_return(Date.new(2026, 9, 15))
     get "/budgets"
     body = last_response.body
-    expect(body).to include("50% of 2026-09 has gone by.", "Target<strong>R$ 1.000,00</strong>")
-    expect(body).to match(%r{<td>Alimentação › Delivery</td>\s*<td class="num">R\$ 45,90</td>}m)
+    expect(body).to include("50% of Sep 2026 has gone by.", "Target<strong>R$ 1,000.00</strong>")
+    expect(body).to match(%r{<td>Food › Food delivery</td>\s*<td class="num">R\$ 45.90</td>}m)
     expect(body).to include("918%", ">over<")
 
-    post "/budgets", category_id: category_id("Delivery").to_s, month: "2026-10", amount: "60,00"
+    post "/budgets", category_id: category_id("Delivery").to_s, month: "2026-10", amount: "60.00"
     expect(db[:budgets].where(category_id: category_id("Delivery")).order(:month).select_map(%i[month amount_cents]))
       .to eq([["2026-09", 1_000], ["2026-10", 6_000]])
 
     allow(Date).to receive(:today).and_return(Date.new(2026, 10, 3))
     get "/budgets", month: "2026-09"
-    expect(last_response.body).to include("2026-09 is over.", "Target missed", "Over budget: Delivery (R$ 35,90)")
+    expect(last_response.body).to include("Sep 2026 is over.", "Target missed", "Over budget: Food delivery (R$ 35.90)")
     expect(last_response.body).to include("Month-end scores")
   end
 
   it "runs the plan's live recalculation from a script file the Content Security Policy allows" do
-    post "/plan", target: "1.000,00", starts_month: "2026-09"
+    post "/plan", target: "1,000.00", starts_month: "2026-09"
     follow_redirect!
 
     expect(last_response.headers["Content-Security-Policy"]).to include("script-src 'self'")
-    expect(last_response.body).to include(%(<script src="/scripts/plan.js"></script>), %(data-target="100000"))
+    expect(last_response.body).to include(%(<script src="/scripts/plan.js"></script>), %(data-target="100000"), %(data-decimal="."), %(data-reaches="reaches the target"))
     expect(last_response.body.scan(/<script[^>]*>/)).to eq([%(<script src="/scripts/plan.js">)])
 
     get "/scripts/plan.js"
@@ -102,33 +102,33 @@ RSpec.describe "Savings plan and budgets", :db, type: :request do
   end
 
   it "warns when the accepted limits save less than the target" do
-    post "/plan", target: "1.000.000,00", starts_month: "2026-09"
+    post "/plan", target: "1,000,000.00", starts_month: "2026-09"
     post "/plan/#{db[:savings_plans].max(:id)}/accept"
     follow_redirect!
 
-    expect(last_response.body).to match(/short of its R\$ 1\.000\.000,00 target/)
+    expect(last_response.body).to match(/short of its R\$ 1,000,000\.00 target/)
   end
 
   it "shows the plan's target only from the month the plan starts" do
-    post "/plan", target: "1.000,00", starts_month: "2026-09"
+    post "/plan", target: "1,000.00", starts_month: "2026-09"
     post "/plan/#{db[:savings_plans].max(:id)}/accept"
-    post "/budgets", category_id: category_id("Delivery").to_s, month: "2026-08", amount: "10,00"
+    post "/budgets", category_id: category_id("Delivery").to_s, month: "2026-08", amount: "10.00"
 
     get "/budgets", month: "2026-08"
     expect(last_response.body).to include("Projected")
     expect(last_response.body).not_to include("Target<strong>")
 
     get "/budgets", month: "2026-09"
-    expect(last_response.body).to include("Target<strong>R$ 1.000,00</strong>")
+    expect(last_response.body).to include("Target<strong>R$ 1,000.00</strong>")
   end
 
   it "sends an invalid limit back to the page with an error" do
     post "/budgets", category_id: category_id("Delivery").to_s, month: "2026-09", amount: "abc"
-    expect(last_response.headers["Location"]).to end_with("/budgets?month=2026-09&error=invalid_amount")
+    expect(last_response.headers["Location"]).to end_with("/budgets?month=2026-09&error=invalid_limit")
     follow_redirect!
     expect(last_response.body).to include("A limit is an amount of zero or more")
 
-    post "/budgets", category_id: "999999", month: "2026-09", amount: "10,00"
+    post "/budgets", category_id: "999999", month: "2026-09", amount: "10.00"
     follow_redirect!
     expect(last_response.body).to include("Pick a month and a spending category.")
   end
@@ -136,6 +136,6 @@ RSpec.describe "Savings plan and budgets", :db, type: :request do
   it "says there are no budgets before a plan" do
     get "/budgets"
 
-    expect(last_response.body).to include("No budgets for 2026-08 yet.")
+    expect(last_response.body).to include("No budgets for Aug 2026 yet.")
   end
 end

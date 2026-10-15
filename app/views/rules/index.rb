@@ -6,29 +6,12 @@ module Tally
       class Index < Tally::View
         include Deps["repos.category_repo", "repos.category_rule_repo"]
 
-        ERRORS = {
-          "invalid_field" => "Pick what to match and how.",
-          "empty_pattern" => "A rule needs something to match.",
-          "invalid_pattern" => "That is not a valid regular expression.",
-          "category_not_found" => "Pick a category.",
-          "invalid_amount" => "Amounts look like -50,00 (spending is negative)."
-        }.freeze
+        FIELDS = %w[description counterparty_name counterparty_document bank_category kind].freeze
 
-        FIELDS = {
-          "description" => "description",
-          "counterparty_name" => "counterparty name",
-          "counterparty_document" => "CNPJ / CPF",
-          "bank_category" => "bank's category",
-          "kind" => "kind"
-        }.freeze
+        OPERATORS = %w[contains starts_with equals regex].freeze
 
-        OPERATORS = {"contains" => "contains", "starts_with" => "starts with", "equals" => "is", "regex" => "matches regex"}.freeze
-
-        private_expose :error_code
-
-        expose :error_message do |error_code|
-          ERRORS.fetch(error_code.to_s, error_code)
-        end
+        # The error the last form sent back, if any (config/i18n, "errors").
+        expose :error_code, decorate: false
 
         expose :rules do
           category_rule_repo.list

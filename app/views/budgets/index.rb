@@ -8,16 +8,8 @@ module Tally
 
         BASELINE_MONTHS = 3
 
-        ERRORS = {
-          "invalid_category" => "Pick a month and a spending category.",
-          "invalid_amount" => "A limit is an amount of zero or more, like 500,00."
-        }.freeze
-
-        private_expose :error_code
-
-        expose :error_message do |error_code|
-          ERRORS[error_code.to_s]
-        end
+        # The error the last form sent back, if any (config/i18n, "errors").
+        expose :error_code, decorate: false
 
         expose :today, decorate: false do
           Date.today

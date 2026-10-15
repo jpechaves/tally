@@ -9,7 +9,7 @@ module Tally
 
         def handle(request, response)
           key = request.params[:key].to_s.strip
-          halt 422, "Missing key" if key.empty?
+          halt 422, t("errors.missing_key") if key.empty?
 
           insight_repo.dismiss(key:, title: request.params[:title].to_s.strip[0, 300])
           month = request.params[:month].to_s[/\A\d{4}-\d{2}\z/]

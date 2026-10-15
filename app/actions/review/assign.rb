@@ -17,7 +17,7 @@ module Tally
             counterparty_id: always ? params[:counterparty_id].to_s[/\A\d+\z/]&.to_i : nil,
             pattern: always ? params[:pattern].to_s.then { _1.empty? ? nil : _1 } : nil
           )
-          halt 422, "Could not save: #{result.failure}" if result.failure?
+          halt 422, t("errors.could_not_save", reason: result.failure) if result.failure?
 
           response.redirect_to "#{routes.path(:review)}?saved=#{result.value!}"
         end

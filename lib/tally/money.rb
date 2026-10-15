@@ -37,6 +37,12 @@ module Tally
       "." => ","
     }.freeze
 
+    # The decimal mark each supported locale writes (Tally::Locales).
+    DECIMAL_MARKS = {"pt-BR" => ",", "en" => "."}.freeze
+
+    # The decimal mark for a locale; Brazilian for anything unknown.
+    def self.decimal_mark(locale) = DECIMAL_MARKS.fetch(locale.to_s, ",")
+
     attr_reader :cents, :currency
 
     # @param cents [Integer] whole cents, signed
@@ -187,13 +193,23 @@ module Tally
       BigDecimal(cents) / 100
     end
 
-    # Brazilian formatting: "R$ 1.234,56", "-R$ 7,06". Other currencies use their code.
-    def format
+    # "R$ 1.234,56", "-R$ 7,06" in Portuguese (the default); "R$ 1,234.56" in English.
+    # Other currencies use their code.
+    def format(locale = "pt-BR")
+      decimal = self.class.decimal_mark(locale)
       units, rest = cents.abs.divmod(100)
-      grouped = units.to_s.reverse.scan(/\d{1,3}/).join(".").reverse
-      "#{"-" if negative?}#{SYMBOLS.fetch(currency, currency)} #{grouped},#{rest.to_s.rjust(2, "0")}"
+      grouped = units.to_s.reverse.scan(/\d{1,3}/).join(SEPARATORS.fetch(decimal)).reverse
+      "#{"-" if negative?}#{SYMBOLS.fetch(currency, currency)} #{grouped}#{decimal}#{rest.to_s.rjust(2, "0")}"
     end
-    alias_method :to_s, :format
+
+    def to_s = format
+
+    # "1234,56" (or "1234.56" in English): for a form field, without symbol or grouping,
+    # so .parse reads it back exactly.
+    def to_field(locale = "pt-BR")
+      units, rest = cents.abs.divmod(100)
+      "#{"-" if negative?}#{units}#{self.class.decimal_mark(locale)}#{rest.to_s.rjust(2, "0")}"
+    end
 
     def inspect
       "#<#{self.class.name} #{format}>"

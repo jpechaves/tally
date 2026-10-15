@@ -1,3 +1,475 @@
-# Add your translations here. See https://hanakai.org/learn/hanami/i18n for details.
+# English. Keys mirror config/i18n/pt-BR.yml exactly (spec/unit/i18n_spec.rb checks).
+# Pages use absolute keys named after their template: "report.show.title" is in
+# app/templates/report/show.html.erb.
 en:
-  hello: "Hello"
+  date:
+    formats:
+      day: "%b %-d, %Y"
+      month: "%b %Y"
+
+  common:
+    add: Add
+    dismiss: Dismiss
+    net: Net
+    none: None.
+    nothing_imported_html: Nothing imported yet. Start by <a href="/imports">importing your statements</a>.
+    range: "%{from} to %{to}"
+    remove: Remove
+    rows: Rows
+    row_count:
+      one: 1 row
+      other: "%{count} rows"
+    save: Save
+    show: Show
+
+  layout:
+    nav:
+      accounts: Accounts
+      budgets: Budgets
+      categories: Categories
+      counterparties: Counterparties
+      cuts: Cuts
+      imports: Import
+      installments: Installments
+      plan: Plan
+      report: Report
+      review: Review
+      rules: Rules
+      transactions: Transactions
+
+  errors:
+    category_not_found: Pick a category.
+    could_not_save: "Could not save: %{reason}"
+    empty_name: A category needs a name.
+    empty_pattern: A rule needs something to match.
+    invalid_amount: "Amounts look like -50.00 (spending is negative)."
+    invalid_field: Pick what to match and how.
+    invalid_kind: Pick expense or income.
+    invalid_limit: A limit is an amount of zero or more, like 500.00.
+    invalid_max_cut: The maximum cut is a percentage from 0 to 100.
+    invalid_nature: Pick fixed, essential or discretionary.
+    invalid_parent: "Categories go one level deep: pick a top-level parent."
+    invalid_pattern: That is not a valid regular expression.
+    invalid_target: Enter how much to save each month, like 1500.00.
+    missing_key: Missing suggestion key.
+    month_and_category: Pick a month and a spending category.
+    name_taken: There is already a category with that name there.
+    no_data: There are no rows in the last three complete months to plan from. Import your statements first.
+    no_rows: Pick at least one row.
+    not_a_draft: This plan was already accepted.
+    not_found: That is no longer there.
+
+  kinds:
+    bill_payment: bill payment
+    fee: fee
+    income: income
+    purchase: purchase
+    refund: refund
+    transfer: transfer
+
+  natures:
+    discretionary: discretionary
+    essential: essential
+    fixed: fixed
+    unset: no nature
+
+  sources:
+    itau_card_pdf: Itaú card (PDF)
+    nubank_account_csv: Nubank account (CSV)
+    nubank_card_csv: Nubank card (CSV)
+
+  statuses:
+    account:
+      cash: cash
+      checking: checking
+      credit_card: credit card
+      investment: investment
+    category:
+      expense: expense
+      income: income
+    import:
+      applied: applied
+      duplicate_file: duplicate file
+      rejected: rejected
+    plan:
+      active: Active
+      draft: Draft
+      replaced: Replaced
+    rule:
+      learned: learned
+      manual: manual
+      seed: seed
+
+  home:
+    show:
+      busy_timeout: Busy timeout
+      database: Database
+      foreign_keys: Foreign keys
+      intro_html: Household spending, budgets and savings. Start by <a href="/imports">importing your statements</a>.
+      journal_mode: Journal mode
+      sqlite_version: SQLite version
+      synchronous: Synchronous
+
+  imports:
+    account: Account
+    file: File
+    missing: Missing
+    new: New
+    source: Source
+    status: Status
+    unchanged: Unchanged
+    updated: Updated
+    index:
+      empty: Nothing imported yet.
+      history: History
+      import: Import
+      intro_html: >-
+        Nubank account CSV (<code>NU_..._01JUN2026_30JUN2026.csv</code>), Nubank card CSV
+        (<code>Nubank_2026-09-09.csv</code>, named after the due date) or Itaú card bill PDF.
+        Importing a file again updates its rows instead of duplicating them.
+      title: Import statements
+      when: When
+    show:
+      counts_html: "<strong>%{new}</strong> new, <strong>%{updated}</strong> updated, <strong>%{unchanged}</strong> unchanged, <strong>%{missing}</strong> missing."
+      duplicate_file: This exact file was already imported, so nothing changed.
+      gone: No longer in the file
+      gone_note: These rows were in an earlier import of the same period or bill but not in this file. They are kept, not deleted.
+      imported: Imported
+      period: Period
+      rejected: "Rejected, nothing was written: %{error}"
+      rows: Rows last seen in this file
+      warnings: Warnings
+
+  accounts:
+    index:
+      account: Account
+      balance: Balance
+      bill: Bill
+      bill_total: Bill total
+      check:
+        ok: paid in full
+        unknown: payment not imported yet
+        warning: "differs by %{difference}"
+      checks: Bill checks
+      due: Due
+      from_transfers: (from transfers)
+      kind: Kind
+      next_bill: next bill
+      no_bills: No card bills imported yet.
+      note: >-
+        Card balances only cover the bills imported so far. Itaú conta and Nubank RDB have no
+        statements: their balance is the sum of the transfers into and out of them.
+      paid: Paid
+      paid_by: Paid by
+      pass_through: The Pix sent to this account and the bills it paid differ by more than %{tolerance}.
+      result: Result
+      title: Accounts
+
+  counterparties:
+    index:
+      bank: Bank
+      document: Document
+      intro: >-
+        Mark yourself (your name at other banks) with "This is me": a Pix between your own
+        accounts then counts as a transfer, never as spending or income.
+      name: Name
+      not_me: Not me
+      this_is_me: This is me
+      title: Counterparties
+      you: (you)
+
+  transactions:
+    table:
+      account: Account
+      amount: Amount
+      bank_suggestion: the bank's suggestion
+      bought: "bought %{date}"
+      category: Category
+      date: Date
+      description: Description
+      details: Details
+      kind: Kind
+      one_leg: (one leg)
+    index:
+      all_accounts: All accounts
+      all_months: All months
+      empty: No transactions.
+      summary: "%{rows}, net %{net}."
+      title: Transactions
+    show:
+      as_printed: "As printed: %{text}"
+      automatic: Automatic (rules and suggestions)
+      category_and_memo: Category and memo
+      memo: Memo
+      source:
+        bank: "The bank suggests %{category}."
+        manual: "You picked %{category}. Imports and rules leave it alone."
+        none: No category yet.
+        rule: "A rule picked %{category}."
+      transfer: A transfer between your accounts is never spending or income, so it needs no category.
+
+  review:
+    index:
+      always: "Always for %{payee}"
+      bank_suggests: "the bank suggests %{category}"
+      empty: "Nothing to review: every row has a category."
+      intro: >-
+        %{uncategorized} rows have no category and %{suggested} only have the bank's
+        suggestion, in %{groups} groups, biggest first. Pick a category for a group: with
+        "always", the payee's other rows, past and future, get it too.
+      saved: "Saved %{rows}."
+      title: Review
+
+  categories:
+    all: "%{name} (all)"
+    pick: Pick a category
+    index:
+      add: Add a category
+      archived: Archived
+      category: Category
+      intro: >-
+        The nature of each expense category tells the savings planner how far it may cut it:
+        fixed 0%, essential up to 15%, discretionary up to 50%. Change the nature or the
+        maximum cut to match your household.
+      kind_note: Under a parent, the kind comes from the parent.
+      max_cut: Max cut %
+      name: Name
+      nature: Nature
+      nature_prompt: nature (expenses)
+      no_nature: none
+      title: Categories
+      top_level: Top level
+      under: "under %{parent}"
+
+  rules:
+    fields:
+      bank_category: bank's category
+      counterparty_document: CNPJ / CPF
+      counterparty_name: counterparty name
+      description: description
+      kind: kind
+    operators:
+      contains: contains
+      equals: is
+      regex: matches regex
+      starts_with: starts with
+    index:
+      add: Add a rule
+      amount: Amount
+      amount_max: max amount
+      amount_min: min amount
+      category: Category
+      from: "from %{amount}"
+      intro: >-
+        Rules run lowest priority first, and the first match picks the category. A
+        counterparty's default (set from the review list) comes before any rule. Text is
+        compared without accents and ignoring case. Seed rules are generic; rules about your
+        own payees stay in your database only.
+      note: Every row that isn't set by hand is categorized again when you add or remove a rule.
+      origin: Origin
+      pattern: text to match
+      priority: Priority
+      title: Rules
+      up_to: "up to %{amount}"
+      when: When
+
+  report:
+    show:
+      amount: Amount
+      average: Average
+      average_of: "average %{amount}"
+      averages_over: "Averages over %{months}."
+      by_category: By category
+      by_nature: By nature
+      category: Category
+      change: Change
+      committed_next: What's committed next
+      counting: >-
+        Card purchases count in the month they were made; installments in the month of their
+        bill. Transfers between your accounts are left out.
+      ends: Ends
+      income: Income
+      installment: Installment
+      installments: Card installments this month
+      installments_summary: "%{amount} of this month's spending, %{count} installments."
+      nature: Nature
+      no_average: No earlier months imported, so there is no average yet.
+      payee: Payee
+      purchase: Purchase
+      saved: Saved
+      share: Share
+      spending: Spending
+      spent: Spent
+      this_month: this month
+      title: Where the money went
+      top_payees: Top payees
+      uncategorized: No category
+      uncategorized_note_html: Rows without a category are under "%{name}"; the <a href="/review">review list</a> sorts them out.
+
+  cuts:
+    purchases:
+      one: 1 purchase
+      other: "%{count} purchases"
+    signals:
+      big:
+        name: Big discretionary category
+        title: "%{name}: %{purchases}, %{cents}"
+        detail: "%{share}% of the month. Cutting it by %{pct}% saves this much."
+      duplicate:
+        name: Possible duplicate charge
+        title: "%{payee}: %{cents} charged %{count} times"
+        detail: "On %{dates}. Check that it isn't a double charge."
+      fees:
+        name: Fees and interest
+        title: "Fees, interest and financing: %{cents}"
+        detail: "%{count} rows. Ask for the card fee to be waived, or pay debts down early."
+      growth:
+        name: Growing
+        title: "%{name}: %{cents}, up from %{average_cents} a month"
+        detail: "%{pct}% over the average of %{from} to %{to}."
+      installments:
+        name: New installments
+        title: "%{purchases} in installments: %{cents} this month"
+        detail: "Commits %{later_cents} more to the next bills. Biggest: %{biggest}."
+      recurring:
+        name: Recurring charge
+        title: "%{payee}: %{cents} a month"
+        detail: "Charged in %{months} of the last %{window} months. Still worth it?"
+      small:
+        name: Many small purchases
+        title: "%{payee}: %{count} charges, %{cents}"
+        detail: "Small amounts add up: %{average_cents} on average."
+    index:
+      about: "about %{amount} a month"
+      dismissed: Dismissed
+      empty: "No suggestions for %{month}."
+      intro: >-
+        %{count} suggestions for %{month}, biggest first. Estimates are per month and overlap
+        (a recurring charge can also be in a big category), so they don't add up to a total.
+        Dismiss one and it stays hidden.
+      restore: Show again
+      title: What can I cut?
+
+  installments:
+    index:
+      banks: What the banks say
+      banks_note: Itaú prints what is already committed to its next bills, a check on the projection above.
+      card: Card
+      committed: Committed
+      each: Each
+      empty: No installments left to pay.
+      freed: Freed vs the month before
+      intro: >-
+        %{amount} already committed to card bills from %{month} on, from %{purchases}.
+        Each month, the money freed is what stops being paid.
+      last_one: Last one
+      later_bills: Later bills
+      latest_due: Latest bill due
+      left_from: "Left from %{month}"
+      month: Month
+      next_bill: Next bill
+      not_printed: not printed
+      paid: Paid
+      purchase: Purchase
+      purchases:
+        one: 1 purchase
+        other: "%{count} purchases"
+      purchases_title: Purchases
+      title: Installments
+
+  plans:
+    index:
+      a_month: a month
+      active_html: "Active plan: save <strong>%{amount}</strong> a month from %{month}."
+      baseline: Baseline
+      how_doing: How you're doing
+      intro_html: >-
+        Say how much you want to save each month. The planner takes your average income and
+        spending over the last three complete months, works out the gap, and spreads it over
+        your categories by how far each may be cut: fixed 0%, essential up to 15%,
+        discretionary up to 50% (change these on <a href="/categories">Categories</a>). You
+        review every line before anything is saved.
+      made: Made
+      make: Make a plan
+      plans: Plans
+      see_it: See it
+      starting: starting
+      starts: Starts
+      status: Status
+      target: Target
+      title: Save every month
+    show:
+      accept: "Accept and write budgets from %{month}"
+      already_there: >-
+        You already save %{saved} a month, %{extra} more than the target. Consider moving the
+        extra to savings (the Nubank RDB) each month. Accepting still writes today's spending
+        as budgets, to keep it there.
+      baseline: "baseline %{from} to %{to}"
+      budgets_from: "budgets from %{month}"
+      category: Category
+      confirm_short: These limits save less than the target. Accept them anyway?
+      cut: Cut
+      fixed_lever: "Fixed costs can't be trimmed month to month, but a contract can be renegotiated or switched:"
+      gap: Gap
+      income: Income
+      installment_ends: "%{name}: %{amount} a month, last one in %{month}"
+      installments_lever: "Installments ending soon free money without cutting anything:"
+      levers: Other levers
+      may_cut: May cut
+      nature: Nature
+      new_limit: New limit
+      no_gap: none
+      on_average: a month, on average
+      per_month: "%{name}: %{amount} a month"
+      reaches: reaches the target
+      saved_today: Saved today
+      short: short of the target
+      shortfall: >-
+        Cutting everything the categories allow saves %{cuts} a month, %{shortfall} short of
+        the gap. The other levers are below.
+      spending: Spending
+      title: "Save %{amount} a month"
+      today: Today
+      would_save_html: 'With these limits you would save <strong id="new-saved">%{amount}</strong> a month:'
+
+  budgets:
+    index:
+      a_month: a month
+      add: Add a budget
+      ahead_flag: ahead of pace
+      category: Category
+      counting: Card purchases count in the month they were made, installments in the month of their bill.
+      elapsed: >-
+        %{pct}% of %{month} has gone by. The projection assumes the income the plan expects
+        (or the last three months' average), that each budget is spent in full, and that
+        spending outside the budgets reaches its average of the last three months.
+      empty_html: 'No budgets for %{month} yet. <a href="/plan">Make a savings plan</a> and accept it, and its limits become your budgets.'
+      in_out: "%{in} in, %{out} out"
+      left: Left
+      limit: Limit
+      missed: Target missed
+      missed_by: "missed by %{amount}"
+      month: Month
+      next_installments: "%{amount} of installments is already committed to next month."
+      on_track: on track
+      over: "%{month} is over."
+      over_budget: "Over budget: %{names}."
+      over_column: Over budget
+      over_flag: over
+      pace: Pace
+      pace_note: >-
+        Pace: spent against what the limit allows by today; over 110% is flagged. Edit a
+        limit and press Enter: it applies from %{month} on. Spending outside these budgets
+        this month: %{amount}.
+      plan_short: "The accepted plan's limits save %{saved} a month, %{short} short of its %{target} target."
+      projected: Projected
+      reached: Target reached
+      reached_short: reached
+      result: Result
+      saved: Saved
+      saved_so_far: Saved so far
+      score: "%{result}: saved %{saved} against %{target} (%{difference})."
+      scores: Month-end scores
+      spent: Spent
+      target: Target
+      title: Budgets

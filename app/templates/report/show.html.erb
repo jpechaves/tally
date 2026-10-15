@@ -1,62 +1,62 @@
 <main>
-  <h1>Where the money went</h1>
+  <h1><%= t("report.show.title") %></h1>
   <% if report.nil? %>
-    <p>Nothing imported yet. Start by <a href="/imports">importing your statements</a>.</p>
+    <p><%= t("common.nothing_imported_html") %></p>
   <% else %>
     <%= render "report/month_picker", path: "/report", months: months, month: month %>
     <% averaged = report.averaged_months %>
     <div class="cards">
-      <div>Income<strong><%= money(report.income_cents) %></strong><span class="note">average <%= money(report.average_income_cents) %></span></div>
-      <div>Spending<strong><%= money(report.spending_cents) %></strong><span class="note">average <%= money(report.average_spending_cents) %></span></div>
-      <div>Saved<strong class="<%= report.saved_cents.negative? ? "up" : "down" %>"><%= money(report.saved_cents) %></strong><span class="note">average <%= money(report.average_saved_cents) %></span></div>
+      <div><%= t("report.show.income") %><strong><%= money(report.income_cents) %></strong><span class="note"><%= t("report.show.average_of", amount: money(report.average_income_cents)) %></span></div>
+      <div><%= t("report.show.spending") %><strong><%= money(report.spending_cents) %></strong><span class="note"><%= t("report.show.average_of", amount: money(report.average_spending_cents)) %></span></div>
+      <div><%= t("report.show.saved") %><strong class="<%= report.saved_cents.negative? ? "up" : "down" %>"><%= money(report.saved_cents) %></strong><span class="note"><%= t("report.show.average_of", amount: money(report.average_saved_cents)) %></span></div>
     </div>
-    <p class="note"><% if averaged.empty? %>No earlier months imported, so there is no average yet.<% else %>Averages over <%= averaged.join(", ") %>.<% end %>
-      Card purchases count in the month they were made; installments in the month of their bill. Transfers between your accounts are left out.</p>
+    <p class="note"><% if averaged.empty? %><%= t("report.show.no_average") %><% else %><%= t("report.show.averages_over", months: averaged.map { month_label(_1) }.join(", ")) %><% end %>
+      <%= t("report.show.counting") %></p>
 
-    <h2>By category</h2>
+    <h2><%= t("report.show.by_category") %></h2>
     <table class="rows">
-      <thead><tr><th>Category</th><th class="num">Spent</th><th class="num">Share</th><th class="num">Average</th><th class="num">Change</th><th class="num">Rows</th></tr></thead>
+      <%= render "report/head", first: t("report.show.category") %>
       <tbody>
         <% report.categories.each do |line| %>
-          <%= render "report/line", line: line, css: "" %>
+          <%= render "report/line", line: line, label: category_name(line.name) || t("report.show.uncategorized"), css: "" %>
           <% line.children.each do |child| %>
-            <%= render "report/line", line: child, css: "child" %>
+            <%= render "report/line", line: child, label: category_name(child.name), css: "child" %>
           <% end %>
         <% end %>
       </tbody>
     </table>
-    <p class="note">Rows without a category are under "Sem categoria"; the <a href="/review">review list</a> sorts them out.</p>
+    <p class="note"><%= t("report.show.uncategorized_note_html", name: t("report.show.uncategorized")) %></p>
 
-    <h2>By nature</h2>
+    <h2><%= t("report.show.by_nature") %></h2>
     <table class="rows">
-      <thead><tr><th>Nature</th><th class="num">Spent</th><th class="num">Share</th><th class="num">Average</th><th class="num">Change</th><th class="num">Rows</th></tr></thead>
+      <%= render "report/head", first: t("report.show.nature") %>
       <tbody>
-        <% report.natures.each do |line| %><%= render "report/line", line: line, css: "" %><% end %>
+        <% report.natures.each do |line| %><%= render "report/line", line: line, label: nature_label(line.name == "unset" ? nil : line.name), css: "" %><% end %>
       </tbody>
     </table>
 
-    <h2>Top payees</h2>
+    <h2><%= t("report.show.top_payees") %></h2>
     <table class="rows">
-      <thead><tr><th>Payee</th><th class="num">Spent</th><th class="num">Share</th><th class="num">Average</th><th class="num">Change</th><th class="num">Rows</th></tr></thead>
+      <%= render "report/head", first: t("report.show.payee") %>
       <tbody>
-        <% report.payees.each do |line| %><%= render "report/line", line: line, css: "" %><% end %>
+        <% report.payees.each do |line| %><%= render "report/line", line: line, label: line.name, css: "" %><% end %>
       </tbody>
     </table>
 
-    <h2>Card installments this month</h2>
+    <h2><%= t("report.show.installments") %></h2>
     <% if report.installments.empty? %>
-      <p>None.</p>
+      <p><%= t("common.none") %></p>
     <% else %>
-      <p><%= money(report.installments_cents) %> of this month's spending, <%= report.installments.size %> installments.
-        <a href="/installments">What's committed next</a>.</p>
+      <p><%= t("report.show.installments_summary", amount: money(report.installments_cents), count: report.installments.size) %>
+        <a href="/installments"><%= t("report.show.committed_next") %></a>.</p>
       <table class="rows">
-        <thead><tr><th>Purchase</th><th>Installment</th><th>Ends</th><th class="num">Amount</th></tr></thead>
+        <thead><tr><th><%= t("report.show.purchase") %></th><th><%= t("report.show.installment") %></th><th><%= t("report.show.ends") %></th><th class="num"><%= t("report.show.amount") %></th></tr></thead>
         <tbody>
           <% report.installments.each do |item| %>
             <tr>
               <td><%= item[:row][:description] %> <span class="note"><%= item[:row][:account_name] %></span></td>
               <td><%= item[:row][:installment_number] %>/<%= item[:row][:installment_total] %></td>
-              <td><%= item[:left].zero? ? "this month" : item[:ends] %></td>
+              <td><%= item[:left].zero? ? t("report.show.this_month") : month_label(item[:ends]) %></td>
               <td class="num"><%= money(item[:cents]) %></td>
             </tr>
           <% end %>

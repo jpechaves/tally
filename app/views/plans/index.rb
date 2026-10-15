@@ -6,16 +6,8 @@ module Tally
       class Index < Tally::View
         include Deps["repos.plan_repo"]
 
-        ERRORS = {
-          "invalid_target" => "Enter how much to save each month, like 1.500,00.",
-          "no_data" => "There are no rows in the last three complete months to plan from. Import your statements first."
-        }.freeze
-
-        private_expose :error_code
-
-        expose :error_message do |error_code|
-          ERRORS.fetch(error_code.to_s, error_code)
-        end
+        # The error the last form sent back, if any (config/i18n, "errors").
+        expose :error_code, decorate: false
 
         expose :plans do
           plan_repo.all

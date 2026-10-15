@@ -40,20 +40,22 @@ module Tally
 
     def spending_rows = @rows.select { Insights.spending?(_1) }
 
-    # Parent categories, biggest first, each with its categories.
+    # Parent categories, biggest first, each with its categories. Rows with no category
+    # make a line with a nil id and name.
     def categories
       top = spending_rows.group_by { [_1[:parent_id] || _1[:category_id], _1[:parent_name] || _1[:category_name]] }
       lines = top.map do |(id, name), rows|
         children = rows.select { _1[:parent_id] }.group_by { [_1[:category_id], _1[:category_name]] }
           .map { |(child_id, child_name), child_rows| line(child_id, child_name, child_rows) { _1[:category_id] == child_id } }
-        line(id, name || Insights::UNCATEGORIZED, rows, children.sort_by { -_1.cents }) do |row|
+        line(id, name, rows, children.sort_by { -_1.cents }) do |row|
           (row[:parent_id] || row[:category_id]) == id
         end
       end
       lines.sort_by { -_1.cents }
     end
 
-    # Spending by nature: fixed, essential, discretionary, and rows without one.
+    # Spending by nature: fixed, essential, discretionary, and "unset" for rows without one.
+    # The name is the nature's code; the page translates it.
     def natures
       spending_rows.group_by { _1[:nature] || "unset" }.map do |nature, rows|
         line(nature, nature, rows) { (_1[:nature] || "unset") == nature }

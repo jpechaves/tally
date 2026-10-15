@@ -24,8 +24,8 @@ RSpec.describe "Importing statements", :db, type: :request do
 
     expect(last_response.status).to eq(302)
     follow_redirect!
-    expect(last_response.body).to include("itau_2026-10.pdf", "Itaú cartão (PDF)", "<strong>20</strong> new")
-    expect(last_response.body).to include("VOO EXEMPLO*AB12", "8/10 · bought 2026-02-02 · viagem · SAO PAULO", "-R$ 1.504,14")
+    expect(last_response.body).to include("itau_2026-10.pdf", "Itaú card (PDF)", "<strong>20</strong> new")
+    expect(last_response.body).to include("VOO EXEMPLO*AB12", "8/10 · bought Feb 2, 2026 · viagem · SAO PAULO", "-R$ 1,504.14")
   end
 
   it "imports several files at once and lists them" do
@@ -49,8 +49,8 @@ RSpec.describe "Importing statements", :db, type: :request do
     get "/accounts"
 
     expect(last_response.status).to eq(200)
-    expect(last_response.body).to include("Nubank RDB", "R$ 1.500,00")
-    expect(last_response.body).to match(%r{2026-07-09</td>\s*<td class="num">R\$ 1\.765,75</td>.*paid in full}m)
+    expect(last_response.body).to include("Nubank RDB", "R$ 1,500.00")
+    expect(last_response.body).to match(%r{Jul 9, 2026</td>\s*<td class="num">R\$ 1,765\.75</td>.*paid in full}m)
     expect(last_response.body).to include("payment not imported yet")
   end
 

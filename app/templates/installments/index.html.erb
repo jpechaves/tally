@@ -1,17 +1,16 @@
 <main>
-  <h1>Installments</h1>
+  <h1><%= t("installments.index.title") %></h1>
   <% if calendar.purchases.empty? %>
-    <p>No installments left to pay.</p>
+    <p><%= t("installments.index.empty") %></p>
   <% else %>
-    <p><%= money(calendar.total_cents) %> already committed to card bills from <%= calendar.from %> on, from <%= calendar.purchases.size %> purchases.
-      Each month, the money freed is what stops being paid.</p>
+    <p><%= t("installments.index.intro", amount: money(calendar.total_cents), month: month_label(calendar.from), purchases: t("installments.index.purchases", count: calendar.purchases.size)) %></p>
     <table class="rows">
-      <thead><tr><th>Month</th><th class="num">Committed</th><th class="num">Freed vs the month before</th></tr></thead>
+      <thead><tr><th><%= t("installments.index.month") %></th><th class="num"><%= t("installments.index.committed") %></th><th class="num"><%= t("installments.index.freed") %></th></tr></thead>
       <tbody>
         <% previous = nil %>
         <% calendar.months.each do |value, cents| %>
           <tr>
-            <td><%= value %></td>
+            <td><%= month_label(value) %></td>
             <td class="num"><%= money(cents) %></td>
             <td class="num down"><%= previous && previous > cents ? money(previous - cents) : "" %></td>
           </tr>
@@ -20,16 +19,16 @@
       </tbody>
     </table>
 
-    <h2>Purchases</h2>
+    <h2><%= t("installments.index.purchases_title") %></h2>
     <table class="rows">
-      <thead><tr><th>Purchase</th><th>Card</th><th>Paid</th><th>Last one</th><th class="num">Each</th><th class="num">Left from <%= calendar.from %></th></tr></thead>
+      <thead><tr><th><%= t("installments.index.purchase") %></th><th><%= t("installments.index.card") %></th><th><%= t("installments.index.paid") %></th><th><%= t("installments.index.last_one") %></th><th class="num"><%= t("installments.index.each") %></th><th class="num"><%= t("installments.index.left_from", month: month_label(calendar.from)) %></th></tr></thead>
       <tbody>
         <% calendar.purchases.each do |purchase| %>
           <tr>
             <td><%= purchase.description %></td>
             <td><%= purchase.account_name %></td>
             <td><%= purchase.number %>/<%= purchase.total %></td>
-            <td><%= purchase.ends %></td>
+            <td><%= month_label(purchase.ends) %></td>
             <td class="num"><%= money(purchase.cents) %></td>
             <td class="num"><%= money(purchase.cents * purchase.left_from(calendar.from)) %></td>
           </tr>
@@ -39,20 +38,20 @@
   <% end %>
 
   <% unless bills.empty? %>
-    <h2>What the banks say</h2>
+    <h2><%= t("installments.index.banks") %></h2>
     <table class="rows">
-      <thead><tr><th>Card</th><th>Latest bill due</th><th class="num">Next bill</th><th class="num">Later bills</th></tr></thead>
+      <thead><tr><th><%= t("installments.index.card") %></th><th><%= t("installments.index.latest_due") %></th><th class="num"><%= t("installments.index.next_bill") %></th><th class="num"><%= t("installments.index.later_bills") %></th></tr></thead>
       <tbody>
         <% bills.each do |bill| %>
           <tr>
             <td><%= bill[:account_name] %></td>
-            <td><%= bill[:due_on] %></td>
-            <td class="num"><%= bill[:next_statement_cents] ? money(bill[:next_statement_cents]) : "not printed" %></td>
+            <td><%= date(bill[:due_on]) %></td>
+            <td class="num"><%= bill[:next_statement_cents] ? money(bill[:next_statement_cents]) : t("installments.index.not_printed") %></td>
             <td class="num"><%= bill[:later_statements_cents] ? money(bill[:later_statements_cents]) : "" %></td>
           </tr>
         <% end %>
       </tbody>
     </table>
-    <p class="note">Itaú prints what is already committed to its next bills, a check on the projection above.</p>
+    <p class="note"><%= t("installments.index.banks_note") %></p>
   <% end %>
 </main>
