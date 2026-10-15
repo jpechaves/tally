@@ -126,6 +126,19 @@ module Tally
     # Every name a starting category may have, to find it whichever locale seeded it.
     def self.names(name) = [name, ENGLISH.fetch(name)].uniq
 
+    PORTUGUESE = ENGLISH.invert.freeze
+
+    # A category's name to show in a locale: a starting category's name translates,
+    # whichever locale seeded it ("Groceries" -> "Supermercado" in "pt-BR"); a name you
+    # typed or renamed yourself shows as it is.
+    def self.display(name, locale)
+      original = PORTUGUESE.fetch(name, name)
+      ENGLISH.key?(original) ? localized(original, locale) : name
+    end
+
+    # The names a category shows as in any locale.
+    def self.shown_as(name) = ENGLISH.key?(PORTUGUESE.fetch(name, name)) ? names(PORTUGUESE.fetch(name, name)) : [name]
+
     # "Água", " ÁGUA " -> "agua": what rules, hints and review groups compare.
     def self.fold(text)
       text.to_s.unicode_normalize(:nfkd).gsub(/\p{Mn}/, "").downcase.strip.squeeze(" ")

@@ -29,7 +29,7 @@
 
     <% if (score = budget_month.score) %>
       <p class="notice"><%= t("budgets.index.score", result: score[:hit] ? t("budgets.index.reached") : t("budgets.index.missed"), saved: money(score[:saved_cents]), target: money(score[:target_cents]), difference: money(score[:difference_cents])) %>
-        <% unless score[:over].empty? %><%= t("budgets.index.over_budget", names: score[:over].map { "#{_1.name} (#{money(-_1.left_cents)})" }.join(", ")) %><% end %></p>
+        <% unless score[:over].empty? %><%= t("budgets.index.over_budget", names: score[:over].map { "#{category_name(_1.name)} (#{money(-_1.left_cents)})" }.join(", ")) %><% end %></p>
     <% end %>
 
     <table class="rows">
@@ -37,7 +37,7 @@
       <tbody>
         <% budget_month.lines.each do |line| %>
           <tr>
-            <td><%= line.parent_name ? "#{line.parent_name} › " : "" %><%= line.name %></td>
+            <td><%= category_path(line.parent_name, line.name) %></td>
             <td class="num"><%= money(line.spent_cents) %></td>
             <td class="num">
               <form action="/budgets" method="post" class="inline">
@@ -60,7 +60,7 @@
   <form action="/budgets" method="post" class="inline">
     <input type="hidden" name="month" value="<%= month %>">
     <select name="category_id" required>
-      <% expense_categories.each do |category| %><option value="<%= category[:id] %>"><%= category[:label] %></option><% end %>
+      <% expense_categories.each do |category| %><option value="<%= category[:id] %>"><%= category_path(category[:parent_name], category[:name]) %></option><% end %>
     </select>
     <label>R$ <input name="amount" class="amount" required></label>
     <button type="submit"><%= t("common.save") %></button>
@@ -78,7 +78,7 @@
             <td class="num"><%= money(score[:saved_cents]) %></td>
             <td class="num"><%= money(score[:target_cents]) %></td>
             <td class="<%= score[:hit] ? "down" : "up" %>"><%= score[:hit] ? t("budgets.index.reached_short") : t("budgets.index.missed_by", amount: money(-score[:difference_cents])) %></td>
-            <td><%= score[:over].map(&:name).join(", ") %></td>
+            <td><%= score[:over].map { category_name(_1.name) }.join(", ") %></td>
           </tr>
         <% end %>
       </tbody>

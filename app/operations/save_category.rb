@@ -16,6 +16,8 @@ module Tally
 
         existing = id && category_repo.find(id)
         step Failure(:not_found) if id && !existing
+        # The form shows a starting category's name translated; saving it back keeps the stored one.
+        name = existing[:name] if existing && Categories.shown_as(existing[:name]).include?(name)
 
         parent = parent_id && category_repo.find(parent_id)
         step Failure(:invalid_parent) if parent_id && (parent.nil? || parent[:parent_id])

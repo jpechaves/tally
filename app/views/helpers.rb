@@ -6,6 +6,9 @@ module Tally
     # Formatting in the reader's language: amounts, dates, months and the app's own codes
     # (kinds, natures, statuses). The text itself lives in config/i18n.
     module Helpers
+      # Cut suggestions whose :name is a category (the others name a payee).
+      CATEGORY_SIGNALS = %w[big growth].freeze
+
       def locale = _context.i18n.locale.to_s
 
       # "R$ 1.234,56" / "-R$ 7,06" in Portuguese, "R$ 1,234.56" in English; blank for nil.
@@ -46,14 +49,22 @@ module Tally
         active = tree.reject { _1[:archived_at] }
         active.reject { _1[:parent_id] }.map do |parent|
           children = active.select { _1[:parent_id] == parent[:id] }
-          [parent[:name], [[parent[:id], t("categories.all", name: parent[:name])]] + children.map { [_1[:id], _1[:name]] }]
+          name = category_name(parent[:name])
+          [name, [[parent[:id], t("categories.all", name:)]] + children.map { [_1[:id], category_name(_1[:name])] }]
         end
       end
+
+      # A starting category's name in the current language; one you named yourself as typed.
+      def category_name(name) = name && Tally::Categories.display(name, locale)
+
+      # "Moradia › Energia", translated like category_name.
+      def category_path(parent_name, name) = [parent_name, name].compact.map { category_name(_1) }.join(" › ")
 
       def category_label(row)
         return "" unless row[:category_name]
 
-        row[:category_source] == "bank" ? "#{row[:category_name]}?" : row[:category_name]
+        name = category_name(row[:category_name])
+        row[:category_source] == "bank" ? "#{name}?" : name
       end
 
       def source_label(source) = t("sources.#{source}", default: source.to_s)
@@ -71,6 +82,7 @@ module Tally
                 in [:cents | :average_cents | :later_cents, _] then money(value)
                 in [:from | :to, _] then month_label(value)
                 in [:dates, _] then value.map { date(_1) }.join(", ")
+                in [:name, _] if CATEGORY_SIGNALS.include?(suggestion.signal) then category_name(value)
                 in [_, Array] then value.join(", ")
                 in [_, Float] then number(value)
                 else value

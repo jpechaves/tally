@@ -10,7 +10,7 @@
           <td class="num"><%= rule[:priority] %></td>
           <td><%= t("rules.fields.#{rule[:field]}", default: rule[:field]) %> <%= t("rules.operators.#{rule[:operator]}", default: rule[:operator]) %> <code><%= rule[:pattern] %></code></td>
           <td class="details"><%= [rule[:amount_min_cents] && t("rules.index.from", amount: money(rule[:amount_min_cents])), rule[:amount_max_cents] && t("rules.index.up_to", amount: money(rule[:amount_max_cents]))].compact.join(" ") %></td>
-          <td><%= rule[:category_name] %></td>
+          <td><%= category_name(rule[:category_name]) %></td>
           <td><%= status_label(:rule, rule[:origin]) %></td>
           <td class="num"><%= rule[:hits] %></td>
           <td><form action="/rules/<%= rule[:id] %>/disable" method="post"><button type="submit"><%= t("common.remove") %></button></form></td>

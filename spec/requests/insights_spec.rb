@@ -28,7 +28,7 @@ RSpec.describe "Report, cuts and installments", :db, type: :request do
     body = last_response.body
     expect(body).to include("Income<strong>R$ 8,920.00</strong>", "Averages over Jun 2026.")
     expect(body).not_to match(/<t[rd][a-z]/)
-    expect(body).to include("<td>Transferências (Pix)</td>", "<td>Delivery</td>", "<td>No category</td>")
+    expect(body).to include("<td>Transfers (Pix)</td>", "<td>Food delivery</td>", "<td>No category</td>")
     expect(body).to include("R$ 1,559.30 of this month&#39;s spending, 3 installments.")
     expect(body).to match(%r{<td>Hotel Exemplo .*?</td>\s*<td>2/6</td>\s*<td>Nov 2026</td>}m)
     expect(body).not_to include("Pagamento de fatura")

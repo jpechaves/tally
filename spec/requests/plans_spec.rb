@@ -27,7 +27,7 @@ RSpec.describe "Savings plan and budgets", :db, type: :request do
 
     follow_redirect!
     body = last_response.body
-    expect(body).to include("Save R$ 2,500.00 a month", "Transferências (Pix)", %(name="proposed[#{category_id("Delivery")}]"))
+    expect(body).to include("Save R$ 2,500.00 a month", "Transfers (Pix)", %(name="proposed[#{category_id("Delivery")}]"))
 
     delivery = db[:savings_plan_lines].where(category_id: category_id("Delivery")).first
     expect(delivery).to include(baseline_cents: 2_407) # (45,90 + 47,80 - 21,50) / 3, with the card's iFood refund netted
@@ -71,7 +71,7 @@ RSpec.describe "Savings plan and budgets", :db, type: :request do
     get "/budgets"
     body = last_response.body
     expect(body).to include("50% of Sep 2026 has gone by.", "Target<strong>R$ 1,000.00</strong>")
-    expect(body).to match(%r{<td>Alimentação › Delivery</td>\s*<td class="num">R\$ 45.90</td>}m)
+    expect(body).to match(%r{<td>Food › Food delivery</td>\s*<td class="num">R\$ 45.90</td>}m)
     expect(body).to include("918%", ">over<")
 
     post "/budgets", category_id: category_id("Delivery").to_s, month: "2026-10", amount: "60.00"
@@ -80,7 +80,7 @@ RSpec.describe "Savings plan and budgets", :db, type: :request do
 
     allow(Date).to receive(:today).and_return(Date.new(2026, 10, 3))
     get "/budgets", month: "2026-09"
-    expect(last_response.body).to include("Sep 2026 is over.", "Target missed", "Over budget: Delivery (R$ 35.90)")
+    expect(last_response.body).to include("Sep 2026 is over.", "Target missed", "Over budget: Food delivery (R$ 35.90)")
     expect(last_response.body).to include("Month-end scores")
   end
 

@@ -463,7 +463,7 @@ Actions validate input and call one operation. Operations hold the rules and the
 - BRL only for now.
 - Pix sent to people is its own category, Transferências (Pix), counted as spending.
 - Version 1 is deterministic (rules + arithmetic); smart features come later and only suggest.
-- Two languages: Brazilian Portuguese (default) and English, with Hanami's built-in i18n. What you type stays as typed: category names, rules and memos are data, not translated. Starting categories are named once, in the default language, when a database is seeded. Importer diagnostics (a rejected file's reason, parser warnings) are stored with the import and stay in English.
+- Two languages: Brazilian Portuguese (default) and English, with Hanami's built-in i18n. What you type stays as typed: rules, memos and categories you name or rename are data, not translated. Starting categories are named in the default language when a database is seeded, and show in the page's language whichever language seeded them; saving one under its translated name keeps the stored name. Importer diagnostics (a rejected file's reason, parser warnings) are stored with the import and stay in English.
 
 ## 14. Version 1 is deterministic
 

@@ -18,9 +18,9 @@
       <%= render "report/head", first: t("report.show.category") %>
       <tbody>
         <% report.categories.each do |line| %>
-          <%= render "report/line", line: line, label: line.name || t("report.show.uncategorized"), css: "" %>
+          <%= render "report/line", line: line, label: category_name(line.name) || t("report.show.uncategorized"), css: "" %>
           <% line.children.each do |child| %>
-            <%= render "report/line", line: child, label: child.name, css: "child" %>
+            <%= render "report/line", line: child, label: category_name(child.name), css: "child" %>
           <% end %>
         <% end %>
       </tbody>

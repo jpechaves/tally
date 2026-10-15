@@ -8,7 +8,7 @@
     <p class="note"><%= t("transactions.show.transfer") %></p>
   <% end %>
   <p class="note">
-    <% if %w[manual rule bank].include?(row[:category_source]) %><%= t("transactions.show.source.#{row[:category_source]}", category: row[:category_name]) %>
+    <% if %w[manual rule bank].include?(row[:category_source]) %><%= t("transactions.show.source.#{row[:category_source]}", category: category_name(row[:category_name])) %>
     <% else %><%= t("transactions.show.source.none") %>
     <% end %>
   </p>

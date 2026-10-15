@@ -73,4 +73,24 @@ RSpec.describe "Languages", :db, type: :request do
       "Possível cobrança em dobro", "ESTACIONAMENTO EXEMPLO: R$ 14,00 cobrado 2 vezes")
     expect(last_response.body).to match(/cerca de R\$ [\d.]+,\d\d por mês/)
   end
+
+  it "translates starting category names, but not the ones you named" do
+    get "/transactions?month=2026-07"
+    expect(last_response.body).to include("<td>Delivery</td>")
+
+    set_cookie "locale=en"
+    get "/transactions?month=2026-07"
+    expect(last_response.body).to include("<td>Food delivery</td>")
+
+    delivery = db[:categories].where(name: "Delivery").get(:id)
+    post "/categories/#{delivery}", name: "Food delivery", nature: "discretionary"
+    expect(db[:categories].where(id: delivery).get(:name)).to eq("Delivery")
+
+    post "/categories/#{delivery}", name: "Comida pedida", nature: "discretionary"
+    get "/transactions?month=2026-07"
+    expect(last_response.body).to include("<td>Comida pedida</td>")
+    clear_cookies
+    get "/transactions?month=2026-07"
+    expect(last_response.body).to include("<td>Comida pedida</td>")
+  end
 end

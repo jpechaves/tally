@@ -8,7 +8,7 @@
       <% categories.each do |category| %>
         <% form = "category-#{category[:id]}" %>
         <tr class="<%= "missing" if category[:archived_at] %>">
-          <td><%= category[:parent_id] ? "#{category[:parent_name]} › " : "" %><input name="name" value="<%= category[:name] %>" form="<%= form %>" size="22"></td>
+          <td><%= category[:parent_id] ? "#{category_name(category[:parent_name])} › " : "" %><input name="name" value="<%= category_name(category[:name]) %>" form="<%= form %>" size="22"></td>
           <td>
             <% if category[:kind] == "expense" %>
               <select name="nature" form="<%= form %>">
@@ -37,7 +37,7 @@
     <select name="parent_id">
       <option value=""><%= t("categories.index.top_level") %></option>
       <% parents.each do |parent| %>
-        <option value="<%= parent[:id] %>"><%= t("categories.index.under", parent: parent[:name]) %></option>
+        <option value="<%= parent[:id] %>"><%= t("categories.index.under", parent: category_name(parent[:name])) %></option>
       <% end %>
     </select>
     <select name="kind">

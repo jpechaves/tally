@@ -63,4 +63,13 @@ RSpec.describe "Translations" do
     english_names = names.map { Tally::Categories.localized(_1, "en") }
     expect(english_names.uniq.size).to eq(names.size)
   end
+
+  it "shows a starting category in the current language, whichever language seeded it" do
+    expect(Tally::Categories.display("Supermercado", "en")).to eq("Groceries")
+    expect(Tally::Categories.display("Groceries", "pt-BR")).to eq("Supermercado")
+    expect(Tally::Categories.display("Groceries", "en")).to eq("Groceries")
+    expect(Tally::Categories.display("Mercadinho", "en")).to eq("Mercadinho")
+    expect(Tally::Categories.shown_as("Groceries")).to eq(%w[Supermercado Groceries])
+    expect(Tally::Categories.shown_as("Mercadinho")).to eq(["Mercadinho"])
+  end
 end

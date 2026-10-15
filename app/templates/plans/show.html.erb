@@ -24,7 +24,7 @@
       <tbody>
         <% lines.each do |line| %>
           <tr>
-            <td><%= line[:parent_name] ? "#{line[:parent_name]} › " : "" %><%= line[:name] %></td>
+            <td><%= category_path(line[:parent_name], line[:name]) %></td>
             <td><%= nature_label(line[:nature]) %></td>
             <td class="num"><%= money(line[:baseline_cents]) %></td>
             <td class="num"><%= money(line[:max_cut_cents]) %></td>
@@ -52,7 +52,7 @@
     <% unless fixed_lines.empty? %>
       <p><%= t("plans.show.fixed_lever") %></p>
       <ul>
-        <% fixed_lines.each do |line| %><li><%= t("plans.show.per_month", name: line[:name], amount: money(line[:baseline_cents])) %></li><% end %>
+        <% fixed_lines.each do |line| %><li><%= t("plans.show.per_month", name: category_name(line[:name]), amount: money(line[:baseline_cents])) %></li><% end %>
       </ul>
     <% end %>
     <% unless ending_installments.empty? %>
