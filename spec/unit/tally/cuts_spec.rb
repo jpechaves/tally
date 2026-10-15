@@ -17,7 +17,8 @@ RSpec.describe Tally::Cuts do
     ]
 
     big = suggestions(rows).find { _1.signal == "big" }
-    expect(big).to have_attributes(key: "big:category:11", title: "Delivery: 2 purchases, R$ 500,00", monthly_cents: 25_000)
+    expect(big).to have_attributes(key: "big:category:11", monthly_cents: 25_000,
+      facts: {name: "Delivery", count: 2, cents: 50_000, share: 20.0, pct: 50})
     expect(suggestions(rows).map(&:signal)).not_to include("growth") # no history
   end
 
@@ -26,7 +27,8 @@ RSpec.describe Tally::Cuts do
       [insight_row("2026-09-10", -600.00, "MERCADO", **in_category(:market))]
 
     growth = suggestions(rows).find { _1.signal == "growth" }
-    expect(growth).to have_attributes(monthly_cents: 20_000, title: "Supermercado: R$ 600,00, up from R$ 400,00 a month")
+    expect(growth).to have_attributes(monthly_cents: 20_000,
+      facts: {name: "Supermercado", cents: 60_000, average_cents: 40_000, pct: 50, from: "2026-06", to: "2026-08"})
 
     rows[-1] = insight_row("2026-09-10", -480.00, "MERCADO", **in_category(:market)) # +20%: quiet
     expect(suggestions(rows).map(&:signal)).not_to include("growth")
@@ -38,7 +40,7 @@ RSpec.describe Tally::Cuts do
 
     recurring = suggestions(rows).find { _1.signal == "recurring" }
     expect(recurring).to have_attributes(key: "recurring:description:academia exemplo", monthly_cents: 12_990,
-      detail: "Charged in 3 of the last 4 months. Still worth it?")
+      facts: {payee: "ACADEMIA EXEMPLO", cents: 12_990, months: 3, window: 4})
 
     rows << insight_row("2026-07-15", -300.00, "ACADEMIA EXEMPLO", **in_category(:gym))
     expect(suggestions(rows).map(&:signal)).not_to include("recurring")
@@ -48,7 +50,8 @@ RSpec.describe Tally::Cuts do
     rows = (1..8).map { insight_row("2026-09-%02d" % _1, -14.00, "ESTACIONAMENTO EXEMPLO #{_1}", **in_category(:parking)) }
 
     small = suggestions(rows).find { _1.signal == "small" }
-    expect(small).to have_attributes(title: "ESTACIONAMENTO EXEMPLO 1: 8 charges, R$ 112,00", monthly_cents: 11_200)
+    expect(small).to have_attributes(monthly_cents: 11_200,
+      facts: {payee: "ESTACIONAMENTO EXEMPLO 1", count: 8, cents: 11_200, average_cents: 1_400})
   end
 
   it "adds up fees, interest and financing" do
@@ -70,7 +73,8 @@ RSpec.describe Tally::Cuts do
     ]
 
     duplicate = suggestions(rows).find { _1.signal == "duplicate" }
-    expect(duplicate).to have_attributes(key: "duplicate:description:academia exemplo:-18990", monthly_cents: 18_990)
+    expect(duplicate).to have_attributes(key: "duplicate:description:academia exemplo:-18990", monthly_cents: 18_990,
+      facts: {payee: "ACADEMIA EXEMPLO", cents: 18_990, count: 2, dates: ["2026-09-15"]})
     expect(suggestions(rows).count { _1.signal == "duplicate" }).to eq(1)
     expect(suggestions(rows, dismissed: [duplicate.key]).map(&:signal)).not_to include("duplicate")
   end
@@ -86,8 +90,8 @@ RSpec.describe Tally::Cuts do
 
     expect(suggestions(rows).map(&:signal)).to eq(["installments"])
     expect(suggestions(rows).first).to have_attributes(
-      title: "2 purchases in installments: R$ 1.110,00 this month", monthly_cents: 111_000,
-      detail: "Commits R$ 5.310,00 more to the next bills. Biggest: Hotel Exemplo (6×), Doceria Exemplo (2×)."
+      monthly_cents: 111_000,
+      facts: {count: 2, cents: 111_000, later_cents: 531_000, biggest: ["Hotel Exemplo (6×)", "Doceria Exemplo (2×)"]}
     )
   end
 

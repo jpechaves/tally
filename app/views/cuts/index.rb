@@ -28,10 +28,6 @@ module Tally
         expose :dismissed do
           insight_repo.dismissed
         end
-
-        expose :signals, decorate: false do
-          Tally::Cuts::SIGNALS
-        end
       end
     end
   end

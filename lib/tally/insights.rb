@@ -10,8 +10,6 @@ module Tally
     SPENDING_KINDS = %w[purchase fee bill_payment refund].freeze
     INCOME_KINDS = %w[income].freeze
 
-    UNCATEGORIZED = "Sem categoria"
-
     module_function
 
     def spending?(row) = SPENDING_KINDS.include?(row[:kind])

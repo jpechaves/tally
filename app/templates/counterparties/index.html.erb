@@ -1,13 +1,12 @@
 <main>
-  <h1>Counterparties</h1>
-  <p>Mark yourself (your name at other banks) with "This is me": a Pix between your own accounts then counts as a
-    transfer, never as spending or income.</p>
+  <h1><%= t("counterparties.index.title") %></h1>
+  <p><%= t("counterparties.index.intro") %></p>
   <table>
-    <thead><tr><th>Name</th><th>Document</th><th>Bank</th><th class="num">Rows</th><th class="num">Net</th><th></th></tr></thead>
+    <thead><tr><th><%= t("counterparties.index.name") %></th><th><%= t("counterparties.index.document") %></th><th><%= t("counterparties.index.bank") %></th><th class="num"><%= t("common.rows") %></th><th class="num"><%= t("common.net") %></th><th></th></tr></thead>
     <tbody>
       <% counterparties.each do |party| %>
         <tr>
-          <td><%= party[:name] %><%= party[:is_self] == 1 ? " (you)" : "" %></td>
+          <td><%= party[:name] %><%= party[:is_self] == 1 ? " #{t("counterparties.index.you")}" : "" %></td>
           <td><%= party[:document] %></td>
           <td><%= party[:bank_name] %></td>
           <td class="num"><%= party[:rows] %></td>
@@ -16,7 +15,7 @@
             <% if party[:document_kind] == "cpf_masked" || party[:is_self] == 1 %>
               <form action="/counterparties/<%= party[:id] %>/self" method="post">
                 <input type="hidden" name="is_self" value="<%= party[:is_self] == 1 ? "0" : "1" %>">
-                <button type="submit"><%= party[:is_self] == 1 ? "Not me" : "This is me" %></button>
+                <button type="submit"><%= party[:is_self] == 1 ? t("counterparties.index.not_me") : t("counterparties.index.this_is_me") %></button>
               </form>
             <% end %>
           </td>

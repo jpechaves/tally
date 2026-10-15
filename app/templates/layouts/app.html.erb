@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="<%= locale %>">
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -30,23 +30,32 @@
       tr.child td:first-child { padding-left: 1.5rem; }
       input.amount { width: 7em; text-align: right; }
       .notice { background: #fff8c5; padding: .5rem .75rem; }
+      nav form { margin-left: auto; }
+      nav form button { background: none; border: 0; padding: 0; color: #0969da; cursor: pointer; font: inherit; }
     </style>
   </head>
   <body>
     <nav>
       <a href="/"><strong>Tally</strong></a>
-      <a href="/imports">Import</a>
-      <a href="/accounts">Accounts</a>
-      <a href="/transactions">Transactions</a>
-      <a href="/report">Report</a>
-      <a href="/cuts">Cuts</a>
-      <a href="/installments">Installments</a>
-      <a href="/plan">Plan</a>
-      <a href="/budgets">Budgets</a>
-      <a href="/review">Review</a>
-      <a href="/categories">Categories</a>
-      <a href="/rules">Rules</a>
-      <a href="/counterparties">Counterparties</a>
+      <a href="/imports"><%= t("layout.nav.imports") %></a>
+      <a href="/accounts"><%= t("layout.nav.accounts") %></a>
+      <a href="/transactions"><%= t("layout.nav.transactions") %></a>
+      <a href="/report"><%= t("layout.nav.report") %></a>
+      <a href="/cuts"><%= t("layout.nav.cuts") %></a>
+      <a href="/installments"><%= t("layout.nav.installments") %></a>
+      <a href="/plan"><%= t("layout.nav.plan") %></a>
+      <a href="/budgets"><%= t("layout.nav.budgets") %></a>
+      <a href="/review"><%= t("layout.nav.review") %></a>
+      <a href="/categories"><%= t("layout.nav.categories") %></a>
+      <a href="/rules"><%= t("layout.nav.rules") %></a>
+      <a href="/counterparties"><%= t("layout.nav.counterparties") %></a>
+      <form action="/locale" method="post">
+        <input type="hidden" name="back" value="<%= request.fullpath %>">
+        <% Tally::Locales::NAMES.each do |code, name| %>
+          <% next if code == locale %>
+          <button type="submit" name="locale" value="<%= code %>" lang="<%= code %>"><%= name %></button>
+        <% end %>
+      </form>
     </nav>
     <%= yield %>
   </body>

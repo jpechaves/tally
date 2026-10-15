@@ -4,6 +4,8 @@ module Tally
   class Routes < Hanami::Routes
     root to: "home.show"
 
+    post "/locale", to: "locale.update", as: :locale
+
     get "/imports", to: "imports.index", as: :imports
     post "/imports", to: "imports.create"
     get "/imports/:id", to: "imports.show", as: :import

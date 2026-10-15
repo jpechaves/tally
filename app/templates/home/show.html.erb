@@ -1,11 +1,11 @@
 <main>
   <h1>Tally</h1>
-  <p>Household spending, budgets and savings. Start by <a href="/imports">importing your statements</a>.</p>
+  <p><%= t("home.show.intro_html") %></p>
 
-  <h2>Database</h2>
+  <h2><%= t("home.show.database") %></h2>
   <table>
-    <% database.each do |label, value| %>
-      <tr><th scope="row"><%= label %></th><td><%= value %></td></tr>
+    <% database.each do |key, value| %>
+      <tr><th scope="row"><%= t("home.show.#{key}") %></th><td><%= value %></td></tr>
     <% end %>
   </table>
 </main>

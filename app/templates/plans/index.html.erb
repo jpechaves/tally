@@ -1,39 +1,36 @@
 <main>
-  <h1>Save every month</h1>
-  <% if error_message %><p class="error"><%= error_message %></p><% end %>
-  <p>Say how much you want to save each month. The planner takes your average income and spending over the last three
-    complete months, works out the gap, and spreads it over your categories by how far each may be cut: fixed 0%,
-    essential up to 15%, discretionary up to 50% (change these on <a href="/categories">Categories</a>). You review
-    every line before anything is saved.</p>
+  <h1><%= t("plans.index.title") %></h1>
+  <% if error_code %><p class="error"><%= t("errors.#{error_code}", default: error_code.to_s) %></p><% end %>
+  <p><%= t("plans.index.intro_html") %></p>
   <form action="/plan" method="post" class="inline">
-    <label>R$ <input name="target" class="amount" placeholder="1.500,00" required> a month</label>
-    <label>starting
+    <label>R$ <input name="target" class="amount" placeholder="<%= amount_field(150_000) %>" required> <%= t("plans.index.a_month") %></label>
+    <label><%= t("plans.index.starting") %>
       <select name="starts_month">
         <% start_options.each_with_index do |month, index| %>
-          <option value="<%= month %>"<%= " selected" if index == 1 %>><%= month %></option>
+          <option value="<%= month %>"<%= " selected" if index == 1 %>><%= month_label(month) %></option>
         <% end %>
       </select>
     </label>
-    <button type="submit">Make a plan</button>
+    <button type="submit"><%= t("plans.index.make") %></button>
   </form>
 
   <% if active %>
-    <p>Active plan: save <strong><%= money(active[:target_cents]) %></strong> a month from <%= active[:starts_month] %>.
-      <a href="/plan/<%= active[:id] %>">See it</a> · <a href="/budgets">How you're doing</a></p>
+    <p><%= t("plans.index.active_html", amount: money(active[:target_cents]), month: month_label(active[:starts_month])) %>
+      <a href="/plan/<%= active[:id] %>"><%= t("plans.index.see_it") %></a> · <a href="/budgets"><%= t("plans.index.how_doing") %></a></p>
   <% end %>
 
   <% unless plans.empty? %>
-    <h2>Plans</h2>
+    <h2><%= t("plans.index.plans") %></h2>
     <table class="rows">
-      <thead><tr><th>Made</th><th class="num">Target</th><th>Baseline</th><th>Starts</th><th>Status</th></tr></thead>
+      <thead><tr><th><%= t("plans.index.made") %></th><th class="num"><%= t("plans.index.target") %></th><th><%= t("plans.index.baseline") %></th><th><%= t("plans.index.starts") %></th><th><%= t("plans.index.status") %></th></tr></thead>
       <tbody>
         <% plans.each do |item| %>
           <tr>
             <td><a href="/plan/<%= item[:id] %>"><%= timestamp(item[:created_at]) %></a></td>
             <td class="num"><%= money(item[:target_cents]) %></td>
-            <td><%= item[:baseline_from] %> to <%= item[:baseline_to] %></td>
-            <td><%= item[:starts_month] %></td>
-            <td><%= item[:status] %></td>
+            <td><%= t("common.range", from: month_label(item[:baseline_from]), to: month_label(item[:baseline_to])) %></td>
+            <td><%= month_label(item[:starts_month]) %></td>
+            <td><%= status_label(:plan, item[:status]) %></td>
           </tr>
         <% end %>
       </tbody>

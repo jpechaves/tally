@@ -1,23 +1,21 @@
 <main>
   <h1><%= row[:description] %></h1>
   <%= render "transactions/table", rows: [row] %>
-  <p class="note">As printed: <%= row[:raw_description] %></p>
+  <p class="note"><%= t("transactions.show.as_printed", text: row[:raw_description]) %></p>
 
-  <h2>Category and memo</h2>
+  <h2><%= t("transactions.show.category_and_memo") %></h2>
   <% if row[:kind] == "transfer" %>
-    <p class="note">A transfer between your accounts is never spending or income, so it needs no category.</p>
+    <p class="note"><%= t("transactions.show.transfer") %></p>
   <% end %>
   <p class="note">
-    <% if row[:category_source] == "manual" %>You picked <%= row[:category_name] %>. Imports and rules leave it alone.
-    <% elsif row[:category_source] == "rule" %>A rule picked <%= row[:category_name] %>.
-    <% elsif row[:category_source] == "bank" %>The bank suggests <%= row[:category_name] %>.
-    <% else %>No category yet.
+    <% if %w[manual rule bank].include?(row[:category_source]) %><%= t("transactions.show.source.#{row[:category_source]}", category: row[:category_name]) %>
+    <% else %><%= t("transactions.show.source.none") %>
     <% end %>
   </p>
   <form action="/transactions/<%= row[:id] %>" method="post">
     <p><%= render "categories/select", name: "category_id", selected: row[:category_source] == "manual" ? row[:category_id] : nil,
-          categories: categories, blank: "Automatic (rules and suggestions)", form: nil %></p>
-    <p><label>Memo<br><textarea name="memo" rows="2" cols="60"><%= row[:memo] %></textarea></label></p>
-    <button type="submit">Save</button>
+          categories: categories, blank: t("transactions.show.automatic"), form: nil %></p>
+    <p><label><%= t("transactions.show.memo") %><br><textarea name="memo" rows="2" cols="60"><%= row[:memo] %></textarea></label></p>
+    <button type="submit"><%= t("common.save") %></button>
   </form>
 </main>

@@ -1,23 +1,23 @@
 <main>
-  <h1>What can I cut?</h1>
+  <h1><%= t("cuts.index.title") %></h1>
   <% if month.nil? %>
-    <p>Nothing imported yet.</p>
+    <p><%= t("common.nothing_imported_html") %></p>
   <% else %>
     <%= render "report/month_picker", path: "/cuts", months: months, month: month %>
     <% if suggestions.empty? %>
-      <p>No suggestions for <%= month %>.</p>
+      <p><%= t("cuts.index.empty", month: month_label(month)) %></p>
     <% else %>
-      <p><%= suggestions.size %> suggestions for <%= month %>, biggest first. Estimates are per month and overlap (a recurring
-        charge can also be in a big category), so they don't add up to a total. Dismiss one and it stays hidden.</p>
+      <p><%= t("cuts.index.intro", count: suggestions.size, month: month_label(month)) %></p>
       <% suggestions.each do |suggestion| %>
+        <% title = cut_text(suggestion, :title) %>
         <section class="group">
-          <h2><%= suggestion.title %> <span class="note">· <%= signals.fetch(suggestion.signal) %> · about <%= money(suggestion.monthly_cents) %> a month</span></h2>
-          <p class="note"><%= suggestion.detail %></p>
+          <h2><%= title %> <span class="note">· <%= t("cuts.signals.#{suggestion.signal}.name") %> · <%= t("cuts.index.about", amount: money(suggestion.monthly_cents)) %></span></h2>
+          <p class="note"><%= cut_text(suggestion, :detail) %></p>
           <form action="/cuts/dismiss" method="post" class="inline">
             <input type="hidden" name="key" value="<%= suggestion.key %>">
-            <input type="hidden" name="title" value="<%= suggestion.title %>">
+            <input type="hidden" name="title" value="<%= title %>">
             <input type="hidden" name="month" value="<%= month %>">
-            <button type="submit">Dismiss</button>
+            <button type="submit"><%= t("common.dismiss") %></button>
           </form>
         </section>
       <% end %>
@@ -25,13 +25,13 @@
   <% end %>
 
   <% unless dismissed.empty? %>
-    <h2>Dismissed</h2>
+    <h2><%= t("cuts.index.dismissed") %></h2>
     <table class="rows">
       <% dismissed.each do |item| %>
         <tr>
           <td><%= item[:title] %></td>
           <td class="note"><%= timestamp(item[:created_at]) %></td>
-          <td><form action="/cuts/<%= item[:id] %>/restore" method="post"><button type="submit">Show again</button></form></td>
+          <td><form action="/cuts/<%= item[:id] %>/restore" method="post"><button type="submit"><%= t("cuts.index.restore") %></button></form></td>
         </tr>
       <% end %>
     </table>

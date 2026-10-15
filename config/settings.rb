@@ -14,6 +14,11 @@ module Tally
 
     # The Itaú account only passes money from the Pix to the card bill, so its balance
     # should stay near zero; above this many cents (either way) the app shows a warning.
+    # The language the app starts in: "pt-BR" or "en" (Tally::Locales). Each browser can
+    # switch with the link in the menu. New databases get their starting categories named
+    # in this language too.
+    setting :default_locale, default: "pt-BR", constructor: Types::String.enum("pt-BR", "en")
+
     setting :pass_through_tolerance_cents, default: 5_000, constructor: Types::Params::Integer
   end
 end

@@ -9,15 +9,15 @@ module Tally
 
         def handle(request, response)
           proposed = (request.params[:proposed] || {}).to_h.to_h do |category_id, text|
-            [category_id.to_s.to_i, Tally::Money.parse(text.to_s, decimal: ",").cents]
+            [category_id.to_s.to_i, parse_amount(text.to_s).cents]
           end
           result = accept_plan.(id: request.params[:id].to_i, proposed:)
           halt 404 if result.failure? && result.failure == :not_found
-          halt 422, "Could not accept: #{result.failure}" if result.failure?
+          halt 422, t("errors.could_not_save", reason: result.failure) if result.failure?
 
           response.redirect_to routes.path(:budgets)
-        rescue Tally::Money::ParseError => e
-          halt 422, "Could not accept: #{e.message}"
+        rescue Tally::Money::ParseError
+          halt 422, t("errors.invalid_amount")
         end
       end
     end

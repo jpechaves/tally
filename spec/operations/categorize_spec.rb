@@ -50,6 +50,23 @@ RSpec.describe "Categorization", :db do
       expect(db[:category_rules].where(pattern: "\\bifood\\b").count).to eq(1)
       expect(db[:category_rules].where(id: rule).get(:disabled_at)).not_to be_nil
     end
+
+    it "names them in English for an English install, and never adds them twice across languages" do
+      expect(op("seed_categories").(locale: "en").value!).to eq(categories: 52, rules: Tally::Categories::RULES.size)
+      expect(db[:categories].where(name: "Groceries").first).to include(nature: "essential", max_cut_pct: 15)
+      expect(db[:categories].where(id: db[:categories].where(name: "Food delivery").get(:parent_id)).get(:name)).to eq("Food")
+      expect(db[:categories].where(name: "Supermercado").count).to eq(0)
+      expect(db[:category_rules].where(pattern: "\\bifood\\b").get(:category_id)).to eq(category_id("Food delivery"))
+
+      expect(op("seed_categories").(locale: "pt-BR").value!).to eq(categories: 0, rules: 0)
+    end
+
+    it "suggests the bank's category under its English name too" do
+      op("seed_categories").(locale: "en")
+      import("itau_2026-10.pdf")
+
+      expect(category_of("MERCADO EXEMPLOSAO PAUL")).to eq(["Groceries", "bank"])
+    end
   end
 
   describe "on import" do

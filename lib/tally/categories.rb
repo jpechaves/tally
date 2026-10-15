@@ -90,6 +90,42 @@ module Tally
       "automobile" => "Carro: seguro e manutenção"
     }.freeze
 
+    # The English names of the starting categories. The Portuguese names above are the
+    # keys: rules and bank hints name categories in Portuguese, and Categories.names finds
+    # a category under either name. A database gets its categories in the default locale
+    # once (SeedCategories); after that they are yours to rename, in any language.
+    ENGLISH = {
+      "Moradia" => "Housing", "Aluguel" => "Rent", "Condomínio" => "Condo fees", "Energia" => "Electricity",
+      "Água" => "Water", "Gás" => "Gas", "Internet e telefone" => "Internet and phone",
+      "Casa e manutenção" => "Home and repairs",
+      "Alimentação" => "Food", "Supermercado" => "Groceries", "Restaurantes" => "Restaurants",
+      "Delivery" => "Food delivery",
+      "Transporte" => "Transport", "Combustível" => "Fuel", "Aplicativo" => "Ride apps", "Estacionamento" => "Parking",
+      "Transporte público" => "Public transport", "Carro: seguro e manutenção" => "Car: insurance and upkeep",
+      "Saúde" => "Health", "Plano de saúde" => "Health insurance", "Farmácia" => "Pharmacy",
+      "Consultas e exames" => "Doctors and tests", "Academia" => "Gym",
+      "Compras" => "Shopping", "Vestuário e beleza" => "Clothing and beauty", "Compras online" => "Online shopping",
+      "Eletrônicos" => "Electronics",
+      "Lazer" => "Leisure", "Viagens" => "Travel", "Entretenimento" => "Entertainment",
+      "Assinaturas" => "Subscriptions", "Streaming e apps" => "Streaming and apps",
+      "Educação" => "Education", "Cursos e livros" => "Courses and books",
+      "Pets" => "Pets", "Pet shop e veterinário" => "Pet shop and vet",
+      "Dívidas" => "Debt", "Financiamentos" => "Loans", "Juros e encargos" => "Interest and charges",
+      "Tarifas" => "Fees", "Tarifas bancárias" => "Bank fees", "IOF" => "IOF",
+      "Impostos" => "Taxes", "Impostos e taxas" => "Taxes and duties",
+      "Transferências" => "Transfers", PIX_TO_PEOPLE => "Transfers (Pix)",
+      "Receitas" => "Income", "Salário" => "Salary", "Pró-labore" => "Owner's pay",
+      "Restituição de IR" => "Tax refund", "Reembolsos" => "Reimbursements", "Outros recebimentos" => "Other income"
+    }.freeze
+
+    # A starting category's name in a locale: "Supermercado" -> "Groceries" in "en".
+    def self.localized(name, locale)
+      locale.to_s == "en" ? ENGLISH.fetch(name) : name
+    end
+
+    # Every name a starting category may have, to find it whichever locale seeded it.
+    def self.names(name) = [name, ENGLISH.fetch(name)].uniq
+
     # "Água", " ÁGUA " -> "agua": what rules, hints and review groups compare.
     def self.fold(text)
       text.to_s.unicode_normalize(:nfkd).gsub(/\p{Mn}/, "").downcase.strip.squeeze(" ")

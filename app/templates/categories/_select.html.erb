@@ -2,7 +2,7 @@
   <% if blank %>
     <option value=""><%= blank %></option>
   <% else %>
-    <option value="" disabled<%= " selected" unless selected %>>Pick a category</option>
+    <option value="" disabled<%= " selected" unless selected %>><%= t("categories.pick") %></option>
   <% end %>
   <% category_groups(categories).each do |parent, options| %>
     <optgroup label="<%= parent %>">

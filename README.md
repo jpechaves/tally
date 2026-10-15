@@ -5,7 +5,7 @@ Personal finance tracker in Ruby ([Hanami 3](https://hanakai.org)) and SQLite. I
 - [docs/architecture.md](docs/architecture.md): goals, data model, money rules, milestones
 - [docs/statement-import.md](docs/statement-import.md): statement formats, re-import, categorization
 
-**Status:** milestone 5 (planner and budgets): statement import (Nubank account and card CSVs, Itaú card bill PDFs, re-imports that update instead of duplicating, transfers between your accounts), categories with a nature, generic rules and a review list grouped by payee, a monthly report, cut suggestions and an installment calendar, plus the "save X a month" planner, budgets and an on-track dashboard. Raspberry Pi deployment is next.
+**Status:** milestone 6 (localization): statement import (Nubank account and card CSVs, Itaú card bill PDFs, re-imports that update instead of duplicating, transfers between your accounts), categories with a nature, generic rules and a review list grouped by payee, a monthly report, cut suggestions and an installment calendar, plus the "save X a month" planner, budgets and an on-track dashboard, in Brazilian Portuguese or English. Raspberry Pi deployment is next.
 
 ## Requirements
 
@@ -34,6 +34,7 @@ Settings come from environment variables, loaded from `.env` files in developmen
 | `HANAMI_MAX_THREADS` | `2` | Puma threads; 2 suits the Pi Zero 2 W. |
 | `IMPORT_STORAGE_DIR` | `storage/imports` | Where each imported file is kept, named by its SHA-256. Gitignored. |
 | `PASS_THROUGH_TOLERANCE_CENTS` | `5000` | How far the Itaú account's balance may drift from zero before the Accounts page warns. |
+| `DEFAULT_LOCALE` | `pt-BR` | The language pages open in (`pt-BR` or `en`), and the one new databases get their starting categories in. Each browser can switch from the menu. |
 
 ## Importing statements
 

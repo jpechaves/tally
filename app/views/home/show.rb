@@ -13,11 +13,11 @@ module Tally
           pragma = ->(name) { db.fetch("PRAGMA #{name}").single_value }
 
           {
-            "SQLite version" => db.fetch("SELECT sqlite_version()").single_value,
-            "Journal mode" => pragma.("journal_mode"),
-            "Foreign keys" => pragma.("foreign_keys") == 1 ? "on" : "off",
-            "Synchronous" => {0 => "off", 1 => "normal", 2 => "full", 3 => "extra"}.fetch(pragma.("synchronous")),
-            "Busy timeout" => "#{pragma.("busy_timeout")} ms"
+            sqlite_version: db.fetch("SELECT sqlite_version()").single_value,
+            journal_mode: pragma.("journal_mode"),
+            foreign_keys: pragma.("foreign_keys") == 1 ? "on" : "off",
+            synchronous: {0 => "off", 1 => "normal", 2 => "full", 3 => "extra"}.fetch(pragma.("synchronous")),
+            busy_timeout: "#{pragma.("busy_timeout")} ms"
           }
         end
       end

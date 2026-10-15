@@ -215,6 +215,27 @@ RSpec.describe Tally::Money do
         expect(described_class.parse(money(cents).format).cents).to eq(cents)
       end
     end
+
+    it "writes English amounts with a decimal point" do
+      expect(money(123_456).format("en")).to eq("R$ 1,234.56")
+      expect(money(-706).format(:en)).to eq("-R$ 7.06")
+      expect(money(100_000_000).format("en")).to eq("R$ 1,000,000.00")
+      [0, -1, 123_456, -987_654_321].each do |cents|
+        expect(described_class.parse(money(cents).format("en"), decimal: ".").cents).to eq(cents)
+      end
+    end
+  end
+
+  describe "#to_field" do
+    it "writes the amount for a form, without grouping, in either locale" do
+      expect(money(123_456).to_field).to eq("1234,56")
+      expect(money(123_456).to_field("en")).to eq("1234.56")
+      expect(money(-5).to_field).to eq("-0,05")
+      [0, 7, -99, 123_456_789].each do |cents|
+        expect(described_class.parse(money(cents).to_field("en"), decimal: ".").cents).to eq(cents)
+        expect(described_class.parse(money(cents).to_field).cents).to eq(cents)
+      end
+    end
   end
 
   it "exposes the exact decimal value" do
