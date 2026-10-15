@@ -1,6 +1,6 @@
 # Design
 
-Tally looks like a dark product tool, after Linear's app: dense, quiet, and readable at a glance. The styles live in one file, `public/assets/app.css`, as custom properties at the top; templates use a handful of classes and no inline colors.
+Tally looks like a dark product tool, after Linear's app: dense, quiet, and readable at a glance. The reference it follows is [design-linear.app.md](design-linear.app.md), an analysis of Linear's design system (colors, type, spacing, components); this page says how Tally applies it and where it departs (a product UI rather than a marketing site, red and green for bad and good, and two data colors for charts). The styles live in one file, `public/assets/app.css`, as custom properties at the top; templates use a handful of classes and no inline colors.
 
 ## Principles
 
