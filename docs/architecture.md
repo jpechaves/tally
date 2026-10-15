@@ -171,7 +171,7 @@ categories
   nature        TEXT NULL       -- expenses only: fixed | essential | discretionary (see §8)
   max_cut_pct   INTEGER NULL    -- how far the planner may cut it; defaults by nature: 0 / 15 / 50
   archived_at   TEXT NULL
-  UNIQUE(parent_id, name)
+  UNIQUE(parent_id, name), and UNIQUE(name) among top-level categories (two partial indexes)
 
 counterparties                  -- who the money went to / came from
   name            TEXT NOT NULL
@@ -236,6 +236,7 @@ category_rules
   category_id   INTEGER NOT NULL REFERENCES categories(id)
   origin        TEXT NOT NULL   -- seed | learned | manual
   hits          INTEGER NOT NULL DEFAULT 0
+  disabled_at   TEXT NULL       -- switched off, not deleted, so a removed seed rule stays removed
 
 savings_plans                   -- one per accepted "save X a month" plan
   target_cents      INTEGER NOT NULL CHECK (target_cents > 0)
@@ -491,7 +492,8 @@ Only after version 1 is correct and in daily use. Each one only **suggests**; no
 
 - **Milestone 1 (skeleton)**: done. Hanami app, SQLite pragmas, `Money`, basic auth, `accounts` table, CI, privacy pre-commit check.
 - **Milestone 2 (import)**: done. The three importers with synthetic golden files (and an optional local check against real statements in `data/statements/`), upsert by `(account, external_id)`, import history, transfer pairing with mirror rows for Itaú conta and Nubank RDB, "This is me" for Pix to yourself, import / accounts / transactions / counterparties pages, and `rake tally:import[...]`.
-- **Next, milestone 3 (categorization)**.
+- **Milestone 3 (categorization)**: done. 52 seed categories with nature and maximum cut, generic seed rules for public merchants (`lib/tally/categories.rb`), the categorizer (counterparty default, rules, Itaú's category as a suggestion), Pix to people as Transferências (Pix), the review list grouped by payee with "always" (counterparty default or learned rule), per-transaction category and memo, categories and rules pages. Your own rules go in your database, or in a gitignored `data/seeds.rb`.
+- **Next, milestone 4 (where the money goes and what to cut)**.
 
 ## 17. Public repository: keeping personal data out
 

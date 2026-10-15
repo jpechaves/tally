@@ -10,8 +10,21 @@ module Tally
 
     get "/accounts", to: "accounts.index", as: :accounts
     get "/transactions", to: "transactions.index", as: :transactions
+    get "/transactions/:id", to: "transactions.show", as: :transaction
+    post "/transactions/:id", to: "transactions.update"
 
     get "/counterparties", to: "counterparties.index", as: :counterparties
     post "/counterparties/:id/self", to: "counterparties.mark_self", as: :mark_self
+
+    get "/review", to: "review.index", as: :review
+    post "/review", to: "review.assign"
+
+    get "/categories", to: "categories.index", as: :categories
+    post "/categories", to: "categories.create"
+    post "/categories/:id", to: "categories.update", as: :category
+
+    get "/rules", to: "rules.index", as: :rules
+    post "/rules", to: "rules.create"
+    post "/rules/:id/disable", to: "rules.disable", as: :disable_rule
   end
 end

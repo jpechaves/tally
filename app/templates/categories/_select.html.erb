@@ -1,0 +1,14 @@
+<select name="<%= name %>"<% if form %> form="<%= form %>"<% end %><% unless blank %> required<% end %>>
+  <% if blank %>
+    <option value=""><%= blank %></option>
+  <% else %>
+    <option value="" disabled<%= " selected" unless selected %>>Pick a category</option>
+  <% end %>
+  <% category_groups(categories).each do |parent, options| %>
+    <optgroup label="<%= parent %>">
+      <% options.each do |id, label| %>
+        <option value="<%= id %>"<%= " selected" if id == selected %>><%= label %></option>
+      <% end %>
+    </optgroup>
+  <% end %>
+</select>

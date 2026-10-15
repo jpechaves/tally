@@ -1,15 +1,11 @@
-# This seeds file should create the database records required to run the app.
-#
-# The code should be idempotent so that it can be executed at any time.
-#
-# To load the seeds, run `hanami db seed`. Seeds are also loaded as part of `hanami db prepare`.
+# frozen_string_literal: true
 
-# For example, if you have appropriate repos available:
+# Loaded by `hanami db seed` and `hanami db prepare`. Safe to run any time.
 #
-#   category_repo = Hanami.app["repos.category_repo"]
-#   category_repo.create(title: "General")
-#
-# Alternatively, you can use relations directly:
-#
-#   categories = Hanami.app["relations.categories"]
-#   categories.insert(title: "General")
+# The generic categories and rules (lib/tally/categories.rb):
+Hanami.app["operations.seed_categories"].call
+
+# Your own rules (your employer, utilities, people you pay) never go in the repository.
+# Put them in data/seeds.rb, which is gitignored, and they load here too.
+local = File.expand_path("../../data/seeds.rb", __dir__)
+load local if File.exist?(local)

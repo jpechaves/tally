@@ -1,0 +1,55 @@
+<main>
+  <h1>Categories</h1>
+  <% if error_message %><p class="error"><%= error_message %></p><% end %>
+  <p>The nature of each expense category tells the savings planner how far it may cut it: fixed 0%, essential up to
+    15%, discretionary up to 50%. Change the nature or the maximum cut to match your household.</p>
+  <table class="rows">
+    <thead><tr><th>Category</th><th>Nature</th><th class="num">Max cut %</th><th class="num">Rows</th><th class="num">Net</th><th>Archived</th><th></th></tr></thead>
+    <tbody>
+      <% categories.each do |category| %>
+        <% form = "category-#{category[:id]}" %>
+        <tr class="<%= "missing" if category[:archived_at] %>">
+          <td><%= category[:parent_id] ? "#{category[:parent_name]} › " : "" %><input name="name" value="<%= category[:name] %>" form="<%= form %>" size="22"></td>
+          <td>
+            <% if category[:kind] == "expense" %>
+              <select name="nature" form="<%= form %>">
+                <option value="">none</option>
+                <% natures.each do |nature| %>
+                  <option value="<%= nature %>"<%= " selected" if nature == category[:nature] %>><%= nature %></option>
+                <% end %>
+              </select>
+            <% else %>
+              income
+            <% end %>
+          </td>
+          <td class="num"><% if category[:kind] == "expense" %><input name="max_cut_pct" type="number" min="0" max="100" value="<%= category[:max_cut_pct] %>" form="<%= form %>" style="width: 4em"><% end %></td>
+          <td class="num"><%= category[:rows] %></td>
+          <td class="num"><%= money(category[:total_cents]) %></td>
+          <td><input type="checkbox" name="archived" value="1" form="<%= form %>"<%= " checked" if category[:archived_at] %>></td>
+          <td><form id="<%= form %>" action="/categories/<%= category[:id] %>" method="post"><button type="submit">Save</button></form></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+
+  <h2>Add a category</h2>
+  <form action="/categories" method="post" class="inline">
+    <input name="name" placeholder="Name" required>
+    <select name="parent_id">
+      <option value="">Top level</option>
+      <% parents.each do |parent| %>
+        <option value="<%= parent[:id] %>">under <%= parent[:name] %></option>
+      <% end %>
+    </select>
+    <select name="kind">
+      <option value="expense">expense</option>
+      <option value="income">income</option>
+    </select>
+    <select name="nature">
+      <option value="">nature (expenses)</option>
+      <% natures.each do |nature| %><option value="<%= nature %>"><%= nature %></option><% end %>
+    </select>
+    <button type="submit">Add</button>
+  </form>
+  <p class="note">Under a parent, the kind comes from the parent.</p>
+</main>
