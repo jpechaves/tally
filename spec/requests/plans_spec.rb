@@ -33,7 +33,7 @@ RSpec.describe "Savings plan and budgets", :db, type: :request do
     expect(delivery).to include(baseline_cents: 2_407) # (45,90 + 47,80 - 21,50) / 3, with the card's iFood refund netted
 
     post "/plan/#{plan[:id]}/accept", proposed: {category_id("Delivery").to_s => "10,00"}
-    expect(last_response.headers["Location"]).to end_with("/budgets")
+    expect(last_response.headers["Location"]).to end_with("/budgets?month=2026-09")
     expect(db[:savings_plans].where(id: plan[:id]).get(:status)).to eq("active")
     expect(db[:budgets].where(category_id: category_id("Delivery")).first).to include(month: "2026-09", amount_cents: 1_000)
     expect(db[:budgets].count).to eq(db[:savings_plan_lines].count)
@@ -82,6 +82,55 @@ RSpec.describe "Savings plan and budgets", :db, type: :request do
     get "/budgets", month: "2026-09"
     expect(last_response.body).to include("2026-09 is over.", "Target missed", "Over budget: Delivery (R$ 35,90)")
     expect(last_response.body).to include("Month-end scores")
+  end
+
+  it "runs the plan's live recalculation from a script file the Content Security Policy allows" do
+    post "/plan", target: "1.000,00", starts_month: "2026-09"
+    follow_redirect!
+
+    expect(last_response.headers["Content-Security-Policy"]).to include("script-src 'self'")
+    expect(last_response.body).to include(%(<script src="/scripts/plan.js"></script>), %(data-target="100000"))
+    expect(last_response.body.scan(/<script[^>]*>/)).to eq([%(<script src="/scripts/plan.js">)])
+
+    get "/scripts/plan.js"
+    expect(last_response.status).to eq(200)
+    expect(last_response.headers["Content-Type"]).to start_with("text/javascript")
+    expect(last_response.body).to include("new-saved", "confirmShort")
+
+    get "/scripts/other.js"
+    expect(last_response.status).to eq(404)
+  end
+
+  it "warns when the accepted limits save less than the target" do
+    post "/plan", target: "1.000.000,00", starts_month: "2026-09"
+    post "/plan/#{db[:savings_plans].max(:id)}/accept"
+    follow_redirect!
+
+    expect(last_response.body).to match(/short of its R\$ 1\.000\.000,00 target/)
+  end
+
+  it "shows the plan's target only from the month the plan starts" do
+    post "/plan", target: "1.000,00", starts_month: "2026-09"
+    post "/plan/#{db[:savings_plans].max(:id)}/accept"
+    post "/budgets", category_id: category_id("Delivery").to_s, month: "2026-08", amount: "10,00"
+
+    get "/budgets", month: "2026-08"
+    expect(last_response.body).to include("Projected")
+    expect(last_response.body).not_to include("Target<strong>")
+
+    get "/budgets", month: "2026-09"
+    expect(last_response.body).to include("Target<strong>R$ 1.000,00</strong>")
+  end
+
+  it "sends an invalid limit back to the page with an error" do
+    post "/budgets", category_id: category_id("Delivery").to_s, month: "2026-09", amount: "abc"
+    expect(last_response.headers["Location"]).to end_with("/budgets?month=2026-09&error=invalid_amount")
+    follow_redirect!
+    expect(last_response.body).to include("A limit is an amount of zero or more")
+
+    post "/budgets", category_id: "999999", month: "2026-09", amount: "10,00"
+    follow_redirect!
+    expect(last_response.body).to include("Pick a month and a spending category.")
   end
 
   it "says there are no budgets before a plan" do

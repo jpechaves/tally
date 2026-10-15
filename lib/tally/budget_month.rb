@@ -24,15 +24,18 @@ module Tally
     # @param budgets [Hash{Integer => Integer}] category id => monthly limit in cents
     # @param categories [Hash{Integer => Hash}] category id => {name:, parent_name:}
     # @param target_cents [Integer, nil] the active plan's target
-    # @param expected_income_cents [Integer] the income the plan expects in a month
+    # @param expected_income_cents [Integer] the income expected in a month
+    # @param expected_unbudgeted_cents [Integer] the spending expected outside the budgets in a month
     # @param today [Date]
-    def initialize(rows, month:, budgets:, categories:, today:, target_cents: nil, expected_income_cents: 0)
+    def initialize(rows, month:, budgets:, categories:, today:, target_cents: nil, expected_income_cents: 0,
+      expected_unbudgeted_cents: 0)
       @month = month
       @rows = rows.select { Insights.month_of(_1) == month }
       @budgets = budgets
       @categories = categories
       @target_cents = target_cents
       @expected_income_cents = expected_income_cents
+      @expected_unbudgeted_cents = expected_unbudgeted_cents
       @first = Date.new(month[0, 4].to_i, month[5, 2].to_i, 1)
       @days = (@first >> 1) - @first
       @elapsed_days = if today < @first then 0
@@ -64,12 +67,15 @@ module Tally
     # Spending in categories with no budget (and rows with no category).
     def unbudgeted_cents = spending_cents - lines.sum(&:spent_cents)
 
-    # Income so far plus what's still expected, minus spending so far plus what's left in
-    # each budget. Spending outside the budgets so far counts; more of it isn't guessed.
+    # Income so far plus what's still expected, minus spending so far, what's left in each
+    # budget, and what's still expected outside the budgets: spending there is treated like
+    # one more budget whose limit is its usual amount.
     def projected_saved_cents
       income = [income_cents, @expected_income_cents].max
-      income - spending_cents - lines.sum { [_1.left_cents, 0].max }
+      income - spending_cents - lines.sum { [_1.left_cents, 0].max } - unbudgeted_left_cents
     end
+
+    def unbudgeted_left_cents = complete? ? 0 : [@expected_unbudgeted_cents - unbudgeted_cents, 0].max
 
     def on_track? = target_cents.nil? || projected_saved_cents >= target_cents
 

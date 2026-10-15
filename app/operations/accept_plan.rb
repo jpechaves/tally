@@ -16,7 +16,7 @@ module Tally
 
         known = plan_repo.lines(id).map { _1[:category_id] }
         transaction { plan_repo.accept(id, proposed: proposed.slice(*known)) }
-        id
+        plan
       end
     end
   end

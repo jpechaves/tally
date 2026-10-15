@@ -18,7 +18,10 @@
       short of the gap. The other levers are below.</p>
   <% end %>
 
-  <form action="/plan/<%= plan[:id] %>/accept" method="post" id="plan">
+  <form action="/plan/<%= plan[:id] %>/accept" method="post" id="plan" data-today="<%= saved_today_cents %>"
+    data-target="<%= plan[:target_cents] %>" data-decimal="," data-locale="pt-BR" data-currency="R$"
+    data-reaches="reaches the target" data-short="short of the target"
+    data-confirm-short="These limits save less than the target. Accept them anyway?">
     <table class="rows">
       <thead><tr><th>Category</th><th>Nature</th><th class="num">Today</th><th class="num">May cut</th><th class="num">New limit</th><th class="num">Cut</th></tr></thead>
       <tbody>
@@ -65,26 +68,5 @@
     <% end %>
   <% end %>
 
-  <script>
-    (() => {
-      const form = document.getElementById("plan");
-      const inputs = form.querySelectorAll("input[data-baseline]");
-      if (!inputs.length) return;
-      const today = <%= saved_today_cents %>, target = <%= plan[:target_cents] %>;
-      const cents = (text) => Math.round(parseFloat(text.replace(/\./g, "").replace(",", ".")) * 100);
-      const brl = (c) => (c < 0 ? "-" : "") + "R$ " + (Math.abs(c) / 100).toLocaleString("pt-BR", {minimumFractionDigits: 2});
-      const update = () => {
-        let cuts = 0;
-        inputs.forEach((input) => {
-          const value = cents(input.value);
-          const cut = isNaN(value) ? 0 : Number(input.dataset.baseline) - value;
-          cuts += cut;
-          input.closest("tr").querySelector("[data-cut]").textContent = brl(cut);
-        });
-        document.getElementById("new-saved").textContent = brl(today + cuts);
-        document.getElementById("verdict").textContent = today + cuts >= target ? "reaches the target" : "short of the target";
-      };
-      inputs.forEach((input) => input.addEventListener("input", update));
-    })();
-  </script>
+  <script src="/scripts/plan.js"></script>
 </main>
