@@ -206,6 +206,9 @@ pt-BR:
       all_accounts: Todas as contas
       all_months: Todos os meses
       empty: Nenhum lançamento.
+      next: Próxima
+      page: "Página %{page} de %{pages}"
+      previous: Anterior
       summary: "%{rows}, saldo %{net}."
       title: Lançamentos
     show:

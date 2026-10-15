@@ -19,7 +19,7 @@ module Tally
       def rows(ids) = transactions.dataset.where(id: ids).order(:id).all
 
       # A page of transactions, newest first, with account and counterparty names.
-      def list(account_id: nil, month: nil, import_id: nil, missing: false, id: nil, limit: 500)
+      def list(account_id: nil, month: nil, import_id: nil, missing: false, id: nil, limit: 500, offset: 0)
         scope = transactions.dataset
           .join(:accounts, id: :account_id)
           .left_join(:counterparties, id: Sequel[:transactions][:counterparty_id])
@@ -34,14 +34,17 @@ module Tally
             Sequel[:categories][:name].as(:category_name)
           )
         scope = scope.where(Sequel[:transactions][:id] => id) if id
-        scope = scope.where(Sequel[:transactions][:account_id] => account_id) if account_id
-        if month
-          scope = scope.where(Sequel.function(:substr, Sequel[:transactions][:occurred_on], 1, 7) => month)
-        end
+        scope = filter(scope, account_id:, month:)
         scope = scope.where(Sequel[:transactions][:missing_since_import_id] => import_id) if missing && import_id
         scope = scope.where(Sequel[:transactions][:last_import_id] => import_id) if import_id && !missing
         scope.order(Sequel.desc(Sequel[:transactions][:occurred_on]), Sequel.desc(Sequel[:transactions][:id]))
-          .limit(limit).all
+          .limit(limit, offset).all
+      end
+
+      # How many rows match the account and month filters, and their net, across all pages.
+      def totals(account_id: nil, month: nil)
+        scope = filter(transactions.dataset.unordered, account_id:, month:)
+        {rows: scope.count, total_cents: scope.sum(Sequel[:transactions][:amount_cents]) || 0}
       end
 
       # Months that have rows, newest first ("2026-09", ...).
@@ -198,6 +201,14 @@ module Tally
       def mirror?(row) = row[:external_id].start_with?(MIRROR_PREFIX)
 
       def mirror_external_id(source_id) = "#{MIRROR_PREFIX}#{source_id}"
+
+      private
+
+      def filter(scope, account_id:, month:)
+        scope = scope.where(Sequel[:transactions][:account_id] => account_id) if account_id
+        scope = scope.where(Sequel.function(:substr, Sequel[:transactions][:occurred_on], 1, 7) => month) if month
+        scope
+      end
     end
   end
 end

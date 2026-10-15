@@ -63,6 +63,28 @@ RSpec.describe "Importing statements", :db, type: :request do
     expect(last_response.body).to include("16 rows", "ENERGIA EXEMPLO S.A.", "transfer ↔ Nubank RDB")
   end
 
+  it "pages the transactions, with the count and net of all of them" do
+    stub_const("Tally::Views::Transactions::Index::PER_PAGE", 5)
+    upload("NU_12345678_01JUL2026_31JUL2026.csv")
+    account = db[:accounts].where(name: "Nubank conta").get(:id)
+    net = db[:transactions].where(account_id: account).sum(:amount_cents)
+    rows = ->(body) { body.scan(%r{<a href="/transactions/\d+">}).size }
+
+    get "/transactions", account:, month: "2026-07"
+    body = last_response.body
+    expect(body).to include("16 rows, net #{Tally::Money.new(net).format("en")}", "Page 1 of 4")
+    expect(body).to include(%(href="/transactions?account=#{account}&amp;month=2026-07&amp;page=2">Next))
+    expect(body).not_to include("Previous")
+    expect(rows.(body)).to eq(5)
+
+    get "/transactions", account:, month: "2026-07", page: "4"
+    expect(last_response.body).to include("Page 4 of 4", "Previous").and(satisfy { rows.(_1) == 1 })
+    expect(last_response.body).not_to include("Next →")
+
+    get "/transactions", account:, month: "2026-07", page: "99"
+    expect(last_response.body).to include("Page 4 of 4")
+  end
+
   it "lets you mark yourself, turning a Pix to yourself into a transfer" do
     upload("NU_12345678_01JUL2026_31JUL2026.csv")
     me = db[:counterparties].where(name: "MARIA E SOUZA").get(:id)
