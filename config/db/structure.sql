@@ -173,7 +173,14 @@ CREATE INDEX `transactions_category_id_occurred_on_index` ON `transactions`(
   `category_id`,
   `occurred_on`
 );
+CREATE TABLE `dismissed_suggestions`(
+  `id` integer NOT NULL PRIMARY KEY AUTOINCREMENT,
+  `key` text NOT NULL UNIQUE,
+  `title` text NOT NULL,
+  `created_at` text DEFAULT((strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))) NOT NULL
+) STRICT;
 INSERT INTO schema_migrations (filename) VALUES
 ('20261015000000_create_accounts.rb'),
 ('20261015100000_create_import_tables.rb'),
-('20261016000000_create_categories.rb');
+('20261016000000_create_categories.rb'),
+('20261017000000_create_dismissed_suggestions.rb');
