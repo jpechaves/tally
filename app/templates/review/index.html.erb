@@ -1,0 +1,32 @@
+<main>
+  <h1>Review</h1>
+  <% if saved %><p class="notice">Saved <%= saved %> rows.</p><% end %>
+  <% if groups.empty? %>
+    <p>Nothing to review: every row has a category.</p>
+  <% else %>
+    <p><%= uncategorized %> rows have no category and <%= suggested %> only have the bank's suggestion, in
+      <%= groups.size %> groups, biggest first. Pick a category for a group: with "always", the payee's other rows,
+      past and future, get it too.</p>
+    <% groups.each do |group| %>
+      <section class="group">
+        <h2><%= group.label %> · <%= group.rows.size %> <%= group.rows.size == 1 ? "row" : "rows" %> · <%= money(group.total_cents) %>
+          <% if group.suggested_category_id %><span class="suggested">· the bank suggests <%= group.suggested_category_name %></span><% end %></h2>
+        <form action="/review" method="post">
+          <input type="hidden" name="ids" value="<%= group.ids.join(",") %>">
+          <% if group.counterparty_id %>
+            <input type="hidden" name="counterparty_id" value="<%= group.counterparty_id %>">
+          <% else %>
+            <input type="hidden" name="pattern" value="<%= group.pattern %>">
+          <% end %>
+          <%= render "categories/select", name: "category_id", selected: group.suggested_category_id, categories: categories, blank: nil, form: nil %>
+          <label><input type="checkbox" name="always" value="1" checked> Always for <%= group.label %></label>
+          <button type="submit">Save</button>
+        </form>
+        <details>
+          <summary class="note">Rows</summary>
+          <%= render "transactions/table", rows: group.rows %>
+        </details>
+      </section>
+    <% end %>
+  <% end %>
+</main>

@@ -38,6 +38,10 @@ module Tally
           .to_a
       end
 
+      def set_default_category(id, category_id)
+        counterparties.dataset.where(id:).update(default_category_id: category_id, updated_at: Repos.now)
+      end
+
       def set_self(id, value)
         counterparties.dataset.where(id:).update(is_self: value ? 1 : 0, updated_at: Repos.now)
       end

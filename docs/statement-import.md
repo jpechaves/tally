@@ -168,34 +168,38 @@ This is a default and easy to switch. It only changes which month a row counts t
 
 The goal is to fill in as much as possible automatically, then make the remaining rows quick to fix by hand.
 
-Each new row goes through these steps in order. The first one that matches sets the category and `category_source`:
+Each row goes through these steps in order (`Tally::Categorizer`). The first one that matches sets the category and `category_source`:
 
 1. **Transfers are never spending.** RDB moves, Itaú `Pagamento via conta`, and Pix to a counterparty marked `is_self` are marked as transfers and get no category. `Pagamento de fatura` (account) and `Pagamento recebido` (card) are the two legs of one transfer. You mark your own name and masked CPF with "This is me" on the Counterparties page, which sets `is_self` in your local database and turns your past Pix to yourself into transfers too. A Pix to yourself at Itaú becomes a transfer to "Itaú conta".
 2. **Counterparty default**: if the counterparty has a `default_category_id`, use it.
-3. **Rules** from `category_rules`, lowest `priority` first, matching on CNPJ, counterparty name, description, bank category, kind, and optional amount range.
-4. **Bank hint**: map Itaú's `bank_category` to an app category (`supermercado` → Alimentação > Supermercado, `restaurante` → Alimentação > Restaurantes, `viagem` → Transporte > Viagens, `saúde` → Saúde, …). These rows are marked `category_source = 'bank'`, so they show as "suggested".
-5. **Nothing matched**: the row stays uncategorized and goes to the review queue.
+3. **Rules** from `category_rules`, lowest `priority` first, matching on CNPJ/CPF, counterparty name, description (cleaned or as printed), bank category or kind, with an optional amount range. Text is compared without accents and ignoring case.
+4. **Bank hint**: map Itaú's `bank_category` to an app category (`supermercado` → Supermercado, `restaurante` → Restaurantes, `viagem` → Viagens, `saúde` → Consultas e exames, `vestuário` → Vestuário e beleza, …). These rows are marked `category_source = 'bank'`, so they show as "suggested".
+5. **Nothing matched**: the row stays uncategorized and goes to the review list.
 
-**Review queue**: uncategorized and bank-suggested rows, **grouped by counterparty**, with a total for each group. Picking a category for a group asks "always use this for <counterparty>?". A yes creates a `learned` rule (or sets the counterparty default) and re-applies it to every past row that isn't `manual`. Since most rows come from a few dozen counterparties, a handful of clicks covers a whole month.
+An income category only applies to money in (kind `income`) and an expense category to everything else, so a payee that pays you and also sells to you can't mix the two. Rows you categorize by hand are `manual`: imports and rules never change them. Every import, "This is me", and change to a rule, a counterparty default or an archived category categorizes the affected rows again.
 
-**Seed rules** shipped in the repository are generic: well-known public merchants matched by name, so they work for any household. Examples:
+**Review list** (`/review`): uncategorized and bank-suggested rows, **grouped by counterparty** (card rows, which have none, by the words of their description, so `FARMACIA EXEMPLO 4021` and `FARMACIA EXEMPLO 1187` go together), biggest total first. Picking a category for a group with "always" checked sets the counterparty default, or for card rows creates a `learned` rule matching the description's words, and re-applies it to every past row that isn't `manual`. Without "always", only those rows change, by hand. On four months of real statements the ten biggest groups held over 80% of the uncategorized money.
+
+**Seed rules** shipped in the repository (`lib/tally/categories.rb`) are generic: well-known public merchants matched by name, so they work for any household. Seeding adds what is missing and never changes or brings back what you edited, archived or removed. Examples:
 
 | Match | Category |
 |---|---|
-| IFOOD, "NuPay - iFood" | Alimentação > Delivery |
+| IFOOD, RAPPI | Alimentação > Delivery |
 | UBER, 99 TECNOLOGIA | Transporte > Aplicativo |
 | POSTO …, SHELL, IPIRANGA | Transporte > Combustível |
-| ESTACIONAMENTO…, PARKING | Transporte > Estacionamento |
+| ESTACIONAMENTO…, PARKING, SEM PARAR | Transporte > Estacionamento |
 | DROGASIL, DROGA RAIA, PAGUE MENOS | Saúde > Farmácia |
-| PETZ, PETLOVE, COBASI | Pets |
-| LATAM, GOL, AZUL | Transporte > Viagens |
-| NETFLIX, SPOTIFY, AMAZON PRIME, DL*GOOGLE | Assinaturas |
+| PETZ, PETLOVE, COBASI | Pets > Pet shop e veterinário |
+| LATAM, GOL, AZUL, AIRBNB | Lazer > Viagens |
+| NETFLIX, SPOTIFY, AMAZON PRIME, DL*GOOGLE | Assinaturas > Streaming e apps |
+| AMAZON, MERCADO LIVRE, SHOPEE | Compras > Compras online |
+| IOF … | Tarifas > IOF |
 | SECR. DA RECEITA FEDERAL (received) | Receitas > Restituição de IR |
-| Itaú `Mensalidade` / `Anuidade` | Tarifas bancárias |
+| Itaú `Mensalidade` / `Anuidade`, any other fee | Tarifas > Tarifas bancárias |
 
-Rules for your own counterparties (your employer, your company, your utilities by CNPJ, your gym, people you pay) are created in your local database, through the review queue or a local seed file in `data/`, never in the repository.
+Rules for your own counterparties (your employer, your company, your utilities by CNPJ, your gym, people you pay) are created in your local database, through the review list or the Rules page, or in a gitignored `data/seeds.rb` loaded by `hanami db seed`, never in the repository.
 
-**Pix sent to people** (CPF recipients) are auto-categorized as **Transferências (Pix)**, their own category. They count as spending, with nature essential, so the planner trims them by 15% at most. You can still move one recipient to a real category (for example rent or a cleaner) with a counterparty rule. Pix to your own accounts stays a transfer and is never spending.
+**Pix sent to people** (masked-CPF recipients, and Pix paid with the Nubank card) are auto-categorized as **Transferências (Pix)**, their own category, by two catch-all seed rules at priority 900. They count as spending, with nature essential, so the planner trims them by 15% at most. You can still move one recipient to a real category (for example rent or a cleaner) with a counterparty rule. Pix to your own accounts stays a transfer and is never spending.
 
 Every row also keeps as much detail as the statement gives: counterparty with CPF/CNPJ and bank details, bank category, city, installment n/m with a link to the other installments, the bill it belongs to, the raw line, and the import it came from.
 

@@ -5,7 +5,7 @@ Personal finance tracker in Ruby ([Hanami 3](https://hanakai.org)) and SQLite. I
 - [docs/architecture.md](docs/architecture.md): goals, data model, money rules, milestones
 - [docs/statement-import.md](docs/statement-import.md): statement formats, re-import, categorization
 
-**Status:** milestone 2 (statement import): Nubank account and card CSVs and Itaú card bill PDFs, re-imports that update instead of duplicating, transfers between your accounts. Categorization is next.
+**Status:** milestone 3 (categorization): statement import (Nubank account and card CSVs, Itaú card bill PDFs, re-imports that update instead of duplicating, transfers between your accounts), plus categories with a nature, generic rules, and a review list grouped by payee. The monthly report and cut suggestions are next.
 
 ## Requirements
 
@@ -54,6 +54,12 @@ Importing a file again updates its rows instead of duplicating them, flags rows 
 To check the parsers against your real statements without committing them, put them in `data/statements/` (gitignored) and run `bundle exec rspec spec/local`.
 
 Itaú bill fixtures are generated: after changing `spec/support/statements/itau_bills.rb`, run `bundle exec ruby spec/support/statements/build_fixtures.rb`.
+
+## Categorizing
+
+Imports categorize rows as they arrive: generic rules for public merchants (iFood, Uber, pharmacies, streaming…), Pix to people as Transferências (Pix), and Itaú's own category as a suggestion. Open **Review** for the rest: rows are grouped by payee, biggest first, and one pick with "always" covers that payee's past and future rows. **Categories** sets each category's nature (fixed, essential, discretionary) and how far the savings planner may cut it; **Rules** lists every rule with how many rows it covers.
+
+The categories and generic rules are seeded by `bin/hanami db seed` (and on the first import). Rules about your own payees stay in your database; to keep some in a file, put them in `data/seeds.rb` (gitignored), which the seed loads.
 
 ## Money
 

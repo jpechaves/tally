@@ -18,6 +18,11 @@
       .error, .status-rejected, .check-warning, .warning { color: #cf222e; }
       .status-applied, .check-ok { color: #1a7f37; }
       .filters { display: flex; gap: .5rem; margin-bottom: 1rem; }
+      .group { border-top: 1px solid #d0d7de; padding: .75rem 0; }
+      .group h2 { font-size: 1rem; margin: 0 0 .5rem; }
+      .group form, form.inline { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+      .suggested { color: #9a6700; }
+      .notice { background: #fff8c5; padding: .5rem .75rem; }
     </style>
   </head>
   <body>
@@ -26,6 +31,9 @@
       <a href="/imports">Import</a>
       <a href="/accounts">Accounts</a>
       <a href="/transactions">Transactions</a>
+      <a href="/review">Review</a>
+      <a href="/categories">Categories</a>
+      <a href="/rules">Rules</a>
       <a href="/counterparties">Counterparties</a>
     </nav>
     <%= yield %>
