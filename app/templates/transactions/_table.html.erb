@@ -4,7 +4,7 @@
   </thead>
   <tbody>
     <% rows.each do |row| %>
-      <tr<% if row[:missing_since_import_id] %> class="missing"<% end %>>
+      <tr class="<%= "missing" if row[:missing_since_import_id] %>">
         <td><%= row[:occurred_on] %></td>
         <td><%= row[:account_name] %></td>
         <td title="<%= row[:raw_description] %>"><%= row[:description] %></td>

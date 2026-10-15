@@ -8,7 +8,9 @@ module Tally
   module Operations
     # Imports one statement file (docs/statement-import.md, section 4):
     #
-    # 1. The same bytes already applied: logged as duplicate_file, nothing else.
+    # 1. The same bytes already in effect (the latest applied version of that statement):
+    #    logged as duplicate_file, nothing else. Bytes applied before but since replaced by
+    #    an edited copy are applied again.
     # 2. Parse and check. A file that fails is logged as rejected, and nothing else is
     #    written.
     # 3. In one DB transaction: upsert each row by (account, external_id), flag rows the
@@ -42,7 +44,8 @@ module Tally
         file = {file_name: File.basename(file_name.to_s), file_sha256: Digest::SHA256.hexdigest(content),
                 file_size: content.bytesize}
 
-        if (previous = import_repo.applied_with_sha(file[:file_sha256]))
+        previous = import_repo.applied_with_sha(file[:file_sha256])
+        if previous && import_repo.latest_applied_like(previous).file_sha256 == previous.file_sha256
           return import_repo.create(**file, status: "duplicate_file", source: previous.source,
             account_id: previous.account_id, period_start: previous.period_start, period_end: previous.period_end)
         end
