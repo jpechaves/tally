@@ -147,6 +147,17 @@ module Tally
 
       def card_statement(id) = card_statements.dataset.where(id:).first
 
+      # Each card's latest bill, with what the bank says is already committed to the next
+      # ones (Itaú prints it; Nubank's CSV doesn't).
+      def card_statements_with_account
+        latest = card_statements.dataset.unordered.group(:account_id).select { max(:due_on).as(:due_on) }.select_append(:account_id)
+        card_statements.dataset
+          .join(latest.as(:latest), account_id: :account_id, due_on: :due_on)
+          .join(:accounts, id: Sequel[:card_statements][:account_id])
+          .select_all(:card_statements).select_append(Sequel[:accounts][:name].as(:account_name))
+          .order(Sequel[:accounts][:name]).all
+      end
+
       # --- Transfers ------------------------------------------------------------------
 
       def unpaired_transfers

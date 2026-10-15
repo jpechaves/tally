@@ -16,6 +16,12 @@ module Tally
     get "/counterparties", to: "counterparties.index", as: :counterparties
     post "/counterparties/:id/self", to: "counterparties.mark_self", as: :mark_self
 
+    get "/report", to: "report.show", as: :report
+    get "/cuts", to: "cuts.index", as: :cuts
+    post "/cuts/dismiss", to: "cuts.dismiss", as: :dismiss_cut
+    post "/cuts/:id/restore", to: "cuts.restore", as: :restore_cut
+    get "/installments", to: "installments.index", as: :installments
+
     get "/review", to: "review.index", as: :review
     post "/review", to: "review.assign"
 
