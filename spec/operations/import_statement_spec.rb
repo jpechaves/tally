@@ -61,6 +61,20 @@ RSpec.describe Tally::Operations::ImportStatement, :db do
       )
     end
 
+    it "makes a card merchant's variants one counterparty, named by its stable part" do
+      repo = Hanami.app["repos.counterparty_repo"]
+      ids = ["AEREA EXEMPLO*AB12", "AEREA EXEMPLO*CD34", "Aerea Exemplo", "AEREA EXEMPLO LINHAS*9876",
+        "PAG*Aerea Exemplo"].map { repo.upsert(name: _1).id }
+
+      expect(ids.uniq.size).to eq(1)
+      expect(db[:counterparties].where(id: ids.first).get(:name)).to eq("AEREA EXEMPLO")
+
+      cut = repo.upsert(name: "PADARIA EXEMPLO CENT").id
+      expect(repo.upsert(name: "Padaria Exemplo Centro").id).to eq(cut)
+      expect(repo.upsert(name: "PADARIA").id).not_to eq(cut)
+      expect(repo.upsert(name: "AEREA EXEMPLO", document: "123.456.789-01").id).not_to eq(ids.first)
+    end
+
     it "saves the card bill's figures" do
       import("itau_2026-10.pdf")
 
