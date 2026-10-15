@@ -16,7 +16,7 @@
     <%= render "charts/trend", title: t("report.show.trend"), trend: trend, month: month %>
 
     <h2><%= t("report.show.by_category") %></h2>
-    <table class="rows">
+    <div class="scroll"><table class="rows">
       <%= render "report/head", first: t("report.show.category") %>
       <tbody>
         <% report.categories.each do |line| %>
@@ -26,24 +26,24 @@
           <% end %>
         <% end %>
       </tbody>
-    </table>
+    </table></div>
     <p class="note"><%= t("report.show.uncategorized_note_html", name: t("report.show.uncategorized")) %></p>
 
     <h2><%= t("report.show.by_nature") %></h2>
-    <table class="rows">
+    <div class="scroll"><table class="rows">
       <%= render "report/head", first: t("report.show.nature") %>
       <tbody>
         <% report.natures.each do |line| %><%= render "report/line", line: line, label: nature_label(line.name == "unset" ? nil : line.name), css: "" %><% end %>
       </tbody>
-    </table>
+    </table></div>
 
     <h2><%= t("report.show.top_payees") %></h2>
-    <table class="rows">
+    <div class="scroll"><table class="rows">
       <%= render "report/head", first: t("report.show.payee") %>
       <tbody>
         <% report.payees.each do |line| %><%= render "report/line", line: line, label: line.name, css: "" %><% end %>
       </tbody>
-    </table>
+    </table></div>
 
     <h2><%= t("report.show.installments") %></h2>
     <% if report.installments.empty? %>
@@ -51,7 +51,7 @@
     <% else %>
       <p><%= t("report.show.installments_summary", amount: money(report.installments_cents), count: report.installments.size) %>
         <a href="/installments"><%= t("report.show.committed_next") %></a>.</p>
-      <table class="rows">
+      <div class="scroll"><table class="rows">
         <thead><tr><th><%= t("report.show.purchase") %></th><th><%= t("report.show.installment") %></th><th><%= t("report.show.ends") %></th><th class="num"><%= t("report.show.amount") %></th></tr></thead>
         <tbody>
           <% report.installments.each do |item| %>
@@ -63,7 +63,7 @@
             </tr>
           <% end %>
         </tbody>
-      </table>
+      </table></div>
     <% end %>
   <% end %>
 </main>

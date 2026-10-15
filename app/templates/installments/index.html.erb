@@ -12,7 +12,7 @@
         series: [{name: t("installments.index.committed"), css: "s-spending", values: calendar.months.values}]
       ) %>
     </section>
-    <table class="rows">
+    <div class="scroll"><table class="rows">
       <thead><tr><th><%= t("installments.index.month") %></th><th class="num"><%= t("installments.index.committed") %></th><th class="num"><%= t("installments.index.freed") %></th></tr></thead>
       <tbody>
         <% previous = nil %>
@@ -25,10 +25,10 @@
           <% previous = cents %>
         <% end %>
       </tbody>
-    </table>
+    </table></div>
 
     <h2><%= t("installments.index.purchases_title") %></h2>
-    <table class="rows">
+    <div class="scroll"><table class="rows">
       <thead><tr><th><%= t("installments.index.purchase") %></th><th><%= t("installments.index.card") %></th><th><%= t("installments.index.paid") %></th><th><%= t("installments.index.last_one") %></th><th class="num"><%= t("installments.index.each") %></th><th class="num"><%= t("installments.index.left_from", month: month_label(calendar.from)) %></th></tr></thead>
       <tbody>
         <% calendar.purchases.each do |purchase| %>
@@ -42,12 +42,12 @@
           </tr>
         <% end %>
       </tbody>
-    </table>
+    </table></div>
   <% end %>
 
   <% unless bills.empty? %>
     <h2><%= t("installments.index.banks") %></h2>
-    <table class="rows">
+    <div class="scroll"><table class="rows">
       <thead><tr><th><%= t("installments.index.card") %></th><th><%= t("installments.index.latest_due") %></th><th class="num"><%= t("installments.index.next_bill") %></th><th class="num"><%= t("installments.index.later_bills") %></th></tr></thead>
       <tbody>
         <% bills.each do |bill| %>
@@ -59,7 +59,7 @@
           </tr>
         <% end %>
       </tbody>
-    </table>
+    </table></div>
     <p class="note"><%= t("installments.index.banks_note") %></p>
   <% end %>
 </main>

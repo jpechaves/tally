@@ -75,12 +75,13 @@ module Tally
         private
 
         # The plan counts from its first month; before that there is no target. What a month
-        # usually brings in, and spends outside its budgets, comes from the three months before it.
+        # usually brings in, and spends outside its budgets, comes from the three months before
+        # it that are over: the current month is usually only partly imported.
         def build(month, plan, categories, today)
           names = categories.transform_values { {name: _1[:name], parent_name: _1[:parent_name]} }
           budgets = plan_repo.budgets_for(month)
           plan = nil unless plan && plan[:starts_month] <= month
-          before = Tally::Insights.previous_months(month, BASELINE_MONTHS)
+          before = Tally::Insights.previous_months([month, today.strftime("%Y-%m")].min, BASELINE_MONTHS)
           baseline = insight_repo.rows(from: before.first, to: before.last).group_by { Tally::Insights.month_of(_1) }.values
           Tally::BudgetMonth.new(insight_repo.rows(from: month, to: month), month:, budgets:, categories: names, today:,
             target_cents: plan && plan[:target_cents],

@@ -131,6 +131,23 @@ RSpec.describe Tally::Operations::ImportStatement, :db do
       expect(import("NU_12345678_01JUL2026_31JUL2026.csv").value!.status).to eq("duplicate_file")
     end
 
+    it "applies the original again after an edited copy under another name" do
+      import("NU_12345678_01JUL2026_31JUL2026.csv")
+      # Without the bank's name the period comes from the rows, so dropping the last
+      # day's rows makes it shorter. The copy also drops one row inside that period.
+      last_day = fixture("NU_12345678_01JUL2026_31JUL2026.csv").force_encoding("UTF-8").lines.drop(1).map { _1[0, 10] }.max_by { _1.split("/").reverse }
+      edited = fixture("NU_12345678_01JUL2026_31JUL2026.csv").force_encoding("UTF-8").gsub(/^#{Regexp.escape(last_day)}.*\n/, "")
+        .sub(/^08\/07\/2026.*\n/, "")
+      copy = import("extrato-editado.csv", edited).value!
+      expect(copy).to have_attributes(status: "applied")
+      expect(copy.rows_missing).to eq(1)
+
+      again = import("NU_12345678_01JUL2026_31JUL2026.csv")
+      expect(again.value!).to have_attributes(status: "applied", rows_missing: 0)
+      expect(rows("Nubank conta").exclude(missing_since_import_id: nil).count).to eq(0)
+      expect(import("NU_12345678_01JUL2026_31JUL2026.csv").value!.status).to eq("duplicate_file")
+    end
+
     it "only flags missing rows on the same card bill" do
       import("Nubank_2026-07-09.csv")
       import("Nubank_2026-08-09.csv")

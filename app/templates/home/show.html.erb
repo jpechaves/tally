@@ -20,9 +20,9 @@
   <% end %>
 
   <h2><%= t("home.show.database") %></h2>
-  <table class="rows">
+  <div class="scroll"><table class="rows">
     <% database.each do |key, value| %>
       <tr><th scope="row"><%= t("home.show.#{key}") %></th><td><%= value %></td></tr>
     <% end %>
-  </table>
+  </table></div>
 </main>

@@ -16,7 +16,8 @@ module Tally
     module_function
 
     # "LOJA EXEMPLO*AB12" -> "LOJA EXEMPLO"; "PAG*Loja Exemplo" -> "Loja Exemplo";
-    # "FARMACIA EXEMPLO 0123" -> "FARMACIA EXEMPLO"
+    # "FARMACIA EXEMPLO 0123" -> "FARMACIA EXEMPLO"; "TURISMO B" -> "TURISMO" (a card's
+    # one-letter suffix)
     def stable_name(name)
       name = name.strip.squeeze(" ")
       head, tail = name.split("*", 2).map(&:strip)
@@ -24,7 +25,7 @@ module Tally
       elsif head && !head.empty? then name = head
       end
       words = name.split
-      words.pop while words.size > 1 && words.last.match?(/\d/)
+      words.pop while words.size > 1 && (words.last.match?(/\d/) || words.last.length == 1)
       words.join(" ")
     end
 

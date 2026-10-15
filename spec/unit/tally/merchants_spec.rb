@@ -11,6 +11,9 @@ RSpec.describe Tally::Merchants do
       "FARMACIA EXEMPLO 0123S" => "FARMACIA EXEMPLO",
       "PADARIA 24 HORAS" => "PADARIA 24 HORAS",
       "LOJA 123" => "LOJA",
+      "Turismo B" => "Turismo",
+      "TURISMO" => "TURISMO",
+      "A" => "A",
       "*" => "*"
     }.each do |name, stable|
       it "reads #{name.inspect} as #{stable.inspect}" do

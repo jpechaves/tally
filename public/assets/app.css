@@ -106,6 +106,9 @@ table { border-collapse: separate; border-spacing: 0; }
 th, td { text-align: left; vertical-align: top; padding: 6px 16px 6px 0; }
 th { font-weight: 500; color: var(--ink-subtle); }
 
+/* Tables scroll sideways inside their own box, never the page. */
+.scroll { max-width: 100%; overflow-x: auto; }
+
 table.rows { width: 100%; background: var(--surface-1); border: 1px solid var(--hairline); border-radius: var(--radius-lg); overflow: hidden; }
 table.rows th, table.rows td { padding: 9px 14px; }
 table.rows thead th { font-size: 12px; background: var(--surface-1); border-bottom: 1px solid var(--hairline); }
@@ -209,7 +212,6 @@ tr.child .share > span { opacity: 0.6; }
   .cards strong { font-size: 19px; }
   .chart { padding: 12px 12px 8px; }
   .chart svg text { font-size: 20px; }
-  table.rows { display: block; overflow-x: auto; }
   table.rows td, table.rows th { white-space: nowrap; }
   h1 { font-size: 22px; }
   table.rows th, table.rows td { padding: 8px 10px; }

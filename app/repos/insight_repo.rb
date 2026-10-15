@@ -13,7 +13,10 @@ module Tally
       end
 
       def installment_rows
-        scope.exclude(Sequel[:transactions][:installment_total] => nil).all
+        scope.exclude(Sequel[:transactions][:installment_total] => nil)
+          .left_join(:card_statements, id: Sequel[:transactions][:card_statement_id])
+          .select_append(Sequel[:card_statements][:due_on].as(:bill_due_on))
+          .all
       end
 
       def dismissed_keys = dismissed_suggestions.dataset.select_map(:key)

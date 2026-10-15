@@ -1,6 +1,6 @@
 <main>
   <h1><%= t("accounts.index.title") %></h1>
-  <table>
+  <div class="scroll"><table>
     <thead><tr><th><%= t("accounts.index.account") %></th><th><%= t("accounts.index.kind") %></th><th class="num"><%= t("common.rows") %></th><th class="num"><%= t("accounts.index.balance") %></th><th></th></tr></thead>
     <tbody>
       <% accounts.each do |entry| %>
@@ -18,14 +18,14 @@
         </tr>
       <% end %>
     </tbody>
-  </table>
+  </table></div>
   <p class="note"><%= t("accounts.index.note") %></p>
 
   <h2><%= t("accounts.index.checks") %></h2>
   <% if checks.empty? %>
     <p><%= t("accounts.index.no_bills") %></p>
   <% else %>
-    <table>
+    <div class="scroll"><table>
       <thead><tr><th><%= t("accounts.index.bill") %></th><th><%= t("accounts.index.due") %></th><th class="num"><%= t("accounts.index.bill_total") %></th><th><%= t("accounts.index.paid_by") %></th><th class="num"><%= t("accounts.index.paid") %></th><th><%= t("accounts.index.result") %></th></tr></thead>
       <tbody>
         <% checks.each do |check| %>
@@ -39,6 +39,6 @@
           </tr>
         <% end %>
       </tbody>
-    </table>
+    </table></div>
   <% end %>
 </main>
