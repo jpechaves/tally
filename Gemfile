@@ -11,6 +11,7 @@ gem "hanami-router", "~> 3.0.0"
 gem "hanami-view", "~> 3.0.0"
 
 gem "bigdecimal" # money parsing; a bundled (not default) gem from Ruby 3.4
+gem "csv" # statement import; a bundled (not default) gem from Ruby 3.4
 gem "dry-types", "~> 1.7"
 gem "dry-operation", ">= 1.0.1"
 gem "dry-validation", "~> 1.11"

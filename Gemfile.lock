@@ -341,6 +341,7 @@ PLATFORMS
 DEPENDENCIES
   bigdecimal
   capybara
+  csv
   database_cleaner-sequel
   dotenv
   dry-operation (>= 1.0.1)
