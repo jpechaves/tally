@@ -1,0 +1,508 @@
+# Tally: Architecture and Data Model
+
+Tally tracks household spending, shows where the money goes, and plans savings. It runs on a Raspberry Pi Zero 2 W on the home network.
+
+Companion: [statement-import.md](statement-import.md) (parsers, re-import rules, categorization rules).
+
+> All names, account numbers and amounts in these docs are made up. The repository is public, so real statements and anything derived from them stay out of it (§17).
+
+## TL;DR
+
+- **Why the app exists:** to show where your money goes, point out what you can cut, and answer "if I want to save R$ X a month, what has to change?" with a concrete per-category plan that you can track every month.
+- **Data in:** three statement sources: the Nubank account CSV (where the salary lands), the Nubank card CSV and the Itaú card PDF. Importing the same file again updates rows instead of duplicating them. An Itaú bill that doesn't add up to its printed total to the cent is rejected, and each Nubank card bill is checked against the payment that settled it.
+- **No double counting:** moving money between your own accounts (Pix to your other bank, paying the card, RDB savings) is a transfer, not spending. Spending is counted once: on card purchases, and on Pix, boleto or debit payments to other people and companies.
+- **Categorization:** company tax ID (CNPJ) rules first, then Itaú's own category as a suggestion, then a review list grouped by who you paid. Every category is also tagged **fixed**, **essential** or **discretionary**, which is what the cut suggestions and the savings planner work from.
+- **Insights:** where the money went (by category and by payee, vs your 3-month average), cut candidates (discretionary spending, recurring charges, many small purchases, fees, installments), and when current installments end.
+- **Savings planner:** you enter a monthly target. The app compares it with what you actually saved over the last 3 months, and spreads the gap across discretionary and flexible categories, never fixed ones. Once you accept the plan it becomes next month's budgets, and the dashboard shows whether you're on pace. Plain arithmetic you can check, no AI.
+- **Stack:** Ruby 3.3+, Hanami 3.0 (ROM, dry-rb), SQLite, server-rendered pages. Runs on the Pi Zero 2 W; you open it from a laptop or phone over home Wi-Fi.
+- **Precision and reliability:** whole centavos in integer columns, the database rejects anything else; WAL with full sync, nightly backup off the SD card.
+- **Deterministic first:** version 1 uses only rules and arithmetic. Smarter features (learned categorization, unusual-spending alerts, optional AI advice) come later as suggestions you approve. See §14 and §15.
+- **Milestones:** skeleton → import → categorization → insights → savings planner and budgets → Pi deployment → phase 2 smart suggestions (§12).
+
+## 1. Goals and constraints
+
+The app answers four questions, in this order:
+1. **Where does my money go?** Every transaction imported and categorized.
+2. **What can I cut?** Ranked suggestions with an R$/month value each.
+3. **If I want to save R$ X a month, what should I do?** A per-category plan that closes the gap.
+4. **Am I on track this month?** Budget vs spent, at the current pace.
+
+Constraints:
+- Single household, LAN only. The Pi is the single live instance; a laptop is for development.
+- Raspberry Pi Zero 2 W: quad Cortex-A53 @ 1 GHz, **512 MB RAM**, SD card storage.
+- Priorities, in order: **precise**, **reliable**, **light**, fast enough.
+
+## 2. How the money moves (what the app has to model)
+
+`[imported]` marks the three statement sources. Arrows marked `transfer` are between your own accounts and never count as spending or income.
+
+```
+        Employer (salary)               Own company (pró-labore)
+              │ income                        │ income
+              ▼                               ▼
+        ┌───────────────────────────────────────────┐
+        │        Nubank conta   [imported, CSV]     │──── Pix / boleto ───▶ bills, people, shops
+        │        (checking)                         │      = spending
+        └───────────────────────────────────────────┘
+          │ transfer          │ "Pagamento de      │ transfer
+          │ "Aplicação/       │  fatura"           │ Pix to yourself
+          │  Resgate RDB"     │                    │
+          ▼                   ▼                    ▼
+   ┌──────────────┐   ┌────────────────┐   ┌──────────────────┐
+   │ Nubank RDB   │   │ Nubank cartão  │   │   Itaú conta     │
+   │ (savings,    │   │ [imported,CSV] │   │ not imported;    │
+   │  balance     │   │ purchases =    │   │ pass-through:    │
+   │  from the    │   │ spending       │   │ Pix ≈ bill       │
+   │  transfers)  │   │                │   │                  │
+   └──────────────┘   └────────────────┘   └──────────────────┘
+                                                   │ transfer "Pagamento via conta"
+                                                   ▼
+                                           ┌──────────────────┐
+                                           │ Itaú cartão      │──▶ shops = spending
+                                           │ [imported, PDF]  │    (itemized, with installments)
+                                           └──────────────────┘
+```
+
+What counts:
+- **Income**: money received from anyone who is not you.
+- **Spending**: purchases on both cards, and Pix, boleto or debit payments to anyone who is not you.
+- **Saved**: income minus spending. Money moved to RDB is one place it can sit, but the planner measures savings as income minus spending, wherever the money ends up.
+
+## 3. System overview
+
+```
+  Laptop / phone browser
+          │  HTTP over home Wi-Fi (basic auth)
+          ▼
+┌────────────────────── Raspberry Pi Zero 2 W ──────────────────────┐
+│  systemd ─▶ Puma (1 process, 2 threads)                           │
+│               │                                                   │
+│               ▼                                                   │
+│   Hanami app                                                      │
+│   ┌─────────┐   ┌─────────────┐   ┌────────┐   ┌──────────────┐   │
+│   │ Actions │──▶│ Operations  │──▶│ Repos  │──▶│ SQLite file  │   │
+│   │ (HTTP)  │   │ (rules, DB  │   │(queries│   │ WAL, FULL    │   │
+│   └─────────┘   │ transaction)│   └────────┘   │ sync, FKs on │   │
+│                 └─────────────┘                └──────────────┘   │
+│                    │        │                        │            │
+│                    ▼        ▼                        │ nightly    │
+│             Importers   Categorizer                  ▼ .backup    │
+│             (CSV, PDF   (rules)                 USB stick /       │
+│              via poppler)                       laptop (rsync)    │
+└───────────────────────────────────────────────────────────────────┘
+```
+
+## 4. Stack (checked against hanakai.org and rubygems.org on 2026-10-15)
+
+| Piece | Choice | Version | Notes |
+|---|---|---|---|
+| Ruby | MRI | **3.3+** | `hanami` 3.0.x gemspec requires `>= 3.3`. |
+| Web framework | Hanami | 3.0.2 | Routes, actions, views, settings, operations. |
+| Persistence | hanami-db → ROM 5.4 + rom-sql 3.7 (on Sequel) | hanami-db 3.0.0 | Relations, repos, immutable structs. Sequel migrations in `config/db/migrate`. |
+| Business logic | dry-operation (Hanami operations) | 1.1 | `step` / `transaction do ... end`, `Success` / `Failure`. |
+| Validation and types | dry-validation, dry-types | 1.11 / 1.9 | Contracts for every form input. |
+| Database | SQLite 3 via `sqlite3` gem | 2.10 | Precompiled for `aarch64-linux-gnu` and `arm-linux-gnu`, so no C compile on the Pi. |
+| App server | Puma | 8.x | Single mode, 2 threads. |
+| Front end | Server-rendered HTML (ERB) + one small CSS file | n/a | No Node toolchain (`--skip-assets`). |
+| CSV import | Ruby stdlib `csv` | bundled | Nubank account and card statements. |
+| PDF import | poppler-utils `pdftotext -bbox` | Debian package | Itaú card bills. The `pdf-reader` gem drops spaces inside merchant names on these PDFs. |
+| Tests | RSpec | n/a | Golden-file tests per parser on synthetic statements, re-import tests, money tests. |
+
+The app was generated with:
+
+```sh
+gem install hanami
+hanami new tally --skip-assets --skip-mailer   # --database defaults to sqlite
+```
+
+## 5. Money: the precision rules
+
+Implemented in `lib/tally/money.rb` (milestone 1).
+
+1. **Integer centavos** in `INTEGER` columns named `*_cents`. Never `REAL`/`Float`, never `NUMERIC`.
+2. **Signed amounts**: negative = money out of the account, positive = money in. Balances are a plain `SUM`.
+3. **A `Money` value object** (`cents: Integer`, `currency: String`) carries every amount through the app. Integer arithmetic only; mixing currencies raises.
+4. **Parse at the edges with `BigDecimal`**: `"1.234,56"` (Itaú, forms) and `-518.54` (Nubank CSV) both become cents. More than 2 decimals is rejected, never silently rounded.
+5. **Division** (splits, percentages) uses `Money#allocate` with the largest-remainder method, so parts always add back up to the total.
+6. **The database enforces it**: SQLite `STRICT` tables (Sequel's `create_table(..., strict: true)`), so a `12.5` in an `INTEGER` column is an error, not a stored value.
+7. **BRL only** for now; accounts carry a `currency` column for later.
+
+## 6. Data model
+
+```
+                         ┌──────────────┐
+                         │   imports    │ one row per file ever imported
+                         └──────┬───────┘
+                                │ first/last import
+┌──────────┐  1     n  ┌────────▼───────────┐  n     1  ┌────────────────┐
+│ accounts │──────────▶│    transactions    │◀──────────│ counterparties │
+└────┬─────┘           │  amount_cents ±    │           │ name, CNPJ/CPF │
+     │                 │  kind, category,   │           │ is_self        │
+     │ 1               │  external_id …     │           └────────────────┘
+     │                 └──┬──────┬───────┬──┘
+     │ n                  │      │       │ n:1
+┌────▼────────────┐       │      │  ┌────▼───────┐  n   1  ┌────────────────┐
+│ card_statements │◀──────┘      │  │ categories │◀─────────│ category_rules │
+│ (one per bill)  │  n:1         │  └────▲───────┘          └────────────────┘
+└─────────────────┘              │       │ 1:n
+                          ┌──────▼────┐  ┌┴─────────┐  n   1  ┌───────────────┐
+                          │ transfers │  │ budgets  │─────────▶│ savings_plans │
+                          │ (2 legs)  │  └──────────┘          │ + plan lines  │
+                          └───────────┘                        └───────────────┘
+```
+
+All tables: `id INTEGER PRIMARY KEY`, `created_at` / `updated_at` as ISO-8601 UTC text. Money-event dates are `TEXT 'YYYY-MM-DD'`.
+
+```
+accounts                        -- created in milestone 1
+  name                  TEXT NOT NULL UNIQUE      -- "Nubank conta", "Nubank cartão", "Itaú cartão", "Nubank RDB", "Itaú conta"
+  kind                  TEXT NOT NULL  -- checking | credit_card | investment | cash
+  institution           TEXT NULL      -- nubank | itau
+  external_ref          TEXT NULL      -- account or card number as the bank prints it (e.g. "12345678", last 4 digits)
+  currency              TEXT NOT NULL DEFAULT 'BRL'
+  opening_balance_cents INTEGER NOT NULL DEFAULT 0
+  archived_at           TEXT NULL
+
+categories
+  name          TEXT NOT NULL
+  parent_id     INTEGER NULL REFERENCES categories(id)   -- one level: Moradia > Energia
+  kind          TEXT NOT NULL   -- expense | income
+  nature        TEXT NULL       -- expenses only: fixed | essential | discretionary (see §8)
+  max_cut_pct   INTEGER NULL    -- how far the planner may cut it; defaults by nature: 0 / 15 / 50
+  archived_at   TEXT NULL
+  UNIQUE(parent_id, name)
+
+counterparties                  -- who the money went to / came from
+  name            TEXT NOT NULL
+  document        TEXT NULL     -- full CNPJ, or masked CPF "•••.123.456-••"
+  document_kind   TEXT NULL     -- cnpj | cpf_masked
+  bank_name, bank_code, branch, account_number  TEXT NULL
+  is_self         INTEGER NOT NULL DEFAULT 0     -- you, at another bank → transfer
+  default_category_id INTEGER NULL REFERENCES categories(id)
+  UNIQUE(document, name)
+
+transactions
+  account_id        INTEGER NOT NULL REFERENCES accounts(id)
+  occurred_on       TEXT NOT NULL     -- date that counts for reports and budgets
+  purchased_on      TEXT NULL         -- original purchase date (card installments)
+  amount_cents      INTEGER NOT NULL CHECK (amount_cents <> 0)
+  kind              TEXT NOT NULL     -- purchase | refund | fee | income | transfer | bill_payment
+  category_id       INTEGER NULL REFERENCES categories(id)
+  category_source   TEXT NOT NULL DEFAULT 'none'   -- none | bank | rule | manual (manual is never overwritten)
+  category_rule_id  INTEGER NULL REFERENCES category_rules(id)
+  transfer_id       INTEGER NULL REFERENCES transfers(id)
+  counterparty_id   INTEGER NULL REFERENCES counterparties(id)
+  description       TEXT NOT NULL     -- cleaned
+  raw_description   TEXT NOT NULL     -- exactly as in the statement
+  bank_category     TEXT NULL         -- Itaú's "vestuário", "supermercado", …
+  location          TEXT NULL         -- Itaú's city
+  installment_number, installment_total  INTEGER NULL
+  purchase_key      TEXT NULL         -- links installments of one purchase across bills
+  card_statement_id INTEGER NULL REFERENCES card_statements(id)
+  memo              TEXT NULL         -- yours; imports never touch it
+  external_id       TEXT NULL         -- upsert key (Nubank UUID, or derived for Itaú)
+  first_import_id, last_import_id, missing_since_import_id  INTEGER NULL REFERENCES imports(id)
+  raw_json          TEXT NULL         -- parsed source row, for audit
+  UNIQUE(account_id, external_id)
+  INDEX (account_id, occurred_on), INDEX (category_id, occurred_on), INDEX (counterparty_id)
+
+transfers                       -- exactly two legs that sum to 0 (one leg until the other account is imported)
+  occurred_on   TEXT NOT NULL
+  memo          TEXT NULL
+
+imports                         -- one row per file, including re-imports
+  account_id, source, file_name, file_sha256, period_start, period_end
+  status        TEXT NOT NULL   -- applied | duplicate_file | rejected
+  rows_inserted, rows_updated, rows_unchanged, rows_missing  INTEGER NOT NULL DEFAULT 0
+  error         TEXT NULL       -- original file kept at storage/imports/<sha256>.<ext>
+
+card_statements                 -- one per bill (fatura)
+  account_id, closing_on, due_on
+  total_cents, previous_total_cents, payments_cents, purchases_cents, fees_cents
+  next_statement_cents, later_statements_cents   -- installments already committed
+  credit_limit_cents, available_limit_cents
+  import_id
+  UNIQUE(account_id, due_on)
+
+category_rules
+  priority      INTEGER NOT NULL DEFAULT 100   -- lower runs first
+  field         TEXT NOT NULL   -- counterparty_document | counterparty_name | description | bank_category | kind
+  operator      TEXT NOT NULL   -- equals | contains | starts_with | regex
+  pattern       TEXT NOT NULL
+  amount_min_cents, amount_max_cents  INTEGER NULL
+  category_id   INTEGER NOT NULL REFERENCES categories(id)
+  origin        TEXT NOT NULL   -- seed | learned | manual
+  hits          INTEGER NOT NULL DEFAULT 0
+
+savings_plans                   -- one per accepted "save X a month" plan
+  target_cents      INTEGER NOT NULL CHECK (target_cents > 0)
+  baseline_from, baseline_to   TEXT NOT NULL   -- months used as "what you do today", e.g. 2026-07..2026-09
+  baseline_income_cents, baseline_spending_cents  INTEGER NOT NULL
+  starts_month      TEXT NOT NULL   -- YYYY-MM
+  status            TEXT NOT NULL   -- draft | active | replaced
+  shortfall_cents   INTEGER NOT NULL DEFAULT 0   -- what cuts could not cover
+
+savings_plan_lines              -- the per-category proposal you reviewed
+  savings_plan_id   INTEGER NOT NULL REFERENCES savings_plans(id)
+  category_id       INTEGER NOT NULL REFERENCES categories(id)
+  baseline_cents    INTEGER NOT NULL   -- average monthly spend
+  proposed_cents    INTEGER NOT NULL   -- the new monthly limit (you can edit it)
+  UNIQUE(savings_plan_id, category_id)
+
+budgets                         -- monthly limit per category; written when a plan is accepted, or by hand
+  category_id      INTEGER NOT NULL REFERENCES categories(id)
+  month            TEXT NOT NULL   -- YYYY-MM
+  amount_cents     INTEGER NOT NULL CHECK (amount_cents >= 0)
+  savings_plan_id  INTEGER NULL REFERENCES savings_plans(id)
+  UNIQUE(category_id, month)
+```
+
+The monthly savings target lives in `savings_plans`. Named goals with a deadline ("R$ 30 mil for a car by 2027-12") are left for later; they would only add tables. The Nubank RDB is an `investment` account whose balance comes from the "Aplicação/Resgate RDB" transfers.
+
+Design choices:
+
+- **Nothing is hard-deleted.** Accounts and categories are archived. A re-import flags rows that disappeared instead of deleting them.
+- **Balances and monthly totals are `SUM` queries**, not stored values, so nothing can drift. At household scale (a few thousand rows a year) these take milliseconds even on the Pi.
+- **Transfers are recognized even with one side.** The Itaú account and the RDB have no statements, so their transfers have one imported leg (the Pix to your Itaú account and the card's "Pagamento via conta"; the RDB moves). It is still marked `transfer` and never counted as spending or income. The RDB legs are mirrored into the RDB account so its balance is right.
+
+## 7. Import and categorization flow
+
+Details are in [statement-import.md](statement-import.md).
+
+```
+ file uploaded
+      │
+      ▼
+ same SHA-256 as before? ──yes──▶ log "duplicate_file", stop
+      │ no
+      ▼
+ parser (pure Ruby, no DB)          Nubank conta CSV │ Nubank cartão CSV │ Itaú cartão PDF
+      │
+      ▼
+ validate: dates, amounts, totals match bill to the cent? ──no──▶ log "rejected", write nothing
+      │ yes
+      ▼
+ ┌───────────── one DB transaction ─────────────┐
+ │ upsert by (account, external_id)             │
+ │   new        → insert                        │
+ │   changed    → update bank fields only       │
+ │   missing    → flag, don't delete            │
+ │ detect transfers (RDB, fatura, Pix to self)  │
+ │ categorize new rows (cascade below)          │
+ │ log import with counts                       │
+ └──────────────────────────────────────────────┘
+      │
+      ▼
+ review list: uncategorized + suggested, grouped by counterparty
+```
+
+Categorization cascade (the first match wins):
+
+```
+ transfer between your accounts? ──yes──▶ no category (not spending)
+        │ no
+ counterparty has a default? ─────yes──▶ that category            (source: rule)
+        │ no
+ a category_rule matches? ────────yes──▶ rule's category          (source: rule)
+   (CNPJ, name, description, amount range)
+        │ no
+ bank printed a category? ────────yes──▶ mapped category, "suggested" (source: bank)
+        │ no
+ uncategorized ──▶ review list ──▶ you pick ──▶ "always for this payee?" ──▶ new rule, back-fills past rows
+```
+
+## 8. Insights and the savings planner
+
+Everything here is `GROUP BY` queries over categorized transactions plus integer arithmetic. No machine learning, so every number can be traced back to the transactions behind it.
+
+### 8.1 Spending nature
+
+Each expense category carries a `nature`, seeded with sensible defaults that you can change:
+
+| Nature | Meaning | Examples | Planner may cut |
+|---|---|---|---|
+| fixed | contract or bill you can't trim month to month | financing, health plan, electricity, water, internet/phone | 0% (shown as "renegotiate" ideas instead) |
+| essential | needed, but the amount is flexible | groceries, pharmacy, fuel, cooking gas, Pix to people | up to 15% |
+| discretionary | wanted, not needed | delivery, restaurants, clothing, online shopping, leisure, parking | up to 50% |
+
+### 8.2 Where the money goes (monthly report)
+
+- Income, spending and **saved** (income − spending) for the month, next to the 3-month average.
+- Spending by parent category and category, sorted by size, each with its share of the total and its change vs the 3-month average.
+- Top payees (counterparties), and spending split by nature (fixed / essential / discretionary).
+- Card installments: how much of each bill is installments, and the month each one ends. Installments can be a large share of a card bill, so this matters.
+- International purchases show their IOF and the IOF refund as a pair, so they net to the real cost.
+
+### 8.3 What can I cut (ranked suggestions)
+
+Each signal produces suggestions with an estimated **R$ per month**, sorted by that value. The examples are made up.
+
+| Signal | Rule | Example |
+|---|---|---|
+| Big discretionary categories | discretionary categories over 5% of spending | online shopping: 20 purchases, R$ 1.500,00 |
+| Growth | category this month > 3-month average by 25% and R$ 100 | needs 3 months of data |
+| Recurring charges | same payee in 3 of the last 4 months, amount within ±10% | gym, phone, subscriptions, monthly Pix to the same person |
+| Many small purchases | 8+ purchases under R$ 50 in a month at similar payees | parking: 12 charges, R$ 130,00 |
+| Fees and interest | kind `fee`, or categories under Dívidas | card fee, financing boleto |
+| Possible duplicate charge | same payee and amount twice within 2 days | two identical gym charges on the same day (dismiss it if they're two memberships, and it stays quiet) |
+| Installments | new installment purchases add to future months | next bill already has R$ 2.000,00 committed |
+
+These are suggestions, not judgments: each can be dismissed, and a dismissed suggestion stays hidden for that payee or category.
+
+### 8.4 "I want to save R$ X a month": the planner
+
+```
+ you enter X
+     │
+     ▼
+ baseline = last 3 complete months
+   income_avg, spending_avg per category
+   saved_today = income_avg − spending_avg
+     │
+     ▼
+ gap = X − saved_today ──── gap ≤ 0 ──▶ "you already save X": suggest moving the extra to RDB
+     │ gap > 0
+     ▼
+ cuttable per category = spending_avg × max_cut_pct   (fixed = 0, essential ≤ 15%, discretionary ≤ 50%)
+     │
+     ▼
+ pool = Σ cuttable ──── pool < gap ──▶ cut everything cuttable, report the shortfall, and list
+     │ pool ≥ gap                     the other levers: fixed costs to renegotiate, installments
+     ▼                                ending soon (money freed per month)
+ split the gap across categories in proportion to "cuttable"
+ (Money#allocate, so the cuts add up to the gap exactly)
+     │
+     ▼
+ proposal: for each category  baseline → new limit  (you can edit any line; the
+ total updates live, and the plan shows if it still reaches X)
+     │ accept
+     ▼
+ savings_plan saved, and next month's budgets are written from it
+```
+
+Small worked example (made-up numbers): income averages R$ 12.000 and spending R$ 10.500, so you save R$ 1.500 today. The target is R$ 3.000, so the gap is R$ 1.500. Discretionary categories average R$ 5.000 (cuttable up to R$ 2.500) and essential ones R$ 4.000 (cuttable up to R$ 600); the remaining R$ 1.500 is fixed and can't be cut. The pool is R$ 3.100, more than the gap. The gap is split 2.500 : 600, so discretionary gives up R$ 1.209,68 and essential R$ 290,32, which add up to exactly R$ 1.500,00 (this exact case is in `spec/unit/tally/money_spec.rb`). The discretionary part is then split across its categories the same way.
+
+### 8.5 Am I on track? (monthly dashboard)
+
+- Target X, saved so far this month, and a **projection**: income so far + expected remaining income − (spent so far + what's left in each budget).
+- Each budget line shows spent, limit and **pace** (spent ÷ share of the month elapsed). A category is flagged once it's ahead of pace by more than 10%.
+- Card purchases count in the month of the bill they land on (see statement-import.md §5), so the dashboard also shows what's already on the open Itaú bill and the installments committed to the next one.
+- At month end, the plan line is scored: target vs actually saved, and which categories went over.
+
+## 9. SQLite reliability settings
+
+Set for every connection in `config/providers/db.rb` (milestone 1), and shown on the home page.
+
+| Pragma | Value | Why |
+|---|---|---|
+| `foreign_keys` | `ON` | Enforce references. |
+| `journal_mode` | `WAL` | Readers don't block the writer; safer on crash. |
+| `synchronous` | `FULL` | Writes are rare, so pay for durability on an SD card that may lose power. |
+| `busy_timeout` | `5000` | Wait instead of failing on concurrent writes. |
+
+Plus a **nightly backup** (`sqlite3 … ".backup"`, 30 copies kept, copied off the SD card), a **weekly `PRAGMA integrity_check`** shown on the home page if it fails, and the original statement files kept in `storage/imports/` so the database can be rebuilt from them.
+
+## 10. Running on the Pi Zero 2 W
+
+- **OS**: Raspberry Pi OS Lite 64-bit (Debian 13 based), whose packaged Ruby should be 3.3; to be confirmed at install. If it's older, install a prebuilt Ruby rather than compiling on 512 MB.
+- **Packages**: `sqlite3`, `poppler-utils`.
+- **Memory**: target under ~150 MB. Puma single mode, 2 threads, YJIT off, `MALLOC_ARENA_MAX=2`.
+- **Service**: systemd unit, restart on failure, start on boot.
+- **Access**: LAN only, HTTP basic auth (`BASIC_AUTH_USERNAME` / `BASIC_AUTH_PASSWORD`; in production the app answers 503 until both are set).
+
+## 11. Code layout
+
+```
+app/
+  actions/      accounts/, transactions/, imports/, review/, reports/, insights/, plans/, budgets/
+  operations/   import_statement.rb, categorize.rb, create_rule.rb, pair_transfers.rb,
+                build_savings_plan.rb, accept_savings_plan.rb, set_budget.rb
+  repos/        account_repo.rb, transaction_repo.rb, import_repo.rb, rule_repo.rb, budget_repo.rb
+  relations/ structs/ views/ templates/
+lib/tally/
+  money.rb
+  basic_auth.rb
+  importers/    nubank_account_csv.rb, nubank_card_csv.rb, itau_card_pdf.rb
+  categorizer.rb
+  insights/     baseline.rb, cut_signals.rb, recurring.rb, planner.rb   (pure: data in, numbers out)
+config/db/migrate/, config/providers/db.rb
+spec/fixtures/statements/   (synthetic only: fake names and amounts in the real formats)
+data/                       (gitignored: real statements, the database, rules from your data)
+```
+
+Actions validate input and call one operation. Operations hold the rules and the DB transaction. Repos hold queries. `Money` holds all arithmetic. Parsers never touch the database.
+
+## 12. Milestones
+
+1. **Skeleton**: generate the app, SQLite pragmas, `Money` with tests, basic auth, the `accounts` table as the first STRICT table.
+2. **Accounts and import**: the accounts, the two Nubank CSV importers and the Itaú PDF importer with golden-file tests on synthetic statements, re-import upsert, import history, transfer detection.
+3. **Categorization**: seed categories with nature, generic seed rules (your own rules stay local), review list grouped by payee, rules learned from your choices.
+4. **Where the money goes and what to cut**: monthly report, cut suggestions, installment calendar.
+5. **Savings planner and budgets**: "save X a month" planner, accepted plan writes budgets, on-track dashboard, month-end score.
+6. **Pi deployment**: systemd, backups, integrity check, memory measurement.
+7. **Later**: named savings goals with deadlines, split transactions, SVG charts.
+8. **Phase 2, smart suggestions**: local classifier, rule suggestions, unusual-spending alerts, forecasts, optional AI (§15).
+
+## 13. Decisions so far
+
+- Statement sources: Nubank account CSV, Nubank card CSV and Itaú card PDF.
+- The Pi is the single live instance; a laptop is for development.
+- The code lives in a public GitHub repository with no personal data in it (§17).
+- BRL only for now.
+- Pix sent to people is its own category, Transferências (Pix), counted as spending.
+- Version 1 is deterministic (rules + arithmetic); smart features come later and only suggest.
+
+## 14. Version 1 is deterministic
+
+Version 1 has **no AI running inside it**. Its "intelligent" parts are plain rules and arithmetic:
+
+| Feature | How it works (deterministic) | Where | Milestone |
+|---|---|---|---|
+| Parsing 3 sources | CSV reader; poppler `pdftotext -bbox` for Itaú, totals checked to the cent | Ruby importers, golden-file tests | 2 |
+| Transfers | Fixed patterns: RDB, Pagamento de fatura, Pix to your own accounts, Conta Global, Pix no Crédito pair (same ID) | `pair_transfers` operation | 2 |
+| Categorization | Ordered list of rules on payee/description, then Itaú's printed category mapped, then "Pix to a CPF" → Transferências (Pix) | `category_rules` table, cascade in §7 | 3 |
+| Payee clean-up | Strip installment suffix (`\s?\d\d/\d\d$`), merge names that only differ in spaces/punctuation | `counterparties` normalizer | 3 |
+| Review list | Group uncategorized rows by payee, biggest total first; "Always use" creates a rule | Same, rule back-fills past rows | 3 |
+| Where the money goes | Sums by month, category and nature; card spend counted in the bill's month | `GROUP BY` queries | 4 |
+| What to cut | Fixed signals: top discretionary categories; same payee in 3+ months (recurring); 8+ purchases under R$ 50 a month; installments whose last parcel is this month; fees and financing | `insights/cut_signals.rb`, thresholds as settings | 4 |
+| Savings planner | Baseline = last 3 months; max cut by nature (0 / 15 / 50%); gap split with largest-remainder `allocate` so it adds up to the cent | `insights/planner.rb` | 5 |
+| Import again | Same key → 0 new / 0 changed | Upsert by `(account, external_id)` | 2 |
+
+So for version 1 every number is **calculated, traceable and repeatable**: the same files and rules always give the same result, and every suggestion links to the transactions behind it.
+
+The repository ships only generic seed rules (public merchants by name). Rules written from your own statements (your employer, your utilities, people you pay) are created in your own database, never in seed files (§17).
+
+## 15. Later: smarter features (phase 2, optional)
+
+Only after version 1 is correct and in daily use. Each one only **suggests**; nothing changes data without your click, and the deterministic result stays the source of truth.
+
+| Feature | Approach that fits a Pi Zero 2 W | Needs |
+|---|---|---|
+| Auto-categorize new payees | Small local text classifier (naive Bayes over payee words, pure Ruby) trained on your own categorized rows; shows "suggested: X (85%)" in Review | a few months of your own categorizations |
+| Suggest rules | When you pick the same category for a payee 3 times, offer "always?" automatically | Review history |
+| Unusual spending | Flag a category or payee far above its own history (e.g. more than 2× its median) | 6+ months of data |
+| Recurring forecast | Predict next month's fixed charges and installments from history | installments + recurring detection |
+| Natural-language Q&A or advice | Optional cloud LLM (e.g. Claude API) called from the laptop, sending only aggregated totals, never raw statements; off by default | your explicit opt-in, an API key |
+
+## 16. Status
+
+- **Milestone 1 (skeleton)**: done. Hanami app, SQLite pragmas, `Money`, basic auth, `accounts` table, CI, privacy pre-commit check.
+- **Next, milestone 2 (import)**: the three importers with synthetic golden files (checked locally against real statements in `data/`), upsert, transfers.
+
+## 17. Public repository: keeping personal data out
+
+The repository is public, so nothing personal is committed.
+
+- **Test fixtures are synthetic.** Small generated files mimic each format exactly: Nubank account CSV, Nubank card CSV and an Itaú bill PDF. They have fake names ("Maria Exemplo"), fake CPF/CNPJ, invented merchants and amounts, and totals that add up. A script in `spec/support/` builds them, so the real layout quirks (split words in the Itaú PDF, `"- 7,06"` negatives, repeated IDs) are reproduced on purpose.
+- **Real statements never enter git.** They live in `data/` (gitignored) along with the SQLite database and backups. An optional local check runs the importers on them and compares totals, but it is skipped when `data/` is empty (CI and anyone else).
+- **Seed data is generic.** The repo ships default categories and rules for public merchants (iFood, Uber, Amazon, utilities by name). Rules that name people, your employer, your company or your CPF/CNPJ are created in your own database, never in seed files.
+- **Docs and examples use fake numbers.**
+- **Guard rails:** `.gitignore` for `data/`, databases, and `*.csv` / `*.pdf` outside `spec/fixtures/`, plus `bin/check-private`, a pre-commit hook (installed by `bin/setup`) that rejects staged files matching the patterns you keep in the gitignored `data/private-patterns.txt` (your CPF, account numbers, names).
+
+## Sources
+
+- Hanakai: https://hanakai.org/ and https://hanakai.org/learn/hanami (guides for Hanami v3.0)
+- Database configuration: https://hanakai.org/learn/hanami/v3.0/database/configuration
+- Migrations: https://hanakai.org/learn/hanami/v3.0/database/migrations
+- Operations: https://hanakai.org/learn/hanami/v3.0/operations
+- Gem versions and Ruby requirement: rubygems.org API for `hanami`, `hanami-db`, `hanami-cli`, `rom`, `rom-sql`, `dry-operation`, `sqlite3`

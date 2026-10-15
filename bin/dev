@@ -1,0 +1,3 @@
+#!/usr/bin/env sh
+# Run the development server with code reloading at http://localhost:2300
+exec bin/hanami server "$@"

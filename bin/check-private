@@ -1,0 +1,71 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Blocks commits that contain personal data (docs/architecture.md, section 17).
+#
+# The repository is public, so the things to look for (your CPF, account numbers, names)
+# can't live in it either. They go in data/private-patterns.txt, which is gitignored:
+#
+#   # one pattern per line; blank lines and lines starting with # are ignored
+#   123.456.789-00          plain text, matched case-insensitively
+#   /4\d{3}[ -]?1234/       a Ruby regular expression between slashes
+#
+# Usage:
+#   bin/check-private          check the staged changes (bin/setup installs this as the
+#                              git pre-commit hook)
+#   bin/check-private --all    check every tracked file
+
+require "open3"
+
+ROOT = File.expand_path("..", __dir__)
+PATTERNS_FILE = File.join(ROOT, "data", "private-patterns.txt")
+
+def git(*args)
+  out, status = Open3.capture2("git", "-C", ROOT, *args, binmode: true)
+  abort "git #{args.join(" ")} failed" unless status.success?
+  out
+end
+
+unless File.exist?(PATTERNS_FILE)
+  warn "check-private: no data/private-patterns.txt, skipping (see bin/check-private for the format)"
+  exit 0
+end
+
+patterns = File.readlines(PATTERNS_FILE, chomp: true).filter_map do |line|
+  line = line.strip
+  next if line.empty? || line.start_with?("#")
+
+  if line.length > 2 && line.start_with?("/") && line.end_with?("/")
+    Regexp.new(line[1..-2])
+  else
+    Regexp.new(Regexp.escape(line), Regexp::IGNORECASE)
+  end
+end
+
+all = ARGV.include?("--all")
+files = if all
+  git("ls-files", "-z").split("\0")
+else
+  git("diff", "--cached", "--name-only", "--diff-filter=ACMR", "-z").split("\0")
+end
+
+hits = []
+files.each do |path|
+  content = all ? File.binread(File.join(ROOT, path)) : git("show", ":#{path}")
+  content = content.force_encoding(Encoding::UTF_8).scrub
+
+  content.each_line.with_index(1) do |line, number|
+    patterns.each_with_index do |pattern, index|
+      hits << "#{path}:#{number} matches pattern ##{index + 1}" if pattern.match?(line)
+    end
+  end
+end
+
+if hits.empty?
+  exit 0
+else
+  warn "check-private: personal data found, nothing was committed:"
+  hits.each { |hit| warn "  #{hit}" }
+  warn "Remove it (use fake data instead), or fix data/private-patterns.txt if it's a false alarm."
+  exit 1
+end

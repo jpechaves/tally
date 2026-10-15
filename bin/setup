@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+set -euo pipefail
+IFS=$'\n\t'
+
+# Sets up (or updates) a development checkout. Safe to run any time.
+
+announce() {
+  printf '\033[1m%s\033[0m\n' "$1"
+}
+
+announce "Installing gems..."
+bundle check || bundle install
+
+announce "Preparing the development and test databases..."
+bin/hanami db prepare
+
+announce "Installing the git pre-commit hook (bin/check-private)..."
+if [ -d .git ]; then
+  ln -sf ../../bin/check-private .git/hooks/pre-commit
+fi
+
+announce "Setup complete. Run bin/dev and open http://localhost:2300"
