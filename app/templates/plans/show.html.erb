@@ -43,7 +43,7 @@
     <p><%= t("plans.show.would_save_html", amount: money(saved_today_cents + cuts_cents)) %>
       <span id="verdict"><%= saved_today_cents + cuts_cents >= plan[:target_cents] ? t("plans.show.reaches") : t("plans.show.short") %></span>.</p>
     <% if plan[:status] == "draft" %>
-      <button type="submit"><%= t("plans.show.accept", month: month_label(plan[:starts_month])) %></button>
+      <button type="submit" class="primary"><%= t("plans.show.accept", month: month_label(plan[:starts_month])) %></button>
     <% end %>
   </form>
 
@@ -65,5 +65,5 @@
     <% end %>
   <% end %>
 
-  <script src="/scripts/plan.js"></script>
+  <script src="/assets/plan.js"></script>
 </main>

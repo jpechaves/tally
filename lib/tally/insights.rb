@@ -23,6 +23,15 @@ module Tally
 
     def month_of(row) = row[:occurred_on][0, 7]
 
+    # Income and spending for each of `months`, for the trend charts.
+    def monthly(rows, months)
+      by_month = rows.group_by { month_of(_1) }
+      months.map do |month|
+        rows = by_month.fetch(month, [])
+        {month:, income_cents: income_cents(rows), spending_cents: spent_cents(rows)}
+      end
+    end
+
     # "2026-09" -> "2026-06", "2026-07", "2026-08"
     def previous_months(month, count)
       date = Date.new(month[0, 4].to_i, month[5, 2].to_i, 1)

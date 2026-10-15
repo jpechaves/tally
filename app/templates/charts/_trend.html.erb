@@ -1,0 +1,16 @@
+<section class="chart">
+  <h2><%= title %></h2>
+  <ul class="legend">
+    <li><span class="swatch s-income" aria-hidden="true"></span><%= t("charts.income") %></li>
+    <li><span class="swatch s-spending" aria-hidden="true"></span><%= t("charts.spending") %></li>
+  </ul>
+  <%= columns_chart(
+    title: title,
+    labels: trend.map { month_label(_1[:month]) },
+    highlight: trend.index { _1[:month] == month },
+    series: [
+      {name: t("charts.income"), css: "s-income", values: trend.map { _1[:income_cents] }},
+      {name: t("charts.spending"), css: "s-spending", values: trend.map { _1[:spending_cents] }}
+    ]
+  ) %>
+</section>

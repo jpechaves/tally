@@ -3,7 +3,7 @@
 module Tally
   class Routes < Hanami::Routes
     root to: "home.show"
-    get "/scripts/:name.js", to: "scripts.show", as: :script
+    get "/assets/:name", to: "assets.show", as: :asset, constraints: {name: /[a-z]+\.(css|js)/}
 
     post "/locale", to: "locale.update", as: :locale
 

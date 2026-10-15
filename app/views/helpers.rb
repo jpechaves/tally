@@ -16,6 +16,24 @@ module Tally
         cents.nil? ? "" : Tally::Money.new(cents).format(locale)
       end
 
+      # A short amount for chart axes: "R$ 1,5 mil" ("R$ 1.5K" in English), "R$ 300".
+      def money_compact(cents)
+        reais = cents.abs / 100.0
+        text = if reais >= 1_000_000 then t("charts.millions", n: number(compact_round(reais / 1_000_000)))
+        elsif reais >= 1_000 then t("charts.thousands", n: number(compact_round(reais / 1_000)))
+        else number(reais.round)
+        end
+        "#{"-" if cents.negative?}R$ #{text}"
+      end
+
+      # Columns over months or other labels (Tally::Charts.columns), amounts in cents.
+      def columns_chart(**options)
+        Tally::Charts.columns(format: method(:money), compact: method(:money_compact), **options).html_safe
+      end
+
+      # A horizontal bar's width, as a percentage of the largest one.
+      def bar_percent(value, max) = Tally::Charts.percent(value, max)
+
       # 123456 -> "1234,56" ("1234.56" in English), for a form field the action reads back
       # exactly with the same decimal mark.
       def amount_field(cents)
@@ -53,6 +71,8 @@ module Tally
           [name, [[parent[:id], t("categories.all", name:)]] + children.map { [_1[:id], category_name(_1[:name])] }]
         end
       end
+
+      def compact_round(value) = value.round(1) == value.round ? value.round : value.round(1)
 
       # A starting category's name in the current language; one you named yourself as typed.
       def category_name(name) = name && Tally::Categories.display(name, locale)
