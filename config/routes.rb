@@ -3,6 +3,7 @@
 module Tally
   class Routes < Hanami::Routes
     root to: "home.show"
+    get "/scripts/:name.js", to: "scripts.show", as: :script
 
     get "/imports", to: "imports.index", as: :imports
     post "/imports", to: "imports.create"
@@ -21,6 +22,13 @@ module Tally
     post "/cuts/dismiss", to: "cuts.dismiss", as: :dismiss_cut
     post "/cuts/:id/restore", to: "cuts.restore", as: :restore_cut
     get "/installments", to: "installments.index", as: :installments
+
+    get "/plan", to: "plans.index", as: :plans
+    post "/plan", to: "plans.create"
+    get "/plan/:id", to: "plans.show", as: :plan
+    post "/plan/:id/accept", to: "plans.accept", as: :accept_plan
+    get "/budgets", to: "budgets.index", as: :budgets
+    post "/budgets", to: "budgets.update"
 
     get "/review", to: "review.index", as: :review
     post "/review", to: "review.assign"

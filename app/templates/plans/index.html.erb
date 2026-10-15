@@ -1,0 +1,42 @@
+<main>
+  <h1>Save every month</h1>
+  <% if error_message %><p class="error"><%= error_message %></p><% end %>
+  <p>Say how much you want to save each month. The planner takes your average income and spending over the last three
+    complete months, works out the gap, and spreads it over your categories by how far each may be cut: fixed 0%,
+    essential up to 15%, discretionary up to 50% (change these on <a href="/categories">Categories</a>). You review
+    every line before anything is saved.</p>
+  <form action="/plan" method="post" class="inline">
+    <label>R$ <input name="target" class="amount" placeholder="1.500,00" required> a month</label>
+    <label>starting
+      <select name="starts_month">
+        <% start_options.each_with_index do |month, index| %>
+          <option value="<%= month %>"<%= " selected" if index == 1 %>><%= month %></option>
+        <% end %>
+      </select>
+    </label>
+    <button type="submit">Make a plan</button>
+  </form>
+
+  <% if active %>
+    <p>Active plan: save <strong><%= money(active[:target_cents]) %></strong> a month from <%= active[:starts_month] %>.
+      <a href="/plan/<%= active[:id] %>">See it</a> · <a href="/budgets">How you're doing</a></p>
+  <% end %>
+
+  <% unless plans.empty? %>
+    <h2>Plans</h2>
+    <table class="rows">
+      <thead><tr><th>Made</th><th class="num">Target</th><th>Baseline</th><th>Starts</th><th>Status</th></tr></thead>
+      <tbody>
+        <% plans.each do |item| %>
+          <tr>
+            <td><a href="/plan/<%= item[:id] %>"><%= timestamp(item[:created_at]) %></a></td>
+            <td class="num"><%= money(item[:target_cents]) %></td>
+            <td><%= item[:baseline_from] %> to <%= item[:baseline_to] %></td>
+            <td><%= item[:starts_month] %></td>
+            <td><%= item[:status] %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  <% end %>
+</main>
