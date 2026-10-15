@@ -126,6 +126,10 @@ Details the parser handles:
 
 Why poppler and not a gem: the pure-Ruby `pdf-reader` gem (2.16) returns positions but drops the spaces inside merchant names on these PDFs (`PADARIAEXEMPLO`), which hurts both display and rule matching. `poppler-utils` is a small Debian package, available on Raspberry Pi OS, and keeps the spaces. The parser calls `pdftotext` with `Open3.capture2` and an argument array, never through a shell string.
 
+### Card merchants as counterparties
+
+Card rows have no CNPJ, and the same merchant shows up under many names: a code that changes per purchase (`LOJA EXEMPLO*AB12`, `LOJA EXEMPLO*CD34`), a store number (`FARMACIA EXEMPLO 0123`), a payment processor's prefix (`PAG*Loja Exemplo`), and each bank cutting long names at its own length. A counterparty without a document is keyed by the merchant's stable part (`Tally::Merchants`): the text before `*` (or after it, for a known processor prefix), without trailing words that contain digits, ignoring case, spaces, punctuation and accents. A name that another bank cut shorter or longer joins the existing counterparty when the shorter key has at least 8 characters. The counterparty is named by that stable part; each row keeps its full description.
+
 ## 4. Re-importing a file (upsert)
 
 If a file is imported again, the existing rows are updated instead of duplicated. Every import still gets its own row in `imports`, so there is a full history.
