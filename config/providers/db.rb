@@ -12,7 +12,9 @@ Hanami.app.configure_provider :db do
       # Writes are rare; pay for durability on an SD card that may lose power.
       synchronous: :full,
       # Readers don't block the writer, and a crash mid-write is safer.
-      connect_sqls: ["PRAGMA journal_mode = WAL"]
+      connect_sqls: ["PRAGMA journal_mode = WAL"],
+      # Name searches that ignore accents and case (Tally::Search).
+      after_connect: ->(connection) { Tally::Search.register(connection) }
     )
   end
 end

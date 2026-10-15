@@ -187,12 +187,19 @@ en:
   counterparties:
     index:
       bank: Bank
+      clear: Clear
+      count:
+        one: 1 counterparty
+        other: "%{count} counterparties"
       document: Document
+      empty: No counterparties yet.
       intro: >-
         Mark yourself (your name at other banks) with "This is me": a Pix between your own
         accounts then counts as a transfer, never as spending or income.
       name: Name
+      no_match: "No one's name contains “%{search}”."
       not_me: Not me
+      search: Search a name
       this_is_me: This is me
       title: Counterparties
       you: (you)

@@ -199,12 +199,19 @@ pt-BR:
   counterparties:
     index:
       bank: Banco
+      clear: Limpar
+      count:
+        one: 1 contraparte
+        other: "%{count} contrapartes"
       document: Documento
+      empty: Nenhuma contraparte ainda.
       intro: >-
         Marque você mesmo (seu nome em outros bancos) com "Sou eu": aí um Pix entre suas
         próprias contas conta como transferência, nunca como gasto ou receita.
       name: Nome
+      no_match: "Nenhum nome contém “%{search}”."
       not_me: Não sou eu
+      search: Buscar um nome
       this_is_me: Sou eu
       title: Contrapartes
       you: (você)
