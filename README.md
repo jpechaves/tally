@@ -4,8 +4,9 @@ Personal finance tracker in Ruby ([Hanami 3](https://hanakai.org)) and SQLite. I
 
 - [docs/architecture.md](docs/architecture.md): goals, data model, money rules, milestones
 - [docs/statement-import.md](docs/statement-import.md): statement formats, re-import, categorization
+- [docs/design.md](docs/design.md): colors, type, layout and chart rules
 
-**Status:** milestone 6 (localization): statement import (Nubank account and card CSVs, Itaú card bill PDFs, re-imports that update instead of duplicating, transfers between your accounts), categories with a nature, generic rules and a review list grouped by payee, a monthly report, cut suggestions and an installment calendar, plus the "save X a month" planner, budgets and an on-track dashboard, in Brazilian Portuguese or English. Raspberry Pi deployment is next.
+**Status:** milestone 7 (design and charts): statement import (Nubank account and card CSVs, Itaú card bill PDFs, re-imports that update instead of duplicating, transfers between your accounts), categories with a nature, generic rules and a review list grouped by payee, a monthly report, cut suggestions and an installment calendar, plus the "save X a month" planner, budgets and an on-track dashboard, in Brazilian Portuguese or English, with a dark dashboard and charts. Raspberry Pi deployment is postponed for now.
 
 ## Requirements
 

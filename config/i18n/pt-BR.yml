@@ -35,12 +35,18 @@ pt-BR:
     show: Mostrar
 
   layout:
+    groups:
+      data: Dados
+      organize: Organizar
+      overview: Visão geral
+      planning: Planejamento
     nav:
       accounts: Contas
       budgets: Orçamentos
       categories: Categorias
       counterparties: Contrapartes
       cuts: Cortes
+      home: Início
       imports: Importar
       installments: Parcelas
       plan: Plano
@@ -48,6 +54,12 @@ pt-BR:
       review: Revisar
       rules: Regras
       transactions: Lançamentos
+
+  charts:
+    income: Receitas
+    millions: "%{n} mi"
+    spending: Gastos
+    thousands: "%{n} mil"
 
   errors:
     category_not_found: Escolha uma categoria.
@@ -114,13 +126,20 @@ pt-BR:
 
   home:
     show:
+      all_categories: Todas as categorias
       busy_timeout: Busy timeout
       database: Banco de dados
       foreign_keys: Chaves estrangeiras
       intro_html: Gastos da casa, orçamentos e economia. Comece <a href="/imports">importando seus extratos</a>.
       journal_mode: Modo de journal
+      month_note: "Mostrando %{month}, o último mês completo."
+      open_report: Abrir o relatório
       sqlite_version: Versão do SQLite
       synchronous: Synchronous
+      title: Visão geral
+      top_categories: "Para onde foi o dinheiro em %{month}"
+      trend: Receitas e gastos por mês
+      what_to_cut: O que posso cortar?
 
   imports:
     account: Conta
@@ -319,6 +338,7 @@ pt-BR:
       this_month: este mês
       title: Para onde foi o dinheiro
       top_payees: Maiores favorecidos
+      trend: Receitas e gastos por mês
       uncategorized: Sem categoria
       uncategorized_note_html: Lançamentos sem categoria ficam em "%{name}"; a <a href="/review">revisão</a> resolve isso.
 
@@ -371,6 +391,7 @@ pt-BR:
       banks: O que os bancos dizem
       banks_note: O Itaú imprime o que já está comprometido nas próximas faturas, uma conferência da projeção acima.
       card: Cartão
+      chart: Parcelas comprometidas por mês
       committed: Comprometido
       each: Cada
       empty: Nenhuma parcela a pagar.

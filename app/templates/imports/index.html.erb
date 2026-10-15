@@ -4,7 +4,7 @@
 
   <form action="/imports" method="post" enctype="multipart/form-data">
     <input type="file" name="files[]" multiple accept=".csv,.pdf" required>
-    <button type="submit"><%= t("imports.index.import") %></button>
+    <button type="submit" class="primary"><%= t("imports.index.import") %></button>
   </form>
 
   <h2><%= t("imports.index.history") %></h2>

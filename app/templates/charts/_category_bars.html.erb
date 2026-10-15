@@ -1,0 +1,8 @@
+<% max = lines.map(&:cents).max.to_i %>
+<dl class="bars">
+  <% lines.each do |line| %>
+    <dt><%= category_name(line.name) || t("report.show.uncategorized") %></dt>
+    <dd title="<%= money(line.cents) %> · <%= number(line.share) %>%"><div class="bar" style="width: <%= bar_percent(line.cents, max) %>%"></div></dd>
+    <dd class="value"><%= money(line.cents) %></dd>
+  <% end %>
+</dl>

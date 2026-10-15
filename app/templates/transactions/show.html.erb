@@ -16,6 +16,6 @@
     <p><%= render "categories/select", name: "category_id", selected: row[:category_source] == "manual" ? row[:category_id] : nil,
           categories: categories, blank: t("transactions.show.automatic"), form: nil %></p>
     <p><label><%= t("transactions.show.memo") %><br><textarea name="memo" rows="2" cols="60"><%= row[:memo] %></textarea></label></p>
-    <button type="submit"><%= t("common.save") %></button>
+    <button type="submit" class="primary"><%= t("common.save") %></button>
   </form>
 </main>

@@ -1,9 +1,26 @@
 <main>
-  <h1>Tally</h1>
-  <p><%= t("home.show.intro_html") %></p>
+  <h1><%= t("home.show.title") %></h1>
+  <% if report.nil? %>
+    <p><%= t("home.show.intro_html") %></p>
+  <% else %>
+    <p class="note"><%= t("home.show.month_note", month: month_label(month)) %> <a href="/report?month=<%= month %>"><%= t("home.show.open_report") %></a></p>
+    <div class="cards">
+      <div><%= t("report.show.income") %><strong><%= money(report.income_cents) %></strong><span class="note"><%= t("report.show.average_of", amount: money(report.average_income_cents)) %></span></div>
+      <div><%= t("report.show.spending") %><strong><%= money(report.spending_cents) %></strong><span class="note"><%= t("report.show.average_of", amount: money(report.average_spending_cents)) %></span></div>
+      <div><%= t("report.show.saved") %><strong class="<%= report.saved_cents.negative? ? "up" : "down" %>"><%= money(report.saved_cents) %></strong><span class="note"><%= t("report.show.average_of", amount: money(report.average_saved_cents)) %></span></div>
+    </div>
+
+    <%= render "charts/trend", title: t("home.show.trend"), trend: trend, month: month %>
+
+    <section class="panel">
+      <h2><%= t("home.show.top_categories", month: month_label(month)) %></h2>
+      <%= render "charts/category_bars", lines: top_categories %>
+      <p class="note"><a href="/report?month=<%= month %>"><%= t("home.show.all_categories") %></a> · <a href="/cuts?month=<%= month %>"><%= t("home.show.what_to_cut") %></a></p>
+    </section>
+  <% end %>
 
   <h2><%= t("home.show.database") %></h2>
-  <table>
+  <table class="rows">
     <% database.each do |key, value| %>
       <tr><th scope="row"><%= t("home.show.#{key}") %></th><td><%= value %></td></tr>
     <% end %>

@@ -4,6 +4,14 @@
     <p><%= t("installments.index.empty") %></p>
   <% else %>
     <p><%= t("installments.index.intro", amount: money(calendar.total_cents), month: month_label(calendar.from), purchases: t("installments.index.purchases", count: calendar.purchases.size)) %></p>
+    <section class="chart">
+      <h2><%= t("installments.index.chart") %></h2>
+      <%= columns_chart(
+        title: t("installments.index.chart"),
+        labels: calendar.months.keys.map { month_label(_1) },
+        series: [{name: t("installments.index.committed"), css: "s-spending", values: calendar.months.values}]
+      ) %>
+    </section>
     <table class="rows">
       <thead><tr><th><%= t("installments.index.month") %></th><th class="num"><%= t("installments.index.committed") %></th><th class="num"><%= t("installments.index.freed") %></th></tr></thead>
       <tbody>

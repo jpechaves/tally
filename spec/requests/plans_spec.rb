@@ -71,7 +71,7 @@ RSpec.describe "Savings plan and budgets", :db, type: :request do
     get "/budgets"
     body = last_response.body
     expect(body).to include("50% of Sep 2026 has gone by.", "Target<strong>R$ 1,000.00</strong>")
-    expect(body).to match(%r{<td>Food › Food delivery</td>\s*<td class="num">R\$ 45.90</td>}m)
+    expect(body).to match(%r{<td>Food › Food delivery\s*<div class="meter over" title="R\$ 45.90 / R\$ 10.00">\s*<span style="width: 100.0%"></span><i style="left: 50.0%"></i>.*?</td>\s*<td class="num">R\$ 45.90</td>}m)
     expect(body).to include("918%", ">over<")
 
     post "/budgets", category_id: category_id("Delivery").to_s, month: "2026-10", amount: "60.00"
@@ -89,15 +89,15 @@ RSpec.describe "Savings plan and budgets", :db, type: :request do
     follow_redirect!
 
     expect(last_response.headers["Content-Security-Policy"]).to include("script-src 'self'")
-    expect(last_response.body).to include(%(<script src="/scripts/plan.js"></script>), %(data-target="100000"), %(data-decimal="."), %(data-reaches="reaches the target"))
-    expect(last_response.body.scan(/<script[^>]*>/)).to eq([%(<script src="/scripts/plan.js">)])
+    expect(last_response.body).to include(%(<script src="/assets/plan.js"></script>), %(data-target="100000"), %(data-decimal="."), %(data-reaches="reaches the target"))
+    expect(last_response.body.scan(/<script[^>]*>/)).to eq([%(<script src="/assets/plan.js">)])
 
-    get "/scripts/plan.js"
+    get "/assets/plan.js"
     expect(last_response.status).to eq(200)
     expect(last_response.headers["Content-Type"]).to start_with("text/javascript")
     expect(last_response.body).to include("new-saved", "confirmShort")
 
-    get "/scripts/other.js"
+    get "/assets/other.js"
     expect(last_response.status).to eq(404)
   end
 

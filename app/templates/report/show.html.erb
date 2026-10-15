@@ -13,6 +13,8 @@
     <p class="note"><% if averaged.empty? %><%= t("report.show.no_average") %><% else %><%= t("report.show.averages_over", months: averaged.map { month_label(_1) }.join(", ")) %><% end %>
       <%= t("report.show.counting") %></p>
 
+    <%= render "charts/trend", title: t("report.show.trend"), trend: trend, month: month %>
+
     <h2><%= t("report.show.by_category") %></h2>
     <table class="rows">
       <%= render "report/head", first: t("report.show.category") %>

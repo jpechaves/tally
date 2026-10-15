@@ -23,12 +23,18 @@ en:
     show: Show
 
   layout:
+    groups:
+      data: Data
+      organize: Organize
+      overview: Overview
+      planning: Planning
     nav:
       accounts: Accounts
       budgets: Budgets
       categories: Categories
       counterparties: Counterparties
       cuts: Cuts
+      home: Home
       imports: Import
       installments: Installments
       plan: Plan
@@ -36,6 +42,12 @@ en:
       review: Review
       rules: Rules
       transactions: Transactions
+
+  charts:
+    income: Income
+    millions: "%{n}M"
+    spending: Spending
+    thousands: "%{n}K"
 
   errors:
     category_not_found: Pick a category.
@@ -102,13 +114,20 @@ en:
 
   home:
     show:
+      all_categories: All categories
       busy_timeout: Busy timeout
       database: Database
       foreign_keys: Foreign keys
       intro_html: Household spending, budgets and savings. Start by <a href="/imports">importing your statements</a>.
       journal_mode: Journal mode
+      month_note: "Showing %{month}, the latest complete month."
+      open_report: Open the report
       sqlite_version: SQLite version
       synchronous: Synchronous
+      title: Overview
+      top_categories: "Where the money went in %{month}"
+      trend: Income and spending by month
+      what_to_cut: What can I cut?
 
   imports:
     account: Account
@@ -306,6 +325,7 @@ en:
       this_month: this month
       title: Where the money went
       top_payees: Top payees
+      trend: Income and spending by month
       uncategorized: No category
       uncategorized_note_html: Rows without a category are under "%{name}"; the <a href="/review">review list</a> sorts them out.
 
@@ -358,6 +378,7 @@ en:
       banks: What the banks say
       banks_note: Itaú prints what is already committed to its next bills, a check on the projection above.
       card: Card
+      chart: Installments committed per month
       committed: Committed
       each: Each
       empty: No installments left to pay.

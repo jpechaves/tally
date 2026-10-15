@@ -15,6 +15,17 @@ module Tally
           requested_month || Tally::Insights.default_month(months)
         end
 
+        TREND_MONTHS = 6
+
+        # Income and spending for the months up to this one, from the first with rows.
+        expose :trend, decorate: false do |month|
+          next [] unless month
+
+          months = Tally::Insights.previous_months(month, TREND_MONTHS - 1) + [month]
+          totals = Tally::Insights.monthly(insight_repo.rows(from: months.first, to: month), months)
+          totals.drop_while { _1[:income_cents].zero? && _1[:spending_cents].zero? }
+        end
+
         expose :report do |month|
           next unless month
 
