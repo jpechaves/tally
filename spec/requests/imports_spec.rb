@@ -78,6 +78,16 @@ RSpec.describe "Importing statements", :db, type: :request do
     expect(last_response.body).to include("MARIA E SOUZA (you)", "Not me")
   end
 
+  it "strikes through rows that are no longer in the file" do
+    upload("Nubank_2026-08-09.csv")
+    shorter = fixture("Nubank_2026-08-09.csv").force_encoding("UTF-8").sub(/^2026-07-10.*\n/, "")
+    Hanami.app["operations.import_statement"].(file_name: "Nubank_2026-08-09.csv", content: shorter)
+
+    get "/imports/#{db[:imports].max(:id)}"
+    expect(last_response.body).to include(%(<tr class="missing">))
+    expect(last_response.body).not_to match(/<t[rd][a-z]/)
+  end
+
   it "answers 404 for an unknown import or counterparty" do
     get "/imports/999"
     expect(last_response.status).to eq(404)

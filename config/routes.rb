@@ -3,6 +3,7 @@
 module Tally
   class Routes < Hanami::Routes
     root to: "home.show"
+    get "/scripts/:name.js", to: "scripts.show", as: :script
 
     post "/locale", to: "locale.update", as: :locale
 

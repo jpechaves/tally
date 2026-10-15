@@ -40,6 +40,13 @@ module Tally
       (b.year - a.year) * 12 + (b.month - a.month)
     end
 
+    # The month a page opens on: the latest month with rows that is already over, since
+    # the current one is usually only partly imported; the latest month if none is.
+    def default_month(months, today: Date.today)
+      current = today.strftime("%Y-%m")
+      months.select { _1 < current }.max || months.max
+    end
+
     # The average of whole cents, rounded half away from zero.
     def average(values) = values.empty? ? 0 : (values.sum.to_r / values.size).round
 

@@ -57,15 +57,15 @@ pt-BR:
     invalid_amount: "Valores são escritos como -50,00 (gastos são negativos)."
     invalid_field: Escolha o que comparar e como.
     invalid_kind: Escolha despesa ou receita.
+    invalid_limit: Um limite é um valor de zero ou mais, como 500,00.
     invalid_max_cut: O corte máximo é uma porcentagem de 0 a 100.
     invalid_nature: Escolha fixa, essencial ou supérflua.
     invalid_parent: "Categorias têm um nível só: escolha uma categoria principal."
     invalid_pattern: Essa não é uma expressão regular válida.
     invalid_target: Informe quanto guardar por mês, como 1.500,00.
     missing_key: Falta a chave da sugestão.
-    month_and_category: Escolha um mês e uma categoria.
+    month_and_category: Escolha um mês e uma categoria de despesa.
     name_taken: Já existe uma categoria com esse nome aí.
-    negative_limit: Um limite não pode ser negativo.
     no_data: Não há lançamentos nos últimos três meses completos para planejar. Importe seus extratos primeiro.
     no_rows: Escolha pelo menos um lançamento.
     not_a_draft: Este plano já foi aceito.
@@ -420,6 +420,7 @@ pt-BR:
       baseline: "base de %{from} a %{to}"
       budgets_from: "orçamentos a partir de %{month}"
       category: Categoria
+      confirm_short: Estes limites guardam menos que a meta. Aceitar mesmo assim?
       cut: Corte
       fixed_lever: "Custos fixos não dá para enxugar mês a mês, mas um contrato pode ser renegociado ou trocado:"
       gap: Diferença
@@ -452,8 +453,9 @@ pt-BR:
       category: Categoria
       counting: Compras no cartão contam no mês em que foram feitas, parcelas no mês da fatura.
       elapsed: >-
-        %{pct}% de %{month} já passou. A projeção assume a receita que o plano espera e que
-        cada orçamento é gasto por inteiro.
+        %{pct}% de %{month} já passou. A projeção assume a receita que o plano espera (ou a
+        média dos últimos três meses), que cada orçamento é gasto por inteiro, e que os gastos
+        fora dos orçamentos chegam à média dos últimos três meses.
       empty_html: 'Nenhum orçamento para %{month} ainda. <a href="/plan">Faça um plano de economia</a> e aceite-o, e os limites dele viram seus orçamentos.'
       in_out: "%{in} entraram, %{out} saíram"
       left: Resta
@@ -472,6 +474,7 @@ pt-BR:
         Ritmo: o gasto comparado ao que o limite permite até hoje; acima de 110% é sinalizado.
         Edite um limite e aperte Enter: ele vale de %{month} em diante. Gastos fora destes
         orçamentos neste mês: %{amount}.
+      plan_short: "Os limites do plano aceito guardam %{saved} por mês, %{short} a menos que a meta de %{target}."
       projected: Projeção
       reached: Meta alcançada
       reached_short: alcançada

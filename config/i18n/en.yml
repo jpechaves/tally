@@ -45,15 +45,15 @@ en:
     invalid_amount: "Amounts look like -50.00 (spending is negative)."
     invalid_field: Pick what to match and how.
     invalid_kind: Pick expense or income.
+    invalid_limit: A limit is an amount of zero or more, like 500.00.
     invalid_max_cut: The maximum cut is a percentage from 0 to 100.
     invalid_nature: Pick fixed, essential or discretionary.
     invalid_parent: "Categories go one level deep: pick a top-level parent."
     invalid_pattern: That is not a valid regular expression.
     invalid_target: Enter how much to save each month, like 1500.00.
     missing_key: Missing suggestion key.
-    month_and_category: Pick a month and a category.
+    month_and_category: Pick a month and a spending category.
     name_taken: There is already a category with that name there.
-    negative_limit: A limit can't be negative.
     no_data: There are no rows in the last three complete months to plan from. Import your statements first.
     no_rows: Pick at least one row.
     not_a_draft: This plan was already accepted.
@@ -407,6 +407,7 @@ en:
       baseline: "baseline %{from} to %{to}"
       budgets_from: "budgets from %{month}"
       category: Category
+      confirm_short: These limits save less than the target. Accept them anyway?
       cut: Cut
       fixed_lever: "Fixed costs can't be trimmed month to month, but a contract can be renegotiated or switched:"
       gap: Gap
@@ -440,7 +441,8 @@ en:
       counting: Card purchases count in the month they were made, installments in the month of their bill.
       elapsed: >-
         %{pct}% of %{month} has gone by. The projection assumes the income the plan expects
-        and that each budget is spent in full.
+        (or the last three months' average), that each budget is spent in full, and that
+        spending outside the budgets reaches its average of the last three months.
       empty_html: 'No budgets for %{month} yet. <a href="/plan">Make a savings plan</a> and accept it, and its limits become your budgets.'
       in_out: "%{in} in, %{out} out"
       left: Left
@@ -459,6 +461,7 @@ en:
         Pace: spent against what the limit allows by today; over 110% is flagged. Edit a
         limit and press Enter: it applies from %{month} on. Spending outside these budgets
         this month: %{amount}.
+      plan_short: "The accepted plan's limits save %{saved} a month, %{short} short of its %{target} target."
       projected: Projected
       reached: Target reached
       reached_short: reached

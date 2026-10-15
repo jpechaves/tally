@@ -64,7 +64,23 @@ RSpec.describe Tally::Cuts do
     expect(suggestions(rows).find { _1.signal == "fees" }).to have_attributes(monthly_cents: 68_770, ids: [1, 2, 3])
   end
 
-  it "flags the same payee and amount twice within 2 days, until dismissed" do
+  it "leaves a monthly card fee to the fees signal, which nets its discount" do
+    rows = %w[2026-06 2026-07 2026-08 2026-09].flat_map do |month|
+      [insight_row("#{month}-02", -105.00, "Mensalidade - Plano do", kind: "fee"),
+        insight_row("#{month}-14", 52.50, "Redução Mensalidade - P", kind: "fee")]
+    end
+
+    expect(suggestions(rows).map(&:signal)).to eq(["fees"])
+    expect(suggestions(rows).first.monthly_cents).to eq(5_250)
+  end
+
+  it "doesn't take a charge repeated on most days for a duplicate" do
+    rows = (10..15).map { insight_row("2026-09-#{_1}", -14.00, "ESTACIONAMENTO EXEMPLO") }
+
+    expect(suggestions(rows).map(&:signal)).not_to include("duplicate")
+  end
+
+  it "flags the same payee and amount twice on the same or the next day, until dismissed" do
     rows = [
       insight_row("2026-09-15", -189.90, "ACADEMIA EXEMPLO"),
       insight_row("2026-09-15", -189.90, "ACADEMIA EXEMPLO"),

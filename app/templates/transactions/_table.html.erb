@@ -4,12 +4,12 @@
   </thead>
   <tbody>
     <% rows.each do |row| %>
-      <tr<% if row[:missing_since_import_id] %> class="missing"<% end %>>
+      <tr class="<%= "missing" if row[:missing_since_import_id] %>">
         <td><%= date(row[:occurred_on]) %></td>
         <td><%= row[:account_name] %></td>
         <td title="<%= row[:raw_description] %>"><a href="/transactions/<%= row[:id] %>"><%= row[:description] %></a></td>
         <td><%= kind_label(row[:kind]) %><% if row[:kind] == "transfer" %><%= row[:counter_account_name] ? " ↔ #{row[:counter_account_name]}" : "" %><%= row[:transfer_id] ? "" : " #{t("transactions.table.one_leg")}" %><% end %></td>
-        <td<% if row[:category_source] == "bank" %> class="suggested" title="<%= t("transactions.table.bank_suggestion") %>"<% end %>><%= category_label(row) %></td>
+        <% if row[:category_source] == "bank" %><td class="suggested" title="<%= t("transactions.table.bank_suggestion") %>"><% else %><td><% end %><%= category_label(row) %></td>
         <td class="details"><%= [
           row[:installment_total] && "#{row[:installment_number]}/#{row[:installment_total]}",
           row[:purchased_on] && t("transactions.table.bought", date: date(row[:purchased_on])),

@@ -11,7 +11,7 @@ module Tally
         end
 
         expose :month do |months, requested_month: nil|
-          requested_month || months.first
+          requested_month || Tally::Insights.default_month(months)
         end
 
         expose :suggestions do |month|

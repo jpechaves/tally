@@ -10,15 +10,23 @@ module Tally
         def handle(request, response)
           month = request.params[:month].to_s[/\A\d{4}-(0[1-9]|1[0-2])\z/]
           category = category_repo.find(request.params[:category_id].to_i)
-          halt 422, t("errors.month_and_category") unless month && category && category[:kind] == "expense"
+          return back(response, month, "month_and_category") unless month && category && category[:kind] == "expense"
 
           amount = parse_amount(request.params[:amount].to_s).cents
-          halt 422, t("errors.negative_limit") if amount.negative?
+          return back(response, month, "invalid_limit") if amount.negative?
 
           plan_repo.set_budget(category[:id], month, amount)
-          response.redirect_to "#{routes.path(:budgets)}?month=#{month}"
+          back(response, month)
         rescue Tally::Money::ParseError
-          halt 422, t("errors.invalid_amount")
+          back(response, month, "invalid_limit")
+        end
+
+        private
+
+        def back(response, month, error = nil)
+          query = {month:, error:}.compact
+          path = routes.path(:budgets)
+          response.redirect_to query.empty? ? path : "#{path}?#{URI.encode_www_form(query)}"
         end
       end
     end

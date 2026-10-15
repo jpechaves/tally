@@ -7,7 +7,7 @@
     <tbody>
       <% categories.each do |category| %>
         <% form = "category-#{category[:id]}" %>
-        <tr<% if category[:archived_at] %> class="missing"<% end %>>
+        <tr class="<%= "missing" if category[:archived_at] %>">
           <td><%= category[:parent_id] ? "#{category[:parent_name]} › " : "" %><input name="name" value="<%= category[:name] %>" form="<%= form %>" size="22"></td>
           <td>
             <% if category[:kind] == "expense" %>

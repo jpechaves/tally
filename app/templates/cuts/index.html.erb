@@ -31,7 +31,7 @@
         <tr>
           <td><%= item[:title] %></td>
           <td class="note"><%= timestamp(item[:created_at]) %></td>
-          <td><form action="/cuts/<%= item[:id] %>/restore" method="post"><button type="submit"><%= t("cuts.index.restore") %></button></form></td>
+          <td><form action="/cuts/<%= item[:id] %>/restore" method="post"><input type="hidden" name="month" value="<%= month %>"><button type="submit"><%= t("cuts.index.restore") %></button></form></td>
         </tr>
       <% end %>
     </table>

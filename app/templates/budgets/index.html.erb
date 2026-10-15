@@ -1,11 +1,16 @@
 <main>
   <h1><%= t("budgets.index.title") %></h1>
   <%= render "report/month_picker", path: "/budgets", months: months, month: month %>
+  <% if error_code %><p class="error"><%= t("errors.#{error_code}", default: error_code.to_s) %></p><% end %>
+  <% if plan_shortfall_cents.positive? %>
+    <p class="warning"><%= t("budgets.index.plan_short", saved: money(plan[:target_cents] - plan_shortfall_cents),
+      short: money(plan_shortfall_cents), target: money(plan[:target_cents])) %></p>
+  <% end %>
   <% if budget_month.lines.empty? %>
     <p><%= t("budgets.index.empty_html", month: month_label(month)) %></p>
   <% else %>
     <div class="cards">
-      <% if plan %><div><%= t("budgets.index.target") %><strong><%= money(plan[:target_cents]) %></strong><span class="note"><%= t("budgets.index.a_month") %></span></div><% end %>
+      <% if budget_month.target_cents %><div><%= t("budgets.index.target") %><strong><%= money(budget_month.target_cents) %></strong><span class="note"><%= t("budgets.index.a_month") %></span></div><% end %>
       <div><%= t("budgets.index.saved_so_far") %><strong><%= money(budget_month.saved_cents) %></strong><span class="note"><%= t("budgets.index.in_out", in: money(budget_month.income_cents), out: money(budget_month.spending_cents)) %></span></div>
       <% unless budget_month.complete? %>
         <div><%= t("budgets.index.projected") %><strong class="<%= budget_month.on_track? ? "down" : "up" %>"><%= money(budget_month.projected_saved_cents) %></strong>

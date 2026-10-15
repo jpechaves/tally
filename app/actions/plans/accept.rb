@@ -15,7 +15,7 @@ module Tally
           halt 404 if result.failure? && result.failure == :not_found
           halt 422, t("errors.could_not_save", reason: result.failure) if result.failure?
 
-          response.redirect_to routes.path(:budgets)
+          response.redirect_to "#{routes.path(:budgets)}?month=#{result.value![:starts_month]}"
         rescue Tally::Money::ParseError
           halt 422, t("errors.invalid_amount")
         end

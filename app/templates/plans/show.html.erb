@@ -15,7 +15,10 @@
     <p class="notice"><%= t("plans.show.shortfall", cuts: money(cuts_cents), shortfall: money(plan[:shortfall_cents])) %></p>
   <% end %>
 
-  <form action="/plan/<%= plan[:id] %>/accept" method="post" id="plan">
+  <form action="/plan/<%= plan[:id] %>/accept" method="post" id="plan" data-today="<%= saved_today_cents %>"
+    data-target="<%= plan[:target_cents] %>" data-decimal="<%= Tally::Money.decimal_mark(locale) %>"
+    data-locale="<%= locale == "en" ? "en-US" : "pt-BR" %>" data-currency="R$" data-reaches="<%= t("plans.show.reaches") %>"
+    data-short="<%= t("plans.show.short") %>" data-confirm-short="<%= t("plans.show.confirm_short") %>">
     <table class="rows">
       <thead><tr><th><%= t("plans.show.category") %></th><th><%= t("plans.show.nature") %></th><th class="num"><%= t("plans.show.today") %></th><th class="num"><%= t("plans.show.may_cut") %></th><th class="num"><%= t("plans.show.new_limit") %></th><th class="num"><%= t("plans.show.cut") %></th></tr></thead>
       <tbody>
@@ -62,28 +65,5 @@
     <% end %>
   <% end %>
 
-  <script>
-    (() => {
-      const form = document.getElementById("plan");
-      const inputs = form.querySelectorAll("input[data-baseline]");
-      if (!inputs.length) return;
-      const today = <%= saved_today_cents %>, target = <%= plan[:target_cents] %>;
-      const decimal = "<%= Tally::Money.decimal_mark(locale) %>", tag = "<%= locale == "en" ? "en-US" : "pt-BR" %>";
-      const words = {reaches: "<%= t("plans.show.reaches") %>", short: "<%= t("plans.show.short") %>"};
-      const cents = (text) => Math.round(parseFloat(text.split(decimal === "," ? "." : ",").join("").replace(decimal, ".")) * 100);
-      const brl = (c) => (c < 0 ? "-" : "") + "R$ " + (Math.abs(c) / 100).toLocaleString(tag, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-      const update = () => {
-        let cuts = 0;
-        inputs.forEach((input) => {
-          const value = cents(input.value);
-          const cut = isNaN(value) ? 0 : Number(input.dataset.baseline) - value;
-          cuts += cut;
-          input.closest("tr").querySelector("[data-cut]").textContent = brl(cut);
-        });
-        document.getElementById("new-saved").textContent = brl(today + cuts);
-        document.getElementById("verdict").textContent = today + cuts >= target ? words.reaches : words.short;
-      };
-      inputs.forEach((input) => input.addEventListener("input", update));
-    })();
-  </script>
+  <script src="/scripts/plan.js"></script>
 </main>

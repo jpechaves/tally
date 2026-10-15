@@ -27,15 +27,22 @@ RSpec.describe "Report, cuts and installments", :db, type: :request do
     expect(last_response.status).to eq(200)
     body = last_response.body
     expect(body).to include("Income<strong>R$ 8,920.00</strong>", "Averages over Jun 2026.")
+    expect(body).not_to match(/<t[rd][a-z]/)
     expect(body).to include("<td>Transferências (Pix)</td>", "<td>Delivery</td>", "<td>No category</td>")
     expect(body).to include("R$ 1,559.30 of this month&#39;s spending, 3 installments.")
     expect(body).to match(%r{<td>Hotel Exemplo .*?</td>\s*<td>2/6</td>\s*<td>Nov 2026</td>}m)
     expect(body).not_to include("Pagamento de fatura")
   end
 
-  it "defaults to the latest month" do
+  it "opens on the latest month that is over, since the current one is only partly imported" do
+    allow(Date).to receive(:today).and_return(Date.new(2026, 10, 15))
     get "/report"
+    expect(last_response.body).to include(%(<option value="2026-09" selected>))
+    get "/cuts"
+    expect(last_response.body).to include(%(<option value="2026-09" selected>))
 
+    allow(Date).to receive(:today).and_return(Date.new(2026, 1, 15))
+    get "/report"
     expect(last_response.body).to include(%(<option value="2027-01" selected>))
   end
 
@@ -53,8 +60,9 @@ RSpec.describe "Report, cuts and installments", :db, type: :request do
     expect(last_response.body).not_to include(%(value="#{key}"))
     expect(last_response.body).to include("Dismissed", "ESTACIONAMENTO EXEMPLO: R$ 14.00 charged 2 times")
 
-    post "/cuts/#{db[:dismissed_suggestions].get(:id)}/restore"
-    get "/cuts", month: "2026-09"
+    post "/cuts/#{db[:dismissed_suggestions].get(:id)}/restore", month: "2026-09"
+    expect(last_response.headers["Location"]).to end_with("/cuts?month=2026-09")
+    follow_redirect!
     expect(last_response.body).to include(%(value="#{key}"))
   end
 
