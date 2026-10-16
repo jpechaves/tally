@@ -20,8 +20,8 @@
     <p><%= t("transactions.index.empty") %></p>
   <% else %>
     <p><%= t("transactions.index.summary", rows: t("common.row_count", count: totals[:rows]), net: money(totals[:total_cents])) %></p>
-    <%= render "transactions/pages", pages: pages, current_page: current_page, page_path: page_path %>
+    <%= render "shared/pages", page: pagination, path: page_path %>
     <%= render "transactions/table", rows: rows %>
-    <%= render "transactions/pages", pages: pages, current_page: current_page, page_path: page_path %>
+    <%= render "shared/pages", page: pagination, path: page_path %>
   <% end %>
 </main>

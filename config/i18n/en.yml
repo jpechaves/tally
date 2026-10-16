@@ -13,6 +13,10 @@ en:
     net: Net
     none: None.
     nothing_imported_html: Nothing imported yet. Start by <a href="/imports">importing your statements</a>.
+    pages:
+      next: Next
+      page: "Page %{page} of %{pages}"
+      previous: Previous
     range: "%{from} to %{to}"
     remove: Remove
     rows: Rows
@@ -213,9 +217,6 @@ en:
       all_accounts: All accounts
       all_months: All months
       empty: No transactions.
-      next: Next
-      page: "Page %{page} of %{pages}"
-      previous: Previous
       summary: "%{rows}, net %{net}."
       title: Transactions
     show:

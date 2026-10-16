@@ -6,7 +6,7 @@ module Tally
       class Index < Tally::View
         include Deps["repos.account_repo", "repos.transaction_repo"]
 
-        PER_PAGE = 100
+        PER_PAGE = Tally::Pagination::PER_PAGE
 
         expose :account_id
         expose :month
@@ -24,25 +24,16 @@ module Tally
           transaction_repo.totals(account_id:, month:)
         end
 
-        expose :pages, decorate: false do |totals|
-          [(totals[:rows] + PER_PAGE - 1) / PER_PAGE, 1].max
+        expose :pagination, decorate: false do |totals, page:|
+          Tally::Pagination.page(page, total: totals[:rows], per_page: PER_PAGE)
         end
 
-        # The page asked for, kept within the pages there are.
-        expose :current_page, decorate: false do |pages, page:|
-          page.clamp(1, pages)
+        expose :rows do |account_id, month, pagination|
+          transaction_repo.list(account_id:, month:, limit: pagination.limit, offset: pagination.offset)
         end
 
-        expose :rows do |account_id, month, current_page|
-          transaction_repo.list(account_id:, month:, limit: PER_PAGE, offset: (current_page - 1) * PER_PAGE)
-        end
-
-        # The link to another page, keeping the filters.
         expose :page_path, decorate: false do |account_id, month|
-          lambda do |number|
-            query = {account: account_id, month:, page: number}.compact.map { |key, value| "#{key}=#{value}" }.join("&")
-            "/transactions?#{query}"
-          end
+          Tally::Pagination.path("/transactions", account: account_id, month:)
         end
       end
     end

@@ -25,6 +25,10 @@ pt-BR:
     net: Saldo
     none: Nenhuma.
     nothing_imported_html: Nada importado ainda. Comece <a href="/imports">importando seus extratos</a>.
+    pages:
+      next: Próxima
+      page: "Página %{page} de %{pages}"
+      previous: Anterior
     range: "%{from} a %{to}"
     remove: Remover
     rows: Lançamentos
@@ -225,9 +229,6 @@ pt-BR:
       all_accounts: Todas as contas
       all_months: Todos os meses
       empty: Nenhum lançamento.
-      next: Próxima
-      page: "Página %{page} de %{pages}"
-      previous: Anterior
       summary: "%{rows}, saldo %{net}."
       title: Lançamentos
     show:
