@@ -458,6 +458,7 @@ lib/tally/
   insights/     baseline.rb, cut_signals.rb, recurring.rb, planner.rb   (pure: data in, numbers out)
   locales.rb    the languages Tally speaks
 config/db/migrate/, config/providers/db.rb
+bin/                        setup, dev, check-private (pre-commit), reset-db (wipe and reseed a local database)
 config/i18n/                pt-BR.yml and en.yml: every word on the pages (§12, milestone 6)
 spec/fixtures/statements/   (synthetic only: fake names and amounts in the real formats)
 data/                       (gitignored: real statements, the database, rules from your data)

@@ -24,6 +24,28 @@ bundle exec rspec
 
 The home page shows the SQLite settings in effect (WAL, foreign keys, full sync), which is a quick check on a new machine.
 
+## Useful commands
+
+| Command | What it does |
+|---|---|
+| `bin/setup` | Installs gems, prepares the dev and test databases, installs the pre-commit hook. Safe to run again after pulling. |
+| `bin/dev` | Starts the server at http://localhost:2300, reloading when code changes. |
+| `bin/hanami console` | A Ruby console with the app loaded, e.g. `app["repos.plan_repo"].active`. |
+| `bundle exec rspec` | Runs the tests. Add a path to run some: `bundle exec rspec spec/requests/plans_spec.rb:20`. |
+| `bundle exec rspec spec/local` | Checks the parsers against your real statements in `data/statements/` (skipped when it is empty). |
+| `bundle exec rake "tally:import[data/statements/*]"` | Imports statement files from disk (see [Importing statements](#importing-statements)). |
+| `bin/hanami db migrate` | Applies new migrations to the dev and test databases (`bin/setup` does it too). |
+| `bin/hanami db seed` | Adds the starting categories and generic rules that are missing, and loads `data/seeds.rb`. It never changes or brings back what you edited, archived or switched off. |
+| `bin/hanami db version` | Prints the database's schema version. |
+| `bin/reset-db` | Wipes the database and starts it again, empty, with the starting categories. See below. |
+| `bin/check-private --all` | Scans every tracked file for the strings in `data/private-patterns.txt`. |
+
+### Starting the database again
+
+`bin/reset-db` deletes everything in the database (statements, categories you changed, rules, plans, budgets) and recreates it from the migrations and seeds, for example to import everything again after an importer change. It asks you to type `yes`, then copies the database next to itself first (`db/tally-backup-20261016-143000.sqlite`) and prints where the copy went. Stop `bin/dev` before running it.
+
+It refuses to run with `HANAMI_ENV=production` or on a Raspberry Pi, where the live database is. `bin/reset-db --force` skips the question, for scripts, and only works in development. To get your data back, stop the server and copy the backup over the database file.
+
 ## Configuration
 
 Settings come from environment variables, loaded from `.env` files in development (see [Hanami settings](https://hanakai.org/learn/hanami/app/settings)). Put real values in `.env.local`, which is gitignored.
