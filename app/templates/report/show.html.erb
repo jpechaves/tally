@@ -20,9 +20,11 @@
       <%= render "report/head", first: t("report.show.category") %>
       <tbody>
         <% report.categories.each do |line| %>
-          <%= render "report/line", line: line, label: category_name(line.name) || t("report.show.uncategorized"), css: "" %>
+          <%= render "report/line", line: line, label: category_name(line.name) || t("report.show.uncategorized"), css: "",
+            href: transactions_path(month: month, kind: "spending", category: line.id || Tally::TransactionFilter::NONE) %>
           <% line.children.each do |child| %>
-            <%= render "report/line", line: child, label: category_name(child.name), css: "child" %>
+            <%= render "report/line", line: child, label: category_name(child.name), css: "child",
+              href: transactions_path(month: month, kind: "spending", category: child.id) %>
           <% end %>
         <% end %>
       </tbody>
@@ -33,7 +35,8 @@
     <div class="scroll"><table class="rows">
       <%= render "report/head", first: t("report.show.nature") %>
       <tbody>
-        <% report.natures.each do |line| %><%= render "report/line", line: line, label: nature_label(line.name == "unset" ? nil : line.name), css: "" %><% end %>
+        <% report.natures.each do |line| %><%= render "report/line", line: line, label: nature_label(line.name == Tally::TransactionFilter::UNSET ? nil : line.name), css: "",
+          href: transactions_path(month: month, kind: "spending", nature: line.name) %><% end %>
       </tbody>
     </table></div>
 
@@ -41,7 +44,8 @@
     <div class="scroll"><table class="rows">
       <%= render "report/head", first: t("report.show.payee") %>
       <tbody>
-        <% report.payees.each do |line| %><%= render "report/line", line: line, label: line.name, css: "" %><% end %>
+        <% report.payees.each do |line| %><%= render "report/line", line: line, label: line.name, css: "",
+          href: transactions_path(month: month, kind: "spending", payee: line.id) %><% end %>
       </tbody>
     </table></div>
 

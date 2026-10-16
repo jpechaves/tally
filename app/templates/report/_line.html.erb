@@ -1,5 +1,6 @@
+<%# One line of a report table; href lists the rows that add up to it. %>
 <tr class="<%= css %>">
-  <td><%= label %></td>
+  <td><a href="<%= href %>"><%= label %></a></td>
   <td class="num"><%= money(line.cents) %></td>
   <td class="num"><span class="share" aria-hidden="true"><span style="width: <%= bar_percent(line.share, 100) %>%"></span></span><span class="pct"><%= number(line.share) %>%</span></td>
   <td class="num"><%= money(line.average_cents) %></td>

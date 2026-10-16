@@ -21,9 +21,18 @@
         <option value="<%= value %>"<%= " selected" if value == filter.kind %>><%= t("transactions.index.kinds.#{value}") %></option>
       <% end %>
     </select>
+    <% filter.carried.each do |key, value| %><input type="hidden" name="<%= key %>" value="<%= value %>"><% end %>
     <button type="submit"><%= t("common.show") %></button>
     <% if filter.any? %><a href="<%= Tally::TransactionFilter::PATH %>"><%= t("transactions.index.clear") %></a><% end %>
   </form>
+  <% unless filter.carried.empty? %>
+    <p class="filters">
+      <% filter.carried.each do |key, value| %>
+        <span class="badge"><%= t("transactions.index.carried.#{key}", value: key == :nature ? nature_label(value == Tally::TransactionFilter::UNSET ? nil : value) : payee_name) %>
+          <a href="<%= filter.with(key => nil).path %>" title="<%= t("transactions.index.drop") %>" aria-label="<%= t("transactions.index.drop") %>">✕</a></span>
+      <% end %>
+    </p>
+  <% end %>
 
   <% if rows.empty? %>
     <p><%= t("transactions.index.empty") %></p>

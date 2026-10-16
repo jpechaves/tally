@@ -225,7 +225,11 @@ en:
       all_categories: All categories
       all_kinds: All kinds
       all_months: All months
+      carried:
+        nature: "Nature: %{value}"
+        payee: "Payee: %{value}"
       clear: Clear filters
+      drop: Remove this filter
       empty: No transactions.
       kinds:
         income: Income

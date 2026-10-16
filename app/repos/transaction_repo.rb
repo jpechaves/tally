@@ -218,6 +218,8 @@ module Tally
         scope = scope.where(Sequel.function(:substr, column.(:occurred_on), 1, 7) => filter.month) if filter.month
         scope = scope.where(column.(:category_id) => category_ids(filter.category)) if filter.category
         scope = scope.where(column.(:kind) => KIND_FILTERS.fetch(filter.kind)) if filter.kind
+        scope = scope.where(nature_condition(filter.nature)) if filter.nature
+        scope = scope.where(payee_key => filter.payee) if filter.payee
         # Spending and income as the report counts them, which leaves out rows a
         # re-import flagged as missing (InsightRepo).
         scope = scope.where(column.(:missing_since_import_id) => nil) if COUNTED.include?(filter.kind)
@@ -229,6 +231,20 @@ module Tally
         return nil if category == Tally::TransactionFilter::NONE
 
         categories.dataset.unordered.where(Sequel.|({id: category}, {parent_id: category})).select(:id)
+      end
+
+      # Who a row paid, grouped like the review list and the report (Tally::Review.key).
+      def payee_key
+        Sequel.function(Tally::Review::KEY_FUNCTION, Sequel[:transactions][:counterparty_id], Sequel[:transactions][:description])
+      end
+
+      # Rows whose own category has this nature. UNSET is rows whose category has none and
+      # rows with no category, as the report groups them.
+      def nature_condition(nature)
+        category_id = Sequel[:transactions][:category_id]
+        return {category_id => categories.dataset.unordered.where(nature:).select(:id)} unless nature == Tally::TransactionFilter::UNSET
+
+        Sequel.|({category_id => nil}, {category_id => categories.dataset.unordered.where(nature: nil).select(:id)})
       end
     end
   end

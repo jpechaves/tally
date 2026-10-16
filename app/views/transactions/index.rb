@@ -34,6 +34,13 @@ module Tally
         expose :rows do |filter, pagination|
           transaction_repo.list(filter, limit: pagination.limit, offset: pagination.offset)
         end
+
+        # Who the payee filter shows, named like the report names it.
+        expose :payee_name, decorate: false do |filter, rows|
+          next unless filter.payee
+
+          rows.empty? ? filter.payee.split(":", 2).last : Tally::Insights.payee_label(rows.first)
+        end
       end
     end
   end

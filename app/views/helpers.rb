@@ -87,6 +87,9 @@ module Tally
         row[:category_source] == "bank" ? "#{name}?" : name
       end
 
+      # A link to the transactions behind a number (Tally::TransactionFilter).
+      def transactions_path(**filters) = Tally::TransactionFilter.new(**filters).path
+
       def source_label(source) = t("sources.#{source}", default: source.to_s)
 
       def kind_label(kind) = t("kinds.#{kind}", default: kind.to_s)

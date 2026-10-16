@@ -18,13 +18,19 @@ module Tally
   #   category  a category id, which takes in its children when it is a parent, or NONE
   #   kind      one of KINDS: "spending" and "income" are the rows the report counts as
   #             such, so their totals match it; "transfer" is the transfers
-  TransactionFilter = Data.define(:account, :month, :category, :kind) do
-    def initialize(account: nil, month: nil, category: nil, kind: nil) = super
+  #   nature    a category nature, or UNSET for rows whose category has none (or no category)
+  #   payee     who was paid, as Tally::Review.key groups rows: "counterparty:12", or
+  #             "description:padaria exemplo" for rows without a counterparty
+  TransactionFilter = Data.define(:account, :month, :category, :kind, :nature, :payee) do
+    def initialize(account: nil, month: nil, category: nil, kind: nil, nature: nil, payee: nil) = super
 
     # The query string's parameters that are set, in a stable order.
     def query = to_h.compact
 
     def any? = !query.empty?
+
+    # The filters the page's form has no field for, which it carries along unchanged.
+    def carried = query.except(*self.class::FORM_FIELDS)
 
     def path = any? ? "#{self.class::PATH}?#{URI.encode_www_form(query)}" : self.class::PATH
 
@@ -43,8 +49,16 @@ module Tally
 
     KINDS = %w[spending income transfer].freeze
 
+    # The nature filter for rows whose category has no nature, as the report calls them.
+    UNSET = "unset"
+    NATURES = (Categories::NATURES + [UNSET]).freeze
+
+    # Filters with a field of their own in the transactions page's form.
+    FORM_FIELDS = %i[account month category kind].freeze
+
     ID = /\A\d{1,9}\z/
     MONTH = /\A\d{4}-(0[1-9]|1[0-2])\z/
+    PAYEE = /\A(counterparty:\d{1,9}|description:[^\n]{1,200})\z/
 
     # Reads the filters from a request's params; a value that isn't valid is ignored.
     def self.parse(params)
@@ -52,7 +66,9 @@ module Tally
         account: params[:account].to_s[ID]&.to_i,
         month: params[:month].to_s[MONTH],
         category: (params[:category].to_s == NONE) ? NONE : params[:category].to_s[ID]&.to_i,
-        kind: KINDS.find { _1 == params[:kind].to_s }
+        kind: KINDS.find { _1 == params[:kind].to_s },
+        nature: NATURES.find { _1 == params[:nature].to_s },
+        payee: params[:payee].to_s[PAYEE]
       )
     end
   end

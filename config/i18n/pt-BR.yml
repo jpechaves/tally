@@ -237,7 +237,11 @@ pt-BR:
       all_categories: Todas as categorias
       all_kinds: Todos os tipos
       all_months: Todos os meses
+      carried:
+        nature: "Natureza: %{value}"
+        payee: "Favorecido: %{value}"
       clear: Limpar filtros
+      drop: Tirar este filtro
       empty: Nenhum lançamento.
       kinds:
         income: Receitas
