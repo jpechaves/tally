@@ -90,6 +90,20 @@ module Tally
       # A link to the transactions behind a number (Tally::TransactionFilter).
       def transactions_path(**filters) = Tally::TransactionFilter.new(**filters).path
 
+      # A card purchase's installments still to pay from `month` on: "7 × R$ 120,00 = R$ 840,00".
+      def installments_left(purchase, month)
+        t("installments.left", count: purchase.left_from(month), each: money(purchase.cents), total: money(purchase.left_cents_from(month)))
+      end
+
+      # What a filter without a form field shows, for its badge on the transactions page.
+      def carried_filter_label(key, value, payee:, purchase:)
+        case key
+        when :nature then nature_label((value == Tally::TransactionFilter::UNSET) ? nil : value)
+        when :payee then payee
+        when :purchase then purchase ? "#{purchase.description} (#{purchase.account_name})" : value
+        end
+      end
+
       def source_label(source) = t("sources.#{source}", default: source.to_s)
 
       def kind_label(kind) = t("kinds.#{kind}", default: kind.to_s)

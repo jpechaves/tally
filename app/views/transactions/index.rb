@@ -35,6 +35,18 @@ module Tally
           transaction_repo.list(filter, limit: pagination.limit, offset: pagination.offset)
         end
 
+        # The card purchase the purchase filter shows, with what is left to pay of it.
+        expose :purchase, decorate: false do |filter|
+          next unless filter.purchase
+
+          series = transaction_repo.installment_series(filter.purchase)
+          Tally::InstallmentCalendar::Purchase.of(series) unless series.empty?
+        end
+
+        expose :this_month, decorate: false do
+          Date.today.strftime("%Y-%m")
+        end
+
         # Who the payee filter shows, named like the report names it.
         expose :payee_name, decorate: false do |filter, rows|
           next unless filter.payee

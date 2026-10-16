@@ -228,6 +228,7 @@ en:
       carried:
         nature: "Nature: %{value}"
         payee: "Payee: %{value}"
+        purchase: "Purchase: %{value}"
       clear: Clear filters
       drop: Remove this filter
       empty: No transactions.
@@ -235,6 +236,8 @@ en:
         income: Income
         spending: Spending
         transfer: Transfers
+      purchase_done: "Installments %{paid}: nothing left to pay, the last one was in %{ends}."
+      purchase_left: "Installments %{paid}. Left to pay from %{month}: %{left}, the last one in %{ends}."
       summary: "%{rows}, net %{net}."
       summary_spent: "%{rows}, spent %{spent}."
       title: Transactions
@@ -421,6 +424,7 @@ en:
         other: "%{count} purchases"
       purchases_title: Purchases
       title: Installments
+    left: "%{count} × %{each} = %{total}"
 
   plans:
     index:
