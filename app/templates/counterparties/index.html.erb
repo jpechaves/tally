@@ -10,8 +10,8 @@
   <% if counterparties.empty? %>
     <p><%= search.empty? ? t("counterparties.index.empty") : t("counterparties.index.no_match", search: search) %></p>
   <% else %>
-    <p><%= t("counterparties.index.count", count: count) %></p>
-    <%= render "transactions/pages", pages: pages, current_page: current_page, page_path: page_path %>
+    <p><%= t("counterparties.index.count", count: pagination.total) %></p>
+    <%= render "shared/pages", page: pagination, path: page_path %>
     <div class="scroll"><table>
       <thead><tr><th><%= t("counterparties.index.name") %></th><th><%= t("counterparties.index.document") %></th><th><%= t("counterparties.index.bank") %></th><th class="num"><%= t("common.rows") %></th><th class="num"><%= t("common.net") %></th><th></th></tr></thead>
       <tbody>
@@ -26,7 +26,7 @@
               <% if party[:document_kind] == "cpf_masked" || party[:is_self] == 1 %>
                 <form action="/counterparties/<%= party[:id] %>/self" method="post">
                   <input type="hidden" name="q" value="<%= search %>">
-                  <input type="hidden" name="page" value="<%= current_page %>">
+                  <input type="hidden" name="page" value="<%= pagination.number %>">
                   <input type="hidden" name="is_self" value="<%= party[:is_self] == 1 ? "0" : "1" %>">
                   <button type="submit"><%= party[:is_self] == 1 ? t("counterparties.index.not_me") : t("counterparties.index.this_is_me") %></button>
                 </form>
@@ -36,6 +36,6 @@
         <% end %>
       </tbody>
     </table></div>
-    <%= render "transactions/pages", pages: pages, current_page: current_page, page_path: page_path %>
+    <%= render "shared/pages", page: pagination, path: page_path %>
   <% end %>
 </main>

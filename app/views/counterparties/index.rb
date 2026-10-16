@@ -6,33 +6,22 @@ module Tally
       class Index < Tally::View
         include Deps["repos.counterparty_repo"]
 
-        PER_PAGE = Transactions::Index::PER_PAGE
+        PER_PAGE = Tally::Pagination::PER_PAGE
 
         expose :search
 
-        # How many the search finds, across all pages.
-        expose :count, decorate: false do |search|
-          counterparty_repo.count(search:)
+        # Counted across all pages.
+        expose :pagination, decorate: false do |search, page:|
+          Tally::Pagination.page(page, total: counterparty_repo.count(search:), per_page: PER_PAGE)
         end
 
-        expose :pages, decorate: false do |count|
-          [(count + PER_PAGE - 1) / PER_PAGE, 1].max
-        end
-
-        # The page asked for, kept within the pages there are.
-        expose :current_page, decorate: false do |pages, page:|
-          page.clamp(1, pages)
-        end
-
-        expose :counterparties do |search, current_page|
-          counterparty_repo.with_totals(search:, limit: PER_PAGE, offset: (current_page - 1) * PER_PAGE)
+        expose :counterparties do |search, pagination|
+          counterparty_repo.with_totals(search:, limit: pagination.limit, offset: pagination.offset)
         end
 
         # The link to another page, keeping the search.
         expose :page_path, decorate: false do |search|
-          lambda do |number|
-            "/counterparties?#{URI.encode_www_form({q: (search unless search.empty?), page: number}.compact)}"
-          end
+          Tally::Pagination.path("/counterparties", q: search)
         end
       end
     end

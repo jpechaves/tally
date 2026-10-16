@@ -13,9 +13,8 @@ module Tally
 
           # Back to the same search and page.
           params = request.params
-          query = {q: params[:q].to_s.strip[0, 100], page: params[:page].to_s[/\A\d{1,6}\z/]}
-            .reject { |_, value| value.nil? || value.empty? }
-          response.redirect_to [routes.path(:counterparties), URI.encode_www_form(query)].reject(&:empty?).join("?")
+          back = Tally::Pagination.path(routes.path(:counterparties), q: params[:q].to_s.strip[0, 100])
+          response.redirect_to back.(Tally::Pagination.param(params[:page]))
         end
       end
     end
