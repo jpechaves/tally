@@ -55,5 +55,16 @@ module Tally
     end
 
     def words(text) = Categories.fold(text).scan(/[a-z]+/)
+
+    # #key for SQL, as KEY_FUNCTION(counterparty_id, description), so the transactions
+    # page can show one payee's rows (Tally::TransactionFilter).
+    KEY_FUNCTION = "tally_payee_key"
+
+    # Adds KEY_FUNCTION to a new SQLite connection (config/providers/db.rb).
+    def register(connection)
+      connection.create_function(KEY_FUNCTION, 2) do |function, counterparty_id, description|
+        function.result = key({counterparty_id:, description: description.to_s})
+      end
+    end
   end
 end

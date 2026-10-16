@@ -170,6 +170,10 @@ input[type=checkbox] { accent-color: var(--accent); }
 .filters, form.inline, .group form { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 16px; }
 .group form { margin-bottom: 0; }
 form.inline { margin-bottom: 0; }
+/* A filter the form has no field for (a payee, a nature), with a link that drops it. */
+.badge { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border: 1px solid var(--hairline); border-radius: 9999px; background: var(--surface-2); color: var(--ink-muted); font-size: 12.5px; }
+.badge a { color: var(--ink-subtle); text-decoration: none; }
+.badge a:hover { color: var(--ink); }
 
 /* --- Charts ------------------------------------------------------------------------------ */
 
