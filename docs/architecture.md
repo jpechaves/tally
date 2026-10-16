@@ -398,6 +398,19 @@ Small worked example (made-up numbers): income averages R$ 12.000 and spending R
 - Card purchases count in the month of the bill they land on (see statement-import.md §5), so the dashboard also shows what's already on the open Itaú bill and the installments committed to the next one.
 - At month end, the plan line is scored: target vs actually saved, and which categories went over.
 
+### 8.6 From a number to its rows
+
+Every number should lead to the transactions behind it. The transactions page takes filters in its query string, and `Tally::TransactionFilter` is the one place that reads them and writes them into links, so the filter form, the page links and links from other pages all agree:
+
+| Parameter | Values | Rows |
+|---|---|---|
+| `account` | account id | that account's |
+| `month` | `YYYY-MM` | posted that month |
+| `category` | category id, or `none` | that category's, and its children's for a parent; `none` is rows with no category |
+| `kind` | `spending`, `income`, `transfer` | spending and income as the report counts them (rows a re-import flagged as missing are left out), so the page's total matches the report; or transfers |
+
+`TransactionRepo` applies a filter to both the page of rows and the totals over all pages. With `kind=spending` the total reads as spending (a positive amount), like the report.
+
 ## 9. SQLite reliability settings
 
 Set for every connection in `config/providers/db.rb` (milestone 1), and shown on the home page.

@@ -1,6 +1,9 @@
+<%# A category picker. blank: label of an empty first option (nil makes it required); none: label of a
+    "no category" option for filters (nil for none). %>
 <select name="<%= name %>"<% if form %> form="<%= form %>"<% end %><% unless blank %> required<% end %>>
   <% if blank %>
     <option value=""><%= blank %></option>
+    <% if none %><option value="<%= Tally::TransactionFilter::NONE %>"<%= " selected" if selected == Tally::TransactionFilter::NONE %>><%= none %></option><% end %>
   <% else %>
     <option value="" disabled<%= " selected" unless selected %>><%= t("categories.pick") %></option>
   <% end %>

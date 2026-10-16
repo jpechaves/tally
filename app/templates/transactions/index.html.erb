@@ -1,27 +1,37 @@
 <main>
   <h1><%= t("transactions.index.title") %></h1>
-  <form action="/transactions" method="get" class="filters">
+  <form action="<%= Tally::TransactionFilter::PATH %>" method="get" class="filters">
     <select name="account">
       <option value=""><%= t("transactions.index.all_accounts") %></option>
       <% accounts.each do |account| %>
-        <option value="<%= account.id %>"<%= " selected" if account.id == account_id %>><%= account.name %></option>
+        <option value="<%= account.id %>"<%= " selected" if account.id == filter.account %>><%= account.name %></option>
       <% end %>
     </select>
     <select name="month">
       <option value=""><%= t("transactions.index.all_months") %></option>
       <% months.each do |value| %>
-        <option value="<%= value %>"<%= " selected" if value == month %>><%= month_label(value) %></option>
+        <option value="<%= value %>"<%= " selected" if value == filter.month %>><%= month_label(value) %></option>
+      <% end %>
+    </select>
+    <%= render "categories/select", name: "category", selected: filter.category, categories: categories,
+      blank: t("transactions.index.all_categories"), none: t("transactions.index.uncategorized"), form: nil %>
+    <select name="kind">
+      <option value=""><%= t("transactions.index.all_kinds") %></option>
+      <% Tally::TransactionFilter::KINDS.each do |value| %>
+        <option value="<%= value %>"<%= " selected" if value == filter.kind %>><%= t("transactions.index.kinds.#{value}") %></option>
       <% end %>
     </select>
     <button type="submit"><%= t("common.show") %></button>
+    <% if filter.any? %><a href="<%= Tally::TransactionFilter::PATH %>"><%= t("transactions.index.clear") %></a><% end %>
   </form>
 
   <% if rows.empty? %>
     <p><%= t("transactions.index.empty") %></p>
   <% else %>
-    <p><%= t("transactions.index.summary", rows: t("common.row_count", count: totals[:rows]), net: money(totals[:total_cents])) %></p>
-    <%= render "shared/pages", page: pagination, path: page_path %>
+    <% count = t("common.row_count", count: totals[:rows]) %>
+    <p><%= filter.spending? ? t("transactions.index.summary_spent", rows: count, spent: money(-totals[:total_cents])) : t("transactions.index.summary", rows: count, net: money(totals[:total_cents])) %></p>
+    <%= render "shared/pages", page: pagination, path: filter.pages %>
     <%= render "transactions/table", rows: rows %>
-    <%= render "shared/pages", page: pagination, path: page_path %>
+    <%= render "shared/pages", page: pagination, path: filter.pages %>
   <% end %>
 </main>

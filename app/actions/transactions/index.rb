@@ -5,8 +5,7 @@ module Tally
     module Transactions
       class Index < Tally::Action
         def handle(request, response)
-          response[:account_id] = request.params[:account].to_s[/\A\d+\z/]&.to_i
-          response[:month] = request.params[:month].to_s[/\A\d{4}-\d{2}\z/]
+          response[:filter] = Tally::TransactionFilter.parse(request.params)
           response[:page] = Tally::Pagination.param(request.params[:page])
         end
       end

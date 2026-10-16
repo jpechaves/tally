@@ -222,10 +222,19 @@ en:
       one_leg: (one leg)
     index:
       all_accounts: All accounts
+      all_categories: All categories
+      all_kinds: All kinds
       all_months: All months
+      clear: Clear filters
       empty: No transactions.
+      kinds:
+        income: Income
+        spending: Spending
+        transfer: Transfers
       summary: "%{rows}, net %{net}."
+      summary_spent: "%{rows}, spent %{spent}."
       title: Transactions
+      uncategorized: No category
     show:
       as_printed: "As printed: %{text}"
       automatic: Automatic (rules and suggestions)
