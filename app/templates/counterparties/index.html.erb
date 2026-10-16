@@ -1,26 +1,41 @@
 <main>
   <h1><%= t("counterparties.index.title") %></h1>
   <p><%= t("counterparties.index.intro") %></p>
-  <div class="scroll"><table>
-    <thead><tr><th><%= t("counterparties.index.name") %></th><th><%= t("counterparties.index.document") %></th><th><%= t("counterparties.index.bank") %></th><th class="num"><%= t("common.rows") %></th><th class="num"><%= t("common.net") %></th><th></th></tr></thead>
-    <tbody>
-      <% counterparties.each do |party| %>
-        <tr>
-          <td><%= party[:name] %><%= party[:is_self] == 1 ? " #{t("counterparties.index.you")}" : "" %></td>
-          <td><%= party[:document] %></td>
-          <td><%= party[:bank_name] %></td>
-          <td class="num"><%= party[:rows] %></td>
-          <td class="num"><%= money(party[:total_cents]) %></td>
-          <td>
-            <% if party[:document_kind] == "cpf_masked" || party[:is_self] == 1 %>
-              <form action="/counterparties/<%= party[:id] %>/self" method="post">
-                <input type="hidden" name="is_self" value="<%= party[:is_self] == 1 ? "0" : "1" %>">
-                <button type="submit"><%= party[:is_self] == 1 ? t("counterparties.index.not_me") : t("counterparties.index.this_is_me") %></button>
-              </form>
-            <% end %>
-          </td>
-        </tr>
-      <% end %>
-    </tbody>
-  </table></div>
+  <form action="/counterparties" method="get" class="filters">
+    <input type="search" name="q" value="<%= search %>" placeholder="<%= t("counterparties.index.search") %>" aria-label="<%= t("counterparties.index.search") %>">
+    <button type="submit"><%= t("common.show") %></button>
+    <% unless search.empty? %><a href="/counterparties"><%= t("counterparties.index.clear") %></a><% end %>
+  </form>
+
+  <% if counterparties.empty? %>
+    <p><%= search.empty? ? t("counterparties.index.empty") : t("counterparties.index.no_match", search: search) %></p>
+  <% else %>
+    <p><%= t("counterparties.index.count", count: pagination.total) %></p>
+    <%= render "shared/pages", page: pagination, path: page_path %>
+    <div class="scroll"><table>
+      <thead><tr><th><%= t("counterparties.index.name") %></th><th><%= t("counterparties.index.document") %></th><th><%= t("counterparties.index.bank") %></th><th class="num"><%= t("common.rows") %></th><th class="num"><%= t("common.net") %></th><th></th></tr></thead>
+      <tbody>
+        <% counterparties.each do |party| %>
+          <tr>
+            <td><%= party[:name] %><%= party[:is_self] == 1 ? " #{t("counterparties.index.you")}" : "" %></td>
+            <td><%= party[:document] %></td>
+            <td><%= party[:bank_name] %></td>
+            <td class="num"><%= party[:rows] %></td>
+            <td class="num"><%= money(party[:total_cents]) %></td>
+            <td>
+              <% if party[:document_kind] == "cpf_masked" || party[:is_self] == 1 %>
+                <form action="/counterparties/<%= party[:id] %>/self" method="post">
+                  <input type="hidden" name="q" value="<%= search %>">
+                  <input type="hidden" name="page" value="<%= pagination.number %>">
+                  <input type="hidden" name="is_self" value="<%= party[:is_self] == 1 ? "0" : "1" %>">
+                  <button type="submit"><%= party[:is_self] == 1 ? t("counterparties.index.not_me") : t("counterparties.index.this_is_me") %></button>
+                </form>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table></div>
+    <%= render "shared/pages", page: pagination, path: page_path %>
+  <% end %>
 </main>

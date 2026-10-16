@@ -32,17 +32,28 @@ module Tally
         document ? "#{document}|#{name.strip.squeeze(" ").upcase}" : "|#{Tally::Merchants.key(name)}"
       end
 
-      # Everyone you paid or were paid by, with how many rows and how much, biggest first.
-      def with_totals
-        counterparties.dataset.unordered
+      # Everyone you paid or were paid by, with how many rows and how much: you first, then
+      # biggest first (ties by id, so pages never shuffle).
+      #
+      # @param search [String, nil] part of the name, any accents or case (Tally::Search)
+      def with_totals(search: nil, limit: nil, offset: nil)
+        named(search)
           .left_join(:transactions, counterparty_id: :id)
           .group(Sequel[:counterparties][:id])
           .select_all(:counterparties)
           .select_append { count(Sequel[:transactions][:id]).as(:rows) }
           .select_append { coalesce(sum(Sequel[:transactions][:amount_cents]), 0).as(:total_cents) }
-          .order(Sequel.desc(:is_self), Sequel.function(:abs, Sequel.function(:coalesce, Sequel.function(:sum, Sequel[:transactions][:amount_cents]), 0)).desc)
+          .order(
+            Sequel.desc(:is_self),
+            Sequel.function(:abs, Sequel.function(:coalesce, Sequel.function(:sum, Sequel[:transactions][:amount_cents]), 0)).desc,
+            Sequel[:counterparties][:id]
+          )
+          .limit(limit, offset)
           .to_a
       end
+
+      # How many counterparties the search finds.
+      def count(search: nil) = named(search).count
 
       def set_default_category(id, category_id)
         counterparties.dataset.where(id:).update(default_category_id: category_id, updated_at: Repos.now)
@@ -53,6 +64,15 @@ module Tally
       end
 
       private
+
+      def named(search)
+        scope = counterparties.dataset.unordered
+        folded = Tally::Search.fold(search.to_s)
+        return scope if folded.empty?
+
+        pattern = "%#{scope.escape_like(folded)}%"
+        scope.where(Sequel.like(Sequel.function(Tally::Search::FUNCTION, Sequel[:counterparties][:name]), pattern))
+      end
 
       # A merchant whose name another bank cut shorter, or longer: one key starts with the
       # other, and the shorter has at least Merchants::MIN_PREFIX characters.
