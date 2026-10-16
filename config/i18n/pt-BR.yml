@@ -234,10 +234,19 @@ pt-BR:
       one_leg: (só um lado)
     index:
       all_accounts: Todas as contas
+      all_categories: Todas as categorias
+      all_kinds: Todos os tipos
       all_months: Todos os meses
+      clear: Limpar filtros
       empty: Nenhum lançamento.
+      kinds:
+        income: Receitas
+        spending: Gastos
+        transfer: Transferências
       summary: "%{rows}, saldo %{net}."
+      summary_spent: "%{rows}, gasto %{spent}."
       title: Lançamentos
+      uncategorized: Sem categoria
     show:
       as_printed: "Como veio no extrato: %{text}"
       automatic: Automática (regras e sugestões)

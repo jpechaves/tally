@@ -18,7 +18,7 @@
           <% else %>
             <input type="hidden" name="pattern" value="<%= group.pattern %>">
           <% end %>
-          <%= render "categories/select", name: "category_id", selected: group.suggested_category_id, categories: categories, blank: nil, form: nil %>
+          <%= render "categories/select", none: nil, name: "category_id", selected: group.suggested_category_id, categories: categories, blank: nil, form: nil %>
           <label><input type="checkbox" name="always" value="1" checked> <%= t("review.index.always", payee: group.label) %></label>
           <button type="submit"><%= t("common.save") %></button>
         </form>

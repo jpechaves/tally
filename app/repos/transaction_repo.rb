@@ -8,6 +8,12 @@ module Tally
     class TransactionRepo < Tally::DB::Repo
       MIRROR_PREFIX = "mirror:"
 
+      # The kinds behind each Tally::TransactionFilter kind; the counted ones match the report.
+      KIND_FILTERS = {
+        "spending" => Tally::Insights::SPENDING_KINDS, "income" => Tally::Insights::INCOME_KINDS, "transfer" => %w[transfer]
+      }.freeze
+      COUNTED = %w[spending income].freeze
+
       # --- Reading --------------------------------------------------------------------
 
       def by_external_id(account_id, external_id)
@@ -19,7 +25,8 @@ module Tally
       def rows(ids) = transactions.dataset.where(id: ids).order(:id).all
 
       # A page of transactions, newest first, with account and counterparty names.
-      def list(account_id: nil, month: nil, import_id: nil, missing: false, id: nil, limit: 500, offset: 0)
+      # @param filter [Tally::TransactionFilter]
+      def list(filter = Tally::TransactionFilter.new, import_id: nil, missing: false, id: nil, limit: 500, offset: 0)
         scope = transactions.dataset
           .join(:accounts, id: :account_id)
           .left_join(:counterparties, id: Sequel[:transactions][:counterparty_id])
@@ -34,16 +41,16 @@ module Tally
             Sequel[:categories][:name].as(:category_name)
           )
         scope = scope.where(Sequel[:transactions][:id] => id) if id
-        scope = filter(scope, account_id:, month:)
+        scope = filtered(scope, filter)
         scope = scope.where(Sequel[:transactions][:missing_since_import_id] => import_id) if missing && import_id
         scope = scope.where(Sequel[:transactions][:last_import_id] => import_id) if import_id && !missing
         scope.order(Sequel.desc(Sequel[:transactions][:occurred_on]), Sequel.desc(Sequel[:transactions][:id]))
           .limit(limit, offset).all
       end
 
-      # How many rows match the account and month filters, and their net, across all pages.
-      def totals(account_id: nil, month: nil)
-        scope = filter(transactions.dataset.unordered, account_id:, month:)
+      # How many rows match the filter, and their net, across all pages.
+      def totals(filter = Tally::TransactionFilter.new)
+        scope = filtered(transactions.dataset.unordered, filter)
         {rows: scope.count, total_cents: scope.sum(Sequel[:transactions][:amount_cents]) || 0}
       end
 
@@ -204,10 +211,24 @@ module Tally
 
       private
 
-      def filter(scope, account_id:, month:)
-        scope = scope.where(Sequel[:transactions][:account_id] => account_id) if account_id
-        scope = scope.where(Sequel.function(:substr, Sequel[:transactions][:occurred_on], 1, 7) => month) if month
+      # Narrows a transactions dataset to a Tally::TransactionFilter.
+      def filtered(scope, filter)
+        column = ->(name) { Sequel[:transactions][name] }
+        scope = scope.where(column.(:account_id) => filter.account) if filter.account
+        scope = scope.where(Sequel.function(:substr, column.(:occurred_on), 1, 7) => filter.month) if filter.month
+        scope = scope.where(column.(:category_id) => category_ids(filter.category)) if filter.category
+        scope = scope.where(column.(:kind) => KIND_FILTERS.fetch(filter.kind)) if filter.kind
+        # Spending and income as the report counts them, which leaves out rows a
+        # re-import flagged as missing (InsightRepo).
+        scope = scope.where(column.(:missing_since_import_id) => nil) if COUNTED.include?(filter.kind)
         scope
+      end
+
+      # A category and, for a parent, its children; nil (no category) for NONE.
+      def category_ids(category)
+        return nil if category == Tally::TransactionFilter::NONE
+
+        categories.dataset.unordered.where(Sequel.|({id: category}, {parent_id: category})).select(:id)
       end
     end
   end

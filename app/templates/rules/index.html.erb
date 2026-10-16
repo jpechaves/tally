@@ -28,7 +28,7 @@
       <% operators.each do |value| %><option value="<%= value %>"><%= t("rules.operators.#{value}") %></option><% end %>
     </select>
     <input name="pattern" placeholder="<%= t("rules.index.pattern") %>" required>
-    <%= render "categories/select", name: "category_id", selected: nil, categories: categories, blank: nil, form: nil %>
+    <%= render "categories/select", none: nil, name: "category_id", selected: nil, categories: categories, blank: nil, form: nil %>
     <input name="amount_min" placeholder="<%= t("rules.index.amount_min") %>" size="10">
     <input name="amount_max" placeholder="<%= t("rules.index.amount_max") %>" size="10">
     <input name="priority" type="number" min="0" value="100" style="width: 5em" title="<%= t("rules.index.priority") %>">
