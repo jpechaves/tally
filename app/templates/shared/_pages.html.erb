@@ -1,0 +1,8 @@
+<%# Previous / next links for a Tally::Pagination::Page; path builds a page's link. %>
+<% if page.count > 1 %>
+  <p class="filters">
+    <% if page.previous %><a href="<%= path.(page.previous) %>">← <%= t("common.pages.previous") %></a><% end %>
+    <span><%= t("common.pages.page", page: page.number, pages: page.count) %></span>
+    <% if page.next %><a href="<%= path.(page.next) %>"><%= t("common.pages.next") %> →</a><% end %>
+  </p>
+<% end %>

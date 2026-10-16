@@ -1,7 +1,0 @@
-<% if pages > 1 %>
-  <p class="filters">
-    <% if current_page > 1 %><a href="<%= page_path.(current_page - 1) %>">← <%= t("transactions.index.previous") %></a><% end %>
-    <span><%= t("transactions.index.page", page: current_page, pages: pages) %></span>
-    <% if current_page < pages %><a href="<%= page_path.(current_page + 1) %>"><%= t("transactions.index.next") %> →</a><% end %>
-  </p>
-<% end %>
