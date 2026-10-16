@@ -6,7 +6,7 @@ module Tally
       class Index < Tally::Action
         def handle(request, response)
           response[:saved] = request.params[:saved].to_s[/\A\d+\z/]&.to_i
-          response[:page] = [request.params[:page].to_s[/\A\d{1,6}\z/].to_i, 1].max
+          response[:page] = Tally::Pagination.param(request.params[:page])
         end
       end
     end

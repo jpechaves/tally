@@ -6,8 +6,8 @@ module Tally
       class Index < Tally::View
         include Deps["repos.category_repo", "repos.transaction_repo"]
 
-        # Groups per page, as many as /transactions has rows.
-        PER_PAGE = Transactions::Index::PER_PAGE
+        # Groups per page: a group's rows always stay together.
+        PER_PAGE = Tally::Pagination::PER_PAGE
 
         expose :saved
 
@@ -16,18 +16,13 @@ module Tally
           Tally::Review.groups(transaction_repo.to_review)
         end
 
-        expose :pages, decorate: false do |all_groups|
-          [(all_groups.size + PER_PAGE - 1) / PER_PAGE, 1].max
+        # Saving the last group of the last page lands on the page before it.
+        expose :pagination, decorate: false do |all_groups, page:|
+          Tally::Pagination.page(page, total: all_groups.size, per_page: PER_PAGE)
         end
 
-        # The page asked for, kept within the pages there are: saving the last group of
-        # the last page lands on the page before it.
-        expose :current_page, decorate: false do |pages, page:|
-          page.clamp(1, pages)
-        end
-
-        expose :groups do |all_groups, current_page|
-          all_groups.slice((current_page - 1) * PER_PAGE, PER_PAGE) || []
+        expose :groups do |all_groups, pagination|
+          pagination.slice(all_groups)
         end
 
         expose :categories do
@@ -47,7 +42,7 @@ module Tally
         end
 
         expose :page_path, decorate: false do
-          ->(number) { "/review?page=#{number}" }
+          Tally::Pagination.path("/review")
         end
       end
     end

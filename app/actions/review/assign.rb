@@ -20,7 +20,7 @@ module Tally
           halt 422, t("errors.could_not_save", reason: result.failure) if result.failure?
 
           # Back to the same page: the groups after the saved one move up into it.
-          response.redirect_to "#{routes.path(:review)}?page=#{[params[:page].to_s[/\A\d{1,6}\z/].to_i, 1].max}&saved=#{result.value!}"
+          response.redirect_to "#{routes.path(:review)}?page=#{Tally::Pagination.param(params[:page])}&saved=#{result.value!}"
         end
       end
     end
