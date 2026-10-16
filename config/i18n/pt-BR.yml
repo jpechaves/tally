@@ -53,7 +53,7 @@ pt-BR:
       home: Início
       imports: Importar
       installments: Parcelas
-      plan: Plano
+      plan: Plano de economia
       report: Relatório
       review: Revisar
       rules: Regras
@@ -120,7 +120,7 @@ pt-BR:
       duplicate_file: arquivo repetido
       rejected: recusado
     plan:
-      active: Ativo
+      active: Aceito
       draft: Rascunho
       replaced: Substituído
     rule:
@@ -440,10 +440,26 @@ pt-BR:
     left: "%{count} × %{each} = %{total}"
 
   plans:
+    flow:
+      accept: Revise os limites, mude o que quiser e aceite. Eles viram seus orçamentos a partir do mês escolhido.
+      accept_title: 2. Aceite.
+      follow: Orçamentos mostra o gasto de cada mês contra os limites, se você está no ritmo da meta e, quando o mês termina, o resultado.
+      follow_title: 3. Acompanhe seus orçamentos.
+      make: Diga quanto quer guardar por mês. O Tally propõe um limite para cada categoria a partir dos seus últimos três meses. É um rascunho, então nada muda ainda.
+      make_title: 1. Faça um plano.
+      title: Como funcionam planos e orçamentos
+      undo: Edite ou remova um orçamento em Orçamentos. Exclua o plano para desfazer todos os orçamentos que ele criou. Seus lançamentos nunca são alterados.
+      undo_title: 4. Mude ou desfaça.
+      you_are_here: você está aqui
     index:
       a_month: por mês
-      active_html: "Plano ativo: guardar <strong>%{amount}</strong> por mês a partir de %{month}."
+      active_html: "Plano aceito: guardar <strong>%{amount}</strong> por mês a partir de %{month}."
       baseline: Base
+      budgets: Orçamentos
+      budgets_from:
+        one: "1 orçamento a partir de %{month}"
+        other: "%{count} orçamentos a partir de %{month}"
+      draft_waiting: "Um rascunho para guardar %{amount} por mês está esperando: nada muda até você aceitá-lo."
       how_doing: Como você está indo
       intro_html: >-
         Diga quanto você quer guardar por mês. O planejador pega a média das suas receitas e
@@ -453,19 +469,28 @@ pt-BR:
         cada linha antes de qualquer coisa ser salva.
       made: Feito em
       make: Fazer um plano
+      new: Fazer um novo plano
+      no_budgets: nenhum restante
       notices:
         plan_deleted: O plano foi excluído.
         plan_deleted_kept_budgets: O plano foi excluído. Os orçamentos que ele criou continuam, como se você os tivesse definido.
         plan_deleted_with_budgets: O plano foi excluído, junto com os orçamentos que ele criou.
       plans: Planos
+      review_and_accept: Revisar e aceitar
       see_it: Ver
       starting: a partir de
       starts: Começa
       status: Situação
       target: Meta
-      title: Guardar todo mês
+      title: Plano de economia
+      what: >-
+        Um plano de economia é uma proposta, como "guardar R$ 500 por mês enxugando estas
+        categorias". Aceitá-lo grava esses limites como seus orçamentos.
     show:
       accept: "Aceitar e criar orçamentos a partir de %{month}"
+      active_note:
+        one: "Aceito: o limite dele é seu orçamento a partir de %{month}. Para desfazer, exclua o plano no fim desta página."
+        other: "Aceito: os %{count} limites dele são seus orçamentos a partir de %{month}. Para desfazer, exclua o plano no fim desta página."
       already_there: >-
         Você já guarda %{saved} por mês, %{extra} acima da meta. Considere mandar o excedente
         para a reserva (o Nubank RDB) todo mês. Aceitar ainda grava os gastos de hoje como
@@ -479,6 +504,7 @@ pt-BR:
       delete: Excluir este plano
       delete_button: Excluir plano
       delete_note: Excluir um plano nunca mexe nos seus lançamentos nem nas categorias.
+      draft_note: "Isto é um rascunho: nada mudou ainda. Edite qualquer novo limite e aceite para transformar os limites em orçamentos a partir de %{month}."
       fixed_lever: "Custos fixos não dá para enxugar mês a mês, mas um contrato pode ser renegociado ou trocado:"
       gap: Diferença
       income: Receitas
@@ -495,7 +521,9 @@ pt-BR:
       remove_budgets:
         one: Remover também o orçamento que ele criou, voltando ao limite de antes
         other: Remover também os %{count} orçamentos que ele criou, voltando aos limites de antes
+      replaced_note: Um plano mais novo substituiu este. Os orçamentos que ele criou e que o plano novo não mudou continuam valendo.
       saved_today: Guardado hoje
+      see_budgets: Ver em Orçamentos
       short: abaixo da meta
       shortfall: >-
         Cortar tudo o que as categorias permitem economiza %{cuts} por mês, %{shortfall}
@@ -519,6 +547,7 @@ pt-BR:
         %{pct}% de %{month} já passou. A projeção assume a receita que o plano espera (ou a
         média dos últimos três meses), que cada orçamento é gasto por inteiro, e que os gastos
         fora dos orçamentos chegam à média dos últimos três meses.
+      from_plan: "Estes limites vêm do seu plano de guardar %{amount} por mês, aceito a partir de %{month}. Mude ou remova um aqui, ou exclua o plano para desfazer tudo."
       empty_html: 'Nenhum orçamento para %{month} ainda. <a href="/plan">Faça um plano de economia</a> e aceite-o, e os limites dele viram seus orçamentos.'
       in_out: "%{in} entraram, %{out} saíram"
       left: Resta
@@ -548,6 +577,8 @@ pt-BR:
       saved_so_far: Guardado até agora
       score: "%{result}: guardou %{saved} de %{target} (%{difference})."
       scores: Resultado de cada mês
+      see_plan: Ver o plano
       spent: Gasto
       target: Meta
       title: Orçamentos
+      what: Um orçamento é um limite mensal para uma categoria. Aceitar um plano de economia cria os orçamentos para você, ou adicione um à mão abaixo.

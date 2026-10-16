@@ -2,6 +2,19 @@
   <h1><%= t("plans.index.title") %></h1>
   <% if error_code %><p class="error"><%= t("errors.#{error_code}", default: error_code.to_s) %></p><% end %>
   <% if notice_code %><p class="notice"><%= t("plans.index.notices.#{notice_code}", default: "") %></p><% end %>
+  <p><%= t("plans.index.what") %></p>
+  <%= render "plans/flow", step: step %>
+
+  <% if active %>
+    <p class="notice"><%= t("plans.index.active_html", amount: money(active[:target_cents]), month: month_label(active[:starts_month])) %>
+      <a href="/plan/<%= active[:id] %>"><%= t("plans.index.see_it") %></a> · <a href="/budgets?month=<%= active[:starts_month] %>"><%= t("plans.index.how_doing") %></a></p>
+  <% end %>
+  <% if draft %>
+    <p class="notice"><%= t("plans.index.draft_waiting", amount: money(draft[:target_cents])) %>
+      <a href="/plan/<%= draft[:id] %>"><%= t("plans.index.review_and_accept") %></a></p>
+  <% end %>
+
+  <h2><%= t("plans.index.new") %></h2>
   <p><%= t("plans.index.intro_html") %></p>
   <form action="/plan" method="post" class="inline">
     <label>R$ <input name="target" class="amount" placeholder="<%= amount_field(150_000) %>" required> <%= t("plans.index.a_month") %></label>
@@ -15,15 +28,10 @@
     <button type="submit" class="primary"><%= t("plans.index.make") %></button>
   </form>
 
-  <% if active %>
-    <p><%= t("plans.index.active_html", amount: money(active[:target_cents]), month: month_label(active[:starts_month])) %>
-      <a href="/plan/<%= active[:id] %>"><%= t("plans.index.see_it") %></a> · <a href="/budgets"><%= t("plans.index.how_doing") %></a></p>
-  <% end %>
-
   <% unless plans.empty? %>
     <h2><%= t("plans.index.plans") %></h2>
     <div class="scroll"><table class="rows">
-      <thead><tr><th><%= t("plans.index.made") %></th><th class="num"><%= t("plans.index.target") %></th><th><%= t("plans.index.baseline") %></th><th><%= t("plans.index.starts") %></th><th><%= t("plans.index.status") %></th></tr></thead>
+      <thead><tr><th><%= t("plans.index.made") %></th><th class="num"><%= t("plans.index.target") %></th><th><%= t("plans.index.baseline") %></th><th><%= t("plans.index.starts") %></th><th><%= t("plans.index.status") %></th><th><%= t("plans.index.budgets") %></th></tr></thead>
       <tbody>
         <% plans.each do |item| %>
           <tr>
@@ -32,6 +40,15 @@
             <td><%= t("common.range", from: month_label(item[:baseline_from]), to: month_label(item[:baseline_to])) %></td>
             <td><%= month_label(item[:starts_month]) %></td>
             <td><%= status_label(:plan, item[:status]) %></td>
+            <td>
+              <% if item[:status] == "draft" %>
+                <a href="/plan/<%= item[:id] %>"><%= t("plans.index.review_and_accept") %></a>
+              <% elsif (count = budget_counts.fetch(item[:id], 0)).positive? %>
+                <a href="/budgets?month=<%= item[:starts_month] %>"><%= t("plans.index.budgets_from", count:, month: month_label(item[:starts_month])) %></a>
+              <% else %>
+                <span class="note"><%= t("plans.index.no_budgets") %></span>
+              <% end %>
+            </td>
           </tr>
         <% end %>
       </tbody>

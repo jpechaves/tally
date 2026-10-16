@@ -2,6 +2,12 @@
   <h1><%= t("plans.show.title", amount: money(plan[:target_cents])) %></h1>
   <p class="note"><%= status_label(:plan, plan[:status]) %> · <%= t("plans.show.baseline", from: month_label(plan[:baseline_from]), to: month_label(plan[:baseline_to])) %> ·
     <%= t("plans.show.budgets_from", month: month_label(plan[:starts_month])) %></p>
+  <p class="notice">
+    <% if plan[:status] == "draft" %><%= t("plans.show.draft_note", month: month_label(plan[:starts_month])) %>
+    <% elsif plan[:status] == "active" %><%= t("plans.show.active_note", count: budget_count, month: month_label(plan[:starts_month])) %>
+      <a href="/budgets?month=<%= plan[:starts_month] %>"><%= t("plans.show.see_budgets") %></a>
+    <% else %><%= t("plans.show.replaced_note") %><% end %>
+  </p>
   <div class="cards">
     <div><%= t("plans.show.income") %><strong><%= money(plan[:baseline_income_cents]) %></strong><span class="note"><%= t("plans.show.on_average") %></span></div>
     <div><%= t("plans.show.spending") %><strong><%= money(plan[:baseline_spending_cents]) %></strong><span class="note"><%= t("plans.show.on_average") %></span></div>

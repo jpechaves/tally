@@ -19,6 +19,19 @@ module Tally
           plans.find { _1[:status] == "active" }
         end
 
+        # The newest draft, still to be accepted.
+        expose :draft do |plans|
+          plans.find { _1[:status] == "draft" }
+        end
+
+        expose :step, decorate: false do
+          plan_repo.step
+        end
+
+        expose :budget_counts, decorate: false do
+          plan_repo.budget_counts
+        end
+
         expose :start_options, decorate: false do
           today = Date.today
           [today, today.next_month].map { _1.strftime("%Y-%m") }

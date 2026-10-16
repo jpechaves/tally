@@ -23,6 +23,10 @@ module Tally
           plan_repo.active
         end
 
+        expose :step, decorate: false do
+          plan_repo.step
+        end
+
         expose :categories, decorate: false do
           category_repo.tree.to_h { [_1[:id], _1] }
         end
