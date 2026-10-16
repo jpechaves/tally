@@ -61,6 +61,25 @@ module Tally
           .order(Sequel.desc(:month)).map(:month)
       end
 
+      # The installments of the card purchase that the row with this id is part of, in bill
+      # order (Tally::InstallmentCalendar.series), with what InstallmentCalendar::Purchase
+      # needs. Empty when the row isn't an installment.
+      def installment_series(id)
+        row = transactions.dataset.where(id:).exclude(installment_total: nil).first
+        return [] unless row
+
+        rows = transactions.dataset
+          .where(Sequel[:transactions][:account_id] => row[:account_id], Sequel[:transactions][:installment_total] => row[:installment_total],
+            Sequel[:transactions][:missing_since_import_id] => nil)
+          .exclude(Sequel[:transactions][:kind] => "transfer")
+          .join(:accounts, id: Sequel[:transactions][:account_id])
+          .left_join(:card_statements, id: Sequel[:transactions][:card_statement_id])
+          .select_all(:transactions)
+          .select_append(Sequel[:accounts][:name].as(:account_name), Sequel[:card_statements][:due_on].as(:bill_due_on))
+          .all
+        Tally::InstallmentCalendar.series_of(rows, id)
+      end
+
       def ids_for_counterparty(counterparty_id)
         transactions.dataset.where(counterparty_id:).select_map(:id)
       end
@@ -220,6 +239,7 @@ module Tally
         scope = scope.where(column.(:kind) => KIND_FILTERS.fetch(filter.kind)) if filter.kind
         scope = scope.where(nature_condition(filter.nature)) if filter.nature
         scope = scope.where(payee_key => filter.payee) if filter.payee
+        scope = scope.where(column.(:id) => installment_series(filter.purchase).map { _1[:id] }) if filter.purchase
         # Spending and income as the report counts them, which leaves out rows a
         # re-import flagged as missing (InsightRepo).
         scope = scope.where(column.(:missing_since_import_id) => nil) if COUNTED.include?(filter.kind)

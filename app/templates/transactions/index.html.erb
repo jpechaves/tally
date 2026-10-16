@@ -28,10 +28,16 @@
   <% unless filter.carried.empty? %>
     <p class="filters">
       <% filter.carried.each do |key, value| %>
-        <span class="badge"><%= t("transactions.index.carried.#{key}", value: key == :nature ? nature_label(value == Tally::TransactionFilter::UNSET ? nil : value) : payee_name) %>
+        <span class="badge"><%= t("transactions.index.carried.#{key}", value: carried_filter_label(key, value, payee: payee_name, purchase: purchase)) %>
           <a href="<%= filter.with(key => nil).path %>" title="<%= t("transactions.index.drop") %>" aria-label="<%= t("transactions.index.drop") %>">✕</a></span>
       <% end %>
     </p>
+  <% end %>
+
+  <% if purchase %>
+    <p class="panel"><% if purchase.left_from(this_month).positive? %><%= t("transactions.index.purchase_left", paid: "#{purchase.number}/#{purchase.total}",
+      month: month_label(this_month), left: installments_left(purchase, this_month), ends: month_label(purchase.ends)) %><% else %><%=
+      t("transactions.index.purchase_done", paid: "#{purchase.number}/#{purchase.total}", ends: month_label(purchase.ends)) %><% end %></p>
   <% end %>
 
   <% if rows.empty? %>

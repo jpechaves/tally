@@ -79,4 +79,20 @@ RSpec.describe Tally::InstallmentCalendar do
 
     expect(calendar.purchases.map { [_1.number, _1.ends] }).to eq([[2, "2026-10"]])
   end
+
+  it "finds the purchase an installment belongs to, and what is left of it" do
+    rows = [
+      insight_row("2026-08-02", -100.03, "TV EXEMPLO", installment_number: 1, installment_total: 3),
+      insight_row("2026-09-02", -100.00, "TV EXEMPLO", installment_number: 2, installment_total: 3),
+      insight_row("2026-09-02", -40.00, "TV EXEMPLO", installment_number: 1, installment_total: 3)
+    ]
+    series = described_class.series_of(rows, rows.first[:id])
+    expect(series).to eq(rows.first(2))
+    expect(described_class.series_of(rows, 999)).to eq([])
+
+    purchase = described_class::Purchase.of(series)
+    expect(purchase).to have_attributes(id: rows[1][:id], number: 2, left: 1, ends: "2026-10")
+    expect([purchase.left_from("2026-10"), purchase.left_cents_from("2026-10")]).to eq([1, 10_000])
+    expect(purchase.left_cents_from("2026-11")).to eq(0)
+  end
 end

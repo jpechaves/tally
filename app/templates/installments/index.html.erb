@@ -33,12 +33,12 @@
       <tbody>
         <% calendar.purchases.each do |purchase| %>
           <tr>
-            <td><%= purchase.description %></td>
+            <td><a href="<%= transactions_path(purchase: purchase.id) %>"><%= purchase.description %></a></td>
             <td><%= purchase.account_name %></td>
             <td><%= purchase.number %>/<%= purchase.total %></td>
             <td><%= month_label(purchase.ends) %></td>
             <td class="num"><%= money(purchase.cents) %></td>
-            <td class="num"><%= money(purchase.cents * purchase.left_from(calendar.from)) %></td>
+            <td class="num"><%= installments_left(purchase, calendar.from) %></td>
           </tr>
         <% end %>
       </tbody>

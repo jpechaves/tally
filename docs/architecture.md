@@ -410,12 +410,15 @@ Every number should lead to the transactions behind it. The transactions page ta
 | `kind` | `spending`, `income`, `transfer` | spending and income as the report counts them (rows a re-import flagged as missing are left out), so the page's total matches the report; or transfers |
 | `nature` | `fixed`, `essential`, `discretionary`, `unset` | whose own category has that nature; `unset` is a category without one, or no category |
 | `payee` | `counterparty:12`, `description:padaria exemplo` | paid to that counterparty (all its name variants, see `Tally::Merchants`), or, without one, with that description as the review list groups them (`Tally::Review.key`, also a SQLite function, `tally_payee_key`) |
+| `purchase` | id of any installment | every installment of that card purchase, linked the way the installment calendar links them (`Tally::InstallmentCalendar.series`) |
 
 `TransactionRepo` applies a filter to both the page of rows and the totals over all pages. With `kind=spending` the total reads as spending (a positive amount), like the report.
 
 Filters the form has no field for (nature, payee) show as badges above the list, each with a link that drops it.
 
 On the report, each line of the category, nature and payee tables links to its month's rows with `kind=spending`, so the list adds up to the line's amount and row count (a request spec checks every line of every month of the fixtures).
+
+Each purchase on the installments page, and each installment in the report, links to its purchase. With a purchase filter the page also says what is left to pay from this month on (`7 × R$ 120,00 = R$ 840,00`, and the last month): computed from the latest installment's number and amount, since future bills aren't imported. The same figure is the purchase's share of the committed months on the installments page.
 
 ## 9. SQLite reliability settings
 

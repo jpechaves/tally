@@ -240,6 +240,7 @@ pt-BR:
       carried:
         nature: "Natureza: %{value}"
         payee: "Favorecido: %{value}"
+        purchase: "Compra: %{value}"
       clear: Limpar filtros
       drop: Tirar este filtro
       empty: Nenhum lançamento.
@@ -247,6 +248,8 @@ pt-BR:
         income: Receitas
         spending: Gastos
         transfer: Transferências
+      purchase_done: "Parcelas %{paid}: nada a pagar, a última foi em %{ends}."
+      purchase_left: "Parcelas %{paid}. Falta pagar a partir de %{month}: %{left}, a última em %{ends}."
       summary: "%{rows}, saldo %{net}."
       summary_spent: "%{rows}, gasto %{spent}."
       title: Lançamentos
@@ -434,6 +437,7 @@ pt-BR:
         other: "%{count} compras"
       purchases_title: Compras
       title: Parcelas
+    left: "%{count} × %{each} = %{total}"
 
   plans:
     index:

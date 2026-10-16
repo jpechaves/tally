@@ -115,3 +115,57 @@ RSpec.describe "Report rows link to their transactions", :db, type: :request do
     expect(last_response.body).to include("2 rows, net -R$ 52.50.", "Nature: fixed")
   end
 end
+
+RSpec.describe "Installments link to their purchase", :db, type: :request do
+  let(:db) { Hanami.app["db.gateway"].connection }
+
+  before do
+    %w[NU_12345678_01JUL2026_31JUL2026.csv Nubank_2026-07-09.csv Nubank_2026-08-09.csv itau_2026-10.pdf
+      itau_2027-01_tight.pdf].each do |name|
+      Hanami.app["operations.import_statement"].(file_name: name, content: fixture(name))
+    end
+  end
+
+  after { FileUtils.rm_rf(Hanami.app.root.join(Hanami.app["settings"].import_storage_dir)) }
+
+  def installment(description, number) = db[:transactions].where(description:, installment_number: number).get(:id)
+
+  def descriptions(body) = body.scan(%r{<a href="/transactions/\d+">([^<]*)</a>}).flatten
+
+  it "shows what is left of each purchase, linked to its installments" do
+    allow(Date).to receive(:today).and_return(Date.new(2027, 1, 15))
+    get "/installments"
+
+    id = installment("LOJA EXEMPLO", 3)
+    expect(last_response.body).to match(%r{<a href="/transactions\?purchase=#{id}">LOJA EXEMPLO</a>.*?7 × R\$ 120\.00 = R\$ 840\.00}m)
+
+    get "/transactions", purchase: id.to_s
+    body = last_response.body
+    # The 11/12 LOJA EXEMPLO on the other bill is another purchase.
+    expect(descriptions(body)).to eq(["LOJA EXEMPLO"])
+    expect(body).to include("Purchase: LOJA EXEMPLO (Itaú cartão)")
+    expect(body).to include("Installments 3/10. Left to pay from Jan 2027: 7 × R$ 120.00 = R$ 840.00, the last one in Aug 2027.")
+  end
+
+  it "lists every installment of a purchase from any one of them" do
+    allow(Date).to receive(:today).and_return(Date.new(2026, 8, 15))
+    get "/report", month: "2026-07"
+    second = installment("Hotel Exemplo", 2)
+    expect(last_response.body).to include(%(<a href="/transactions?purchase=#{second}">Hotel Exemplo</a>))
+
+    [second, installment("Hotel Exemplo", 1)].each do |id|
+      get "/transactions", purchase: id.to_s
+      body = last_response.body
+      expect(body.scan(%r{<td class="details">(\d+/6)}).flatten).to eq(%w[2/6 1/6])
+      expect(body).to include("2 rows, net -R$ 2,100.00.")
+      expect(body).to include("Left to pay from Aug 2026: 4 × R$ 1,050.00 = R$ 4,200.00, the last one in Nov 2026.")
+    end
+  end
+
+  it "says when a purchase is paid off" do
+    allow(Date).to receive(:today).and_return(Date.new(2027, 1, 15))
+    get "/transactions", purchase: installment("Hotel Exemplo", 2).to_s
+
+    expect(last_response.body).to include("Installments 2/6: nothing left to pay, the last one was in Nov 2026.")
+  end
+end

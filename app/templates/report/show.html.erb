@@ -60,7 +60,7 @@
         <tbody>
           <% report.installments.each do |item| %>
             <tr>
-              <td><%= item[:row][:description] %> <span class="note"><%= item[:row][:account_name] %></span></td>
+              <td><a href="<%= transactions_path(purchase: item[:row][:id]) %>"><%= item[:row][:description] %></a> <span class="note"><%= item[:row][:account_name] %></span></td>
               <td><%= item[:row][:installment_number] %>/<%= item[:row][:installment_total] %></td>
               <td><%= item[:left].zero? ? t("report.show.this_month") : month_label(item[:ends]) %></td>
               <td class="num"><%= money(item[:cents]) %></td>
