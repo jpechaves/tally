@@ -19,6 +19,9 @@ module Tally
       i18n.locale = Tally::Locales.pick(request.cookies[Tally::Locales::COOKIE], default: Hanami.app["settings"].default_locale)
     end
 
+    # A "YYYY-MM" month from a param, or nil.
+    def month_param(value) = value.to_s[Tally::Insights::MONTH]
+
     # Reads an amount typed in a form, with the current locale's decimal mark.
     def parse_amount(text)
       Tally::Money.parse(text.to_s, decimal: Tally::Money.decimal_mark(i18n.locale))

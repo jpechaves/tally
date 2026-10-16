@@ -52,6 +52,23 @@ module Tally
         end
       end
 
+      # Deletes a plan and its lines. The budgets it wrote are removed with it when
+      # `remove_budgets`, which takes them back to what was there before the plan;
+      # otherwise they stay, as if you had set them by hand. Transactions and categories
+      # are never touched.
+      #
+      # @return [Integer] how many budget rows the plan had written
+      def delete(plan_id, remove_budgets:)
+        written = budgets.dataset.where(savings_plan_id: plan_id)
+        count = remove_budgets ? written.delete : written.update(savings_plan_id: nil, updated_at: Repos.now)
+        savings_plans.dataset.where(id: plan_id).delete
+        count
+      end
+
+      # How many budget rows the plan wrote that are still its own (a limit you edit by hand
+      # in the plan's first month becomes yours).
+      def budget_count(plan_id) = budgets.dataset.where(savings_plan_id: plan_id, removed: 0).count
+
       # --- Budgets ----------------------------------------------------------------------
 
       # A budget row applies from its month until the category's next row.
@@ -59,21 +76,36 @@ module Tally
         budgets.dataset.insert_conflict(
           target: %i[category_id month],
           update: {amount_cents: Sequel[:excluded][:amount_cents], savings_plan_id: Sequel[:excluded][:savings_plan_id],
-                   updated_at: Repos.now}
+                   removed: 0, updated_at: Repos.now}
         ).insert(category_id:, month:, amount_cents:, savings_plan_id:)
       end
 
+      # Ends a category's budget from `month` on: its rows from then are deleted, and a
+      # removed row stops the one before (the months that one covered keep their limit).
+      def remove_budget(category_id, month)
+        rows = budgets.dataset.where(category_id:)
+        rows.where(Sequel[:month] >= month).delete
+        before = rows.where(Sequel[:month] < month).reverse(:month).first
+        return unless before && before[:removed].zero?
+
+        budgets.dataset.insert(category_id:, month:, amount_cents: 0, removed: 1)
+      end
+
+      # Every category that has ever had a budget.
+      def budgeted_category_ids = budgets.dataset.distinct.select_map(:category_id)
+
       # Category id => the limit in force in `month`: each category's latest row at or
-      # before it.
+      # before it, unless that row removed the budget.
       def budgets_for(month)
         latest = budgets.dataset.unordered.where(Sequel[:budgets][:month] <= month)
           .group(:category_id).select(:category_id) { max(:month).as(:month) }
         budgets.dataset.join(latest.as(:latest), category_id: :category_id, month: :month)
+          .where(Sequel[:budgets][:removed] => 0)
           .select_hash(Sequel[:budgets][:category_id], Sequel[:budgets][:amount_cents])
       end
 
       # The first month any budget applies to, or nil.
-      def first_budget_month = budgets.dataset.min(:month)
+      def first_budget_month = budgets.dataset.where(removed: 0).min(:month)
     end
   end
 end

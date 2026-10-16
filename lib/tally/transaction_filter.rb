@@ -59,7 +59,7 @@ module Tally
     FORM_FIELDS = %i[account month category kind].freeze
 
     ID = /\A\d{1,9}\z/
-    MONTH = /\A\d{4}-(0[1-9]|1[0-2])\z/
+    MONTH = Insights::MONTH
     PAYEE = /\A(counterparty:\d{1,9}|description:[^\n]{1,200})\z/
 
     # Reads the filters from a request's params; a value that isn't valid is ignored.

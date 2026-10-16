@@ -84,18 +84,22 @@ RSpec.describe "Savings plan and budgets", :db, type: :request do
     expect(last_response.body).to include("Month-end scores")
   end
 
-  it "runs the plan's live recalculation from a script file the Content Security Policy allows" do
+  it "runs the plan's live recalculation and confirmations from script files the Content Security Policy allows" do
     post "/plan", target: "1,000.00", starts_month: "2026-09"
     follow_redirect!
 
     expect(last_response.headers["Content-Security-Policy"]).to include("script-src 'self'")
     expect(last_response.body).to include(%(<script src="/assets/plan.js"></script>), %(data-target="100000"), %(data-decimal="."), %(data-reaches="reaches the target"))
-    expect(last_response.body.scan(/<script[^>]*>/)).to eq([%(<script src="/assets/plan.js">)])
+    expect(last_response.body.scan(/<script[^>]*>/)).to eq([%(<script src="/assets/confirm.js" defer>), %(<script src="/assets/plan.js">)])
 
     get "/assets/plan.js"
     expect(last_response.status).to eq(200)
     expect(last_response.headers["Content-Type"]).to start_with("text/javascript")
     expect(last_response.body).to include("new-saved", "confirmShort")
+
+    get "/assets/confirm.js"
+    expect(last_response.headers["Content-Type"]).to start_with("text/javascript")
+    expect(last_response.body).to include("dataset.confirm")
 
     get "/assets/other.js"
     expect(last_response.status).to eq(404)
@@ -149,5 +153,98 @@ RSpec.describe "Savings plan and budgets", :db, type: :request do
     get "/budgets"
 
     expect(last_response.body).to include("No budgets for Aug 2026 yet.")
+  end
+
+  describe "deleting" do
+    def accept(target = "1,000.00", proposed: {})
+      post "/plan", target:, starts_month: "2026-09"
+      id = db[:savings_plans].max(:id)
+      post "/plan/#{id}/accept", proposed.empty? ? {} : {proposed:}
+      id
+    end
+
+    def limits(month) = Hanami.app["repos.plan_repo"].budgets_for(month)
+
+    it "deletes a draft plan and its lines" do
+      post "/plan", target: "1,000.00", starts_month: "2026-09"
+      id = db[:savings_plans].max(:id)
+      get "/plan/#{id}"
+      expect(last_response.body).to include("Delete this plan", %(data-confirm="Delete this plan? This can&#39;t be undone."))
+      expect(last_response.body).not_to include("remove_budgets")
+
+      post "/plan/#{id}/delete"
+      expect(last_response.headers["Location"]).to end_with("/plan?notice=plan_deleted")
+      expect(db[:savings_plans].count).to eq(0)
+      expect(db[:savings_plan_lines].count).to eq(0)
+      follow_redirect!
+      expect(last_response.body).to include("The plan was deleted.")
+
+      post "/plan/#{id}/delete"
+      expect(last_response.status).to eq(404)
+    end
+
+    it "removes the budgets an accepted plan wrote, back to the limits from before, and nothing else" do
+      post "/budgets", category_id: category_id("Delivery").to_s, month: "2026-08", amount: "30.00"
+      counts = -> { [db[:transactions].count, db[:categories].count, db[:category_rules].count] }
+      before = counts.()
+      id = accept(proposed: {category_id("Delivery").to_s => "10.00"})
+      expect(limits("2026-09")[category_id("Delivery")]).to eq(1_000)
+
+      get "/plan/#{id}"
+      written = db[:budgets].where(savings_plan_id: id).count
+      expect(last_response.body).to include(%(name="remove_budgets" value="1" checked), "Also remove the #{written} budgets it wrote")
+
+      post "/plan/#{id}/delete", remove_budgets: "1"
+      expect(last_response.headers["Location"]).to end_with("notice=plan_deleted_with_budgets")
+      expect(db[:savings_plans].count).to eq(0)
+      expect(limits("2026-09")).to eq(category_id("Delivery") => 3_000)
+      expect(counts.()).to eq(before)
+    end
+
+    it "keeps the budgets when asked, as if set by hand" do
+      id = accept
+      written = db[:budgets].count
+
+      post "/plan/#{id}/delete"
+      expect(last_response.headers["Location"]).to end_with("notice=plan_deleted_kept_budgets")
+      expect(db[:budgets].count).to eq(written)
+      expect(db[:budgets].exclude(savings_plan_id: nil).count).to eq(0)
+
+      get "/budgets", month: "2026-09"
+      expect(last_response.body).not_to include("Target<strong>")
+    end
+
+    it "removes one category's budget from a month on, keeping the months before" do
+      delivery = category_id("Delivery").to_s
+      post "/budgets", category_id: delivery, month: "2026-08", amount: "10.00"
+      post "/budgets", category_id: delivery, month: "2026-10", amount: "60.00"
+
+      get "/budgets", month: "2026-09"
+      expect(last_response.body).to include(%(action="/budgets/remove"), %(data-confirm="Remove the Food delivery budget from Sep 2026 on?"))
+
+      post "/budgets/remove", category_id: delivery, month: "2026-09"
+      expect(last_response.headers["Location"]).to end_with("/budgets?month=2026-09")
+      expect([limits("2026-08"), limits("2026-09"), limits("2026-11")]).to eq([{delivery.to_i => 1_000}, {}, {}])
+
+      post "/budgets", category_id: delivery, month: "2026-11", amount: "20.00"
+      expect([limits("2026-10"), limits("2026-11")]).to eq([{}, {delivery.to_i => 2_000}])
+
+      post "/budgets/remove", category_id: "999999", month: "2026-09"
+      expect(last_response.headers["Location"]).to end_with("error=month_and_category")
+    end
+
+    it "removes every budget from a month on" do
+      accept
+      post "/budgets", category_id: category_id("Delivery").to_s, month: "2026-08", amount: "10.00"
+
+      get "/budgets", month: "2026-09"
+      expect(last_response.body).to include("Remove all budgets from Sep 2026 on")
+
+      post "/budgets/remove", all: "1", month: "2026-09"
+      expect(limits("2026-09")).to eq({})
+      expect(limits("2026-08")).to eq(category_id("Delivery") => 1_000)
+      get "/budgets", month: "2026-09"
+      expect(last_response.body).to include("No budgets for Sep 2026 yet.")
+    end
   end
 end

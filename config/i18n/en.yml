@@ -440,6 +440,10 @@ en:
         review every line before anything is saved.
       made: Made
       make: Make a plan
+      notices:
+        plan_deleted: The plan was deleted.
+        plan_deleted_kept_budgets: The plan was deleted. The budgets it wrote stay, as if you had set them.
+        plan_deleted_with_budgets: The plan was deleted, and so were the budgets it wrote.
       plans: Plans
       see_it: See it
       starting: starting
@@ -456,8 +460,12 @@ en:
       baseline: "baseline %{from} to %{to}"
       budgets_from: "budgets from %{month}"
       category: Category
+      confirm_delete: Delete this plan? This can't be undone.
       confirm_short: These limits save less than the target. Accept them anyway?
       cut: Cut
+      delete: Delete this plan
+      delete_button: Delete plan
+      delete_note: Deleting a plan never touches your transactions or categories.
       fixed_lever: "Fixed costs can't be trimmed month to month, but a contract can be renegotiated or switched:"
       gap: Gap
       income: Income
@@ -471,6 +479,9 @@ en:
       on_average: a month, on average
       per_month: "%{name}: %{amount} a month"
       reaches: reaches the target
+      remove_budgets:
+        one: Also remove the budget it wrote, going back to the limit you had before
+        other: Also remove the %{count} budgets it wrote, going back to the limits you had before
       saved_today: Saved today
       short: short of the target
       shortfall: >-
@@ -487,6 +498,9 @@ en:
       add: Add a budget
       ahead_flag: ahead of pace
       category: Category
+      clear: "Remove all budgets from %{month} on"
+      confirm_clear: "Remove every budget from %{month} on? The months before keep theirs."
+      confirm_remove: "Remove the %{name} budget from %{month} on?"
       counting: Card purchases count in the month they were made, installments in the month of their bill.
       elapsed: >-
         %{pct}% of %{month} has gone by. The projection assumes the income the plan expects
@@ -514,6 +528,8 @@ en:
       projected: Projected
       reached: Target reached
       reached_short: reached
+      remove: Remove
+      remove_note: "Remove ends a budget from %{month} on; the months before keep it."
       result: Result
       saved: Saved
       saved_so_far: Saved so far

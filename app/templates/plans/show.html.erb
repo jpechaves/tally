@@ -65,5 +65,16 @@
     <% end %>
   <% end %>
 
+  <details class="danger">
+    <summary><%= t("plans.show.delete") %></summary>
+    <form action="/plan/<%= plan[:id] %>/delete" method="post" data-confirm="<%= t("plans.show.confirm_delete") %>">
+      <% if budget_count.positive? %>
+        <label><input type="checkbox" name="remove_budgets" value="1" checked> <%= t("plans.show.remove_budgets", count: budget_count) %></label>
+      <% end %>
+      <p class="note"><%= t("plans.show.delete_note") %></p>
+      <button type="submit" class="danger"><%= t("plans.show.delete_button") %></button>
+    </form>
+  </details>
+
   <script src="/assets/plan.js"></script>
 </main>

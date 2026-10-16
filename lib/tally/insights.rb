@@ -10,6 +10,9 @@ module Tally
     SPENDING_KINDS = %w[purchase fee bill_payment refund].freeze
     INCOME_KINDS = %w[income].freeze
 
+    # A month as pages and forms send it: "2026-09".
+    MONTH = /\A\d{4}-(0[1-9]|1[0-2])\z/
+
     module_function
 
     def spending?(row) = SPENDING_KINDS.include?(row[:kind])

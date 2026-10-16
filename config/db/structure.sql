@@ -212,6 +212,7 @@ CREATE TABLE `budgets`(
   `savings_plan_id` integer REFERENCES `savings_plans`,
   `created_at` text DEFAULT((strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))) NOT NULL,
   `updated_at` text DEFAULT((strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))) NOT NULL,
+  removed integer NOT NULL DEFAULT 0 CHECK(removed IN(0, 1)),
   CONSTRAINT `budgets_amount` CHECK(amount_cents >= 0)
 ) STRICT;
 CREATE UNIQUE INDEX `budgets_category_id_month_index` ON `budgets`(
@@ -223,4 +224,5 @@ INSERT INTO schema_migrations (filename) VALUES
 ('20261015100000_create_import_tables.rb'),
 ('20261016000000_create_categories.rb'),
 ('20261017000000_create_dismissed_suggestions.rb'),
-('20261018000000_create_savings_plans_and_budgets.rb');
+('20261018000000_create_savings_plans_and_budgets.rb'),
+('20261019000000_add_removed_to_budgets.rb');

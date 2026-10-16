@@ -10,6 +10,11 @@ module Tally
 
         expose :plan
 
+        # How many budgets accepting it wrote that are still its own.
+        expose :budget_count, decorate: false do |plan|
+          plan_repo.budget_count(plan[:id])
+        end
+
         expose :lines do |plan|
           plan_repo.lines(plan[:id])
         end
