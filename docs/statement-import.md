@@ -76,7 +76,7 @@ date,title,amount
 - `amount` is quoted with a **comma decimal and dot thousands** (`"1.401,78"`), **positive = charge**, and negatives are written with a space (`"- 7,06"`). `Money.parse` drops the space, and the importer flips the sign so charges are negative on the card account like every other outflow.
 - **No transaction ID.** The upsert key is derived like Itaú's: `sha256(card | bill due date | date | title | amount | k)`. `k` matters here: bills can contain truly identical rows (for example two memberships at the same gym charged the same amount on the same day), and `k` numbers them so they stay separate.
 - **The bill's due date comes from the file name** (`Nubank_2026-09-09.csv`). A file without it is rejected with a message asking you to rename it, rather than guessing which bill it is.
-- No summary line, so the check is against the account statement instead: **the sum of a bill's charges must equal the "Pagamento de fatura" that paid it** (once that account month is imported). A mismatch is a warning, not a rejection, because a bill can be paid partially, and IOF rounding inside the bank can leave a one-centavo gap. The importer never invents a balancing row.
+- No summary line, so the check is against the account statement instead: **the sum of a bill's charges must equal the "Pagamento de fatura" rows that paid it** (once that account month is imported; a bill can be paid in several parts, some while it is still open, see §4). A mismatch is a warning, not a rejection, because a bill can be paid partially, and IOF rounding inside the bank can leave a one-centavo gap. The importer never invents a balancing row.
 
 Title patterns:
 
@@ -191,7 +191,7 @@ The import runs as one operation (`ImportStatement`), inside a single DB transac
 - **Between currencies** (a Conta Global top-up and Nubank conta's "Conversão para Conta Global") the amounts differ: US$ 178,74 there, R$ 1.000,00 here. The dollar leg's rate says what the reais should be (178,74 × 5,405405 = R$ 966,16), and the BRL leg pairs when it is between 98% and 108% of that, within 3 days. The margin covers IOF (3,5% in 2026). A re-import that moves either amount out of that margin unpairs them.
 - Otherwise (the other side not imported yet) the row stays a one-leg transfer: still never spending or income.
 
-**Cross-source checks** are on the Accounts page: each Nubank card bill against the account's "Pagamento de fatura" (between 20 days before and 5 days after the due date), and each Itaú bill against the payment printed on the next bill. A difference is a warning, never a rejection. The Itaú account's balance is flagged when it drifts more than `PASS_THROUGH_TOLERANCE_CENTS` (default R$ 50) from zero.
+**Cross-source checks** are on the Accounts page: each Nubank card bill against what the account's "Pagamento de fatura" rows paid toward it (payments in date order fill the oldest bill still owing among those open that day, a bill opening on the previous bill's due date, so early payments, payments in parts and prepayments toward the next bill land on the right bill), and each Itaú bill against the payment printed on the next bill. A difference is a warning, never a rejection. The Itaú account's balance is flagged when it drifts more than `PASS_THROUGH_TOLERANCE_CENTS` (default R$ 50) from zero.
 
 Overlapping files work too: a Nubank export for 15 Jun to 15 Jul followed by one for July only updates the shared rows and inserts the rest.
 
