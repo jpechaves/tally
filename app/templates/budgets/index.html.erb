@@ -28,6 +28,7 @@
         <%= t("budgets.index.elapsed", pct: (budget_month.elapsed * 100).round, month: month_label(month)) %>
       <% end %>
       <%= t("budgets.index.counting") %>
+      <% if budget_month.committed_cents.positive? %><%= t("budgets.index.committed_note", amount: money(budget_month.committed_cents)) %><% end %>
       <% if next_installments_cents.positive? %><%= t("budgets.index.next_installments", amount: money(next_installments_cents)) %><% end %>
     </p>
 
@@ -45,7 +46,8 @@
               <div class="meter<%= " over" if line.over? %>" title="<%= money(line.spent_cents) %> / <%= money(line.limit_cents) %>">
                 <span style="width: <%= bar_percent(line.spent_cents, line.limit_cents) %>%"></span><% unless budget_month.complete? %><i style="left: <%= (budget_month.elapsed * 100).round(1).to_f %>%"></i><% end %>
               </div></td>
-            <td class="num"><%= money(line.spent_cents) %></td>
+            <td class="num"><%= money(line.spent_cents) %><% if line.committed_cents.positive? %>
+              <span class="note"><%= t("budgets.index.committed", amount: money(line.committed_cents)) %></span><% end %></td>
             <td class="num">
               <form action="/budgets" method="post" class="inline">
                 <input type="hidden" name="category_id" value="<%= line.category_id %>">

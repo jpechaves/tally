@@ -398,7 +398,8 @@ Small worked example (made-up numbers): income averages R$ 12.000 and spending R
 
 ### 8.5 Am I on track? (monthly dashboard)
 
-- Target X, saved so far this month, and a **projection**: income so far + expected remaining income − (spent so far + what's left in each budget).
+- Target X, saved so far this month, and a **projection**: income so far + expected remaining income − (spent so far + what's left in each budget, or what's already committed to it if more).
+- Rows dated after today (installments on a bill exported before it closes) are committed, not spent, until their date: they show as "to come" on their budget line and are left out of the report, the home page, cuts and the planner (`InsightRepo#rows`).
 - Each budget line shows spent, limit and **pace** (spent ÷ share of the month elapsed). A category is flagged once it's ahead of pace by more than 10%.
 - Card purchases count in the month of the bill they land on (see statement-import.md §5), so the dashboard also shows what's already on the open Itaú bill and the installments committed to the next one.
 - At month end, the plan line is scored: target vs actually saved, and which categories went over.
@@ -412,7 +413,7 @@ Every number should lead to the transactions behind it. The transactions page ta
 | `account` | account id | that account's |
 | `month` | `YYYY-MM` | posted that month |
 | `category` | category id, or `none` | that category's, and its children's for a parent; `none` is rows with no category |
-| `kind` | `spending`, `income`, `transfer` | spending and income as the report counts them (rows a re-import flagged as missing are left out), so the page's total matches the report; or transfers |
+| `kind` | `spending`, `income`, `transfer` | spending and income as the report counts them (rows a re-import flagged as missing, and rows dated after today, are left out), so the page's total matches the report; or transfers |
 | `nature` | `fixed`, `essential`, `discretionary`, `unset` | whose own category has that nature; `unset` is a category without one, or no category |
 | `payee` | `counterparty:12`, `description:padaria exemplo` | paid to that counterparty (all its name variants, see `Tally::Merchants`), or, without one, with that description as the review list groups them (`Tally::Review.key`, also a SQLite function, `tally_payee_key`) |
 | `purchase` | id of any installment | every installment of that card purchase, linked the way the installment calendar links them (`Tally::InstallmentCalendar.series`) |

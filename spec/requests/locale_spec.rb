@@ -64,6 +64,7 @@ RSpec.describe "Languages", :db, type: :request do
   end
 
   it "words cut suggestions in Portuguese" do
+    allow(Date).to receive(:today).and_return(Date.new(2026, 10, 15))
     %w[itau_2026-10.pdf itau_2027-01_tight.pdf].each do |name|
       Hanami.app["operations.import_statement"].(file_name: name, content: fixture(name))
     end

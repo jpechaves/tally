@@ -113,6 +113,10 @@ module Tally
 
       def source_label(source) = t("sources.#{source}", default: source.to_s)
 
+      # A row dated after today, like an installment on a bill exported early: committed,
+      # not spent yet.
+      def upcoming?(row) = row[:occurred_on] > Date.today.iso8601
+
       def kind_label(kind) = t("kinds.#{kind}", default: kind.to_s)
 
       def nature_label(nature) = t("natures.#{nature || "unset"}", default: nature.to_s)

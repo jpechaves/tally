@@ -51,6 +51,37 @@ RSpec.describe Tally::BudgetMonth do
     expect(over.unbudgeted_left_cents).to eq(0)
   end
 
+  it "counts rows dated after today as committed, not spent, until their date" do
+    upcoming = rows + [
+      insight_row("2026-09-25", -300.00, "LOJA EXEMPLO - Parcela 3/5", **in_category(:market)),
+      insight_row("2026-09-28", -80.00, "LOJA")
+    ]
+    early = described_class.new(upcoming, month: "2026-09", budgets: {11 => 500_00, 12 => 2_000_00}, categories:,
+      today: Date.new(2026, 9, 12), expected_income_cents: 10_000_00, expected_unbudgeted_cents: 50_00)
+
+    market = early.lines.find { _1.name == "Supermercado" }
+    expect(early.spending_cents).to eq(110_000)
+    expect(early.saved_cents).to eq(890_000)
+    expect(market).to have_attributes(spent_cents: 60_000, committed_cents: 30_000, pace_pct: 75)
+    expect(early.committed_cents).to eq(38_000)
+    # Committed R$ 80 outside the budgets is more than the usual R$ 50 still to come.
+    expect(early.unbudgeted_left_cents).to eq(8_000)
+
+    late = described_class.new(upcoming, month: "2026-09", budgets: {11 => 500_00, 12 => 2_000_00}, categories:,
+      today: Date.new(2026, 9, 25), expected_income_cents: 10_000_00)
+    expect(late.lines.find { _1.name == "Supermercado" }).to have_attributes(spent_cents: 90_000, committed_cents: 0)
+    expect(late.committed_cents).to eq(8_000)
+  end
+
+  it "projects committed spending over what's left of a budget" do
+    big = rows + [insight_row("2026-09-20", -700.00, "IFOOD", **in_category(:delivery))]
+    september = described_class.new(big, month: "2026-09", budgets: {11 => 500_00, 12 => 2_000_00}, categories:,
+      today: Date.new(2026, 9, 15), expected_income_cents: 10_000_00)
+
+    # Delivery: R$ 100 left, but R$ 700 already committed.
+    expect(september.projected_saved_cents).to eq(1_000_000 - 110_000 - 140_000 - 70_000)
+  end
+
   it "scores the month once it is over" do
     september = month(Date.new(2026, 10, 2), target: 9_000_00)
 

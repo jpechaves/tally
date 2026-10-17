@@ -223,6 +223,7 @@ en:
       fee: "fee %{amount}"
       kind: Kind
       one_leg: (one leg)
+      upcoming: not charged yet
     index:
       all_accounts: All accounts
       all_categories: All categories
@@ -532,6 +533,8 @@ en:
       clear: "Remove all budgets from %{month} on"
       confirm_clear: "Remove every budget from %{month} on? The months before keep theirs."
       confirm_remove: "Remove the %{name} budget from %{month} on?"
+      committed: "+ %{amount} to come"
+      committed_note: "%{amount} on bills already imported is dated later this month: it counts once its date comes, and the projection expects it."
       counting: Card purchases count in the month they were made, installments in the month of their bill.
       elapsed: >-
         %{pct}% of %{month} has gone by. The projection assumes the income the plan expects

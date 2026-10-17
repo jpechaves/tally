@@ -84,6 +84,31 @@ RSpec.describe "Savings plan and budgets", :db, type: :request do
     expect(last_response.body).to include("Month-end scores")
   end
 
+  it "counts a row dated after today as committed, not spent" do
+    db[:transactions].where(raw_description: "Compra no débito via NuPay - iFood").update(occurred_on: "2026-09-20")
+    post "/plan", target: "1,000.00", starts_month: "2026-09"
+    post "/plan/#{db[:savings_plans].max(:id)}/accept", proposed: {category_id("Delivery").to_s => "10.00"}
+
+    allow(Date).to receive(:today).and_return(Date.new(2026, 9, 15))
+    get "/budgets"
+    body = last_response.body
+    expect(body).to match(%r{<td class="num">R\$ 0.00\s*<span class="note">\+ R\$ 45.90 to come</span></td>}m)
+    expect(body).to include("R$ 45.90 on bills already imported is dated later this month")
+    expect(body).not_to include(">over<")
+
+    get "/transactions", month: "2026-09"
+    expect(last_response.body).to include("not charged yet")
+    get "/report", month: "2026-09"
+    expect(last_response.body).not_to include(">Food delivery</a>")
+
+    allow(Date).to receive(:today).and_return(Date.new(2026, 9, 20))
+    get "/budgets"
+    expect(last_response.body).to include(">over<")
+    expect(last_response.body).not_to include("to come")
+    get "/report", month: "2026-09"
+    expect(last_response.body).to include(">Food delivery</a>")
+  end
+
   it "runs the plan's live recalculation and confirmations from script files the Content Security Policy allows" do
     post "/plan", target: "1,000.00", starts_month: "2026-09"
     follow_redirect!

@@ -263,8 +263,11 @@ module Tally
         scope = scope.where(payee_key => filter.payee) if filter.payee
         scope = scope.where(column.(:id) => installment_series(filter.purchase).map { _1[:id] }) if filter.purchase
         # Spending and income as the report counts them, which leaves out rows a
-        # re-import flagged as missing (InsightRepo).
-        scope = scope.where(column.(:missing_since_import_id) => nil) if COUNTED.include?(filter.kind)
+        # re-import flagged as missing and rows dated after today (InsightRepo).
+        if COUNTED.include?(filter.kind)
+          scope = scope.where(column.(:missing_since_import_id) => nil)
+            .where { column.(:occurred_on) <= Date.today.iso8601 }
+        end
         scope
       end
 

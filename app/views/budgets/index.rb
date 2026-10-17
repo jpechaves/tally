@@ -87,7 +87,7 @@ module Tally
           plan = nil unless plan && plan[:starts_month] <= month
           before = Tally::Insights.previous_months([month, today.strftime("%Y-%m")].min, BASELINE_MONTHS)
           baseline = insight_repo.rows(from: before.first, to: before.last).group_by { Tally::Insights.month_of(_1) }.values
-          Tally::BudgetMonth.new(insight_repo.rows(from: month, to: month), month:, budgets:, categories: names, today:,
+          Tally::BudgetMonth.new(insight_repo.rows(from: month, to: month, through: nil), month:, budgets:, categories: names, today:,
             target_cents: plan && plan[:target_cents],
             expected_income_cents: plan ? plan[:baseline_income_cents] : average(baseline) { Tally::Insights.income_cents(_1) },
             expected_unbudgeted_cents: average(baseline) { Tally::Insights.spent_cents(_1.reject { |row| budgets.key?(row[:category_id]) }) })

@@ -234,6 +234,7 @@ pt-BR:
       fee: "tarifa %{amount}"
       kind: Tipo
       one_leg: (só um lado)
+      upcoming: ainda não cobrado
     index:
       all_accounts: Todas as contas
       all_categories: Todas as categorias
@@ -544,6 +545,8 @@ pt-BR:
       clear: "Remover todos os orçamentos a partir de %{month}"
       confirm_clear: "Remover todos os orçamentos a partir de %{month}? Os meses anteriores continuam com os deles."
       confirm_remove: "Remover o orçamento de %{name} a partir de %{month}?"
+      committed: "+ %{amount} a vir"
+      committed_note: "%{amount} em faturas já importadas tem data mais adiante neste mês: conta quando a data chegar, e a projeção já o espera."
       counting: Compras no cartão contam no mês em que foram feitas, parcelas no mês da fatura.
       elapsed: >-
         %{pct}% de %{month} já passou. A projeção assume a receita que o plano espera (ou a
