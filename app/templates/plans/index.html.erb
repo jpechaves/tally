@@ -1,6 +1,7 @@
 <main>
   <h1><%= t("plans.index.title") %></h1>
   <% if error_code %><p class="error"><%= t("errors.#{error_code}", default: error_code.to_s) %></p><% end %>
+  <% if notice_code %><p class="notice"><%= t("plans.index.notices.#{notice_code}", default: "") %></p><% end %>
   <p><%= t("plans.index.intro_html") %></p>
   <form action="/plan" method="post" class="inline">
     <label>R$ <input name="target" class="amount" placeholder="<%= amount_field(150_000) %>" required> <%= t("plans.index.a_month") %></label>

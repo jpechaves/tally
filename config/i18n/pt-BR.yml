@@ -453,6 +453,10 @@ pt-BR:
         cada linha antes de qualquer coisa ser salva.
       made: Feito em
       make: Fazer um plano
+      notices:
+        plan_deleted: O plano foi excluído.
+        plan_deleted_kept_budgets: O plano foi excluído. Os orçamentos que ele criou continuam, como se você os tivesse definido.
+        plan_deleted_with_budgets: O plano foi excluído, junto com os orçamentos que ele criou.
       plans: Planos
       see_it: Ver
       starting: a partir de
@@ -469,8 +473,12 @@ pt-BR:
       baseline: "base de %{from} a %{to}"
       budgets_from: "orçamentos a partir de %{month}"
       category: Categoria
+      confirm_delete: Excluir este plano? Não dá para desfazer.
       confirm_short: Estes limites guardam menos que a meta. Aceitar mesmo assim?
       cut: Corte
+      delete: Excluir este plano
+      delete_button: Excluir plano
+      delete_note: Excluir um plano nunca mexe nos seus lançamentos nem nas categorias.
       fixed_lever: "Custos fixos não dá para enxugar mês a mês, mas um contrato pode ser renegociado ou trocado:"
       gap: Diferença
       income: Receitas
@@ -484,6 +492,9 @@ pt-BR:
       on_average: por mês, em média
       per_month: "%{name}: %{amount} por mês"
       reaches: alcança a meta
+      remove_budgets:
+        one: Remover também o orçamento que ele criou, voltando ao limite de antes
+        other: Remover também os %{count} orçamentos que ele criou, voltando aos limites de antes
       saved_today: Guardado hoje
       short: abaixo da meta
       shortfall: >-
@@ -500,6 +511,9 @@ pt-BR:
       add: Adicionar um orçamento
       ahead_flag: acima do ritmo
       category: Categoria
+      clear: "Remover todos os orçamentos a partir de %{month}"
+      confirm_clear: "Remover todos os orçamentos a partir de %{month}? Os meses anteriores continuam com os deles."
+      confirm_remove: "Remover o orçamento de %{name} a partir de %{month}?"
       counting: Compras no cartão contam no mês em que foram feitas, parcelas no mês da fatura.
       elapsed: >-
         %{pct}% de %{month} já passou. A projeção assume a receita que o plano espera (ou a
@@ -527,6 +541,8 @@ pt-BR:
       projected: Projeção
       reached: Meta alcançada
       reached_short: alcançada
+      remove: Remover
+      remove_note: "Remover encerra um orçamento a partir de %{month}; os meses anteriores continuam com ele."
       result: Resultado
       saved: Guardado
       saved_so_far: Guardado até agora

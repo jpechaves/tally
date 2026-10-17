@@ -33,7 +33,7 @@
     <% end %>
 
     <div class="scroll"><table class="rows">
-      <thead><tr><th><%= t("budgets.index.category") %></th><th class="num"><%= t("budgets.index.spent") %></th><th class="num"><%= t("budgets.index.limit") %></th><th class="num"><%= t("budgets.index.left") %></th><th class="num"><%= t("budgets.index.pace") %></th><th></th></tr></thead>
+      <thead><tr><th><%= t("budgets.index.category") %></th><th class="num"><%= t("budgets.index.spent") %></th><th class="num"><%= t("budgets.index.limit") %></th><th class="num"><%= t("budgets.index.left") %></th><th class="num"><%= t("budgets.index.pace") %></th><th></th><th></th></tr></thead>
       <tbody>
         <% budget_month.lines.each do |line| %>
           <tr>
@@ -52,11 +52,24 @@
             <td class="num<%= line.over? ? " up" : "" %>"><%= money(line.left_cents) %></td>
             <td class="num<%= line.ahead_of_pace? ? " up" : "" %>"><%= line.pace_pct ? "#{line.pace_pct}%" : "" %></td>
             <td class="warning"><%= line.over? ? t("budgets.index.over_flag") : (line.ahead_of_pace? ? t("budgets.index.ahead_flag") : "") %></td>
+            <td>
+              <form action="/budgets/remove" method="post" data-confirm="<%= t("budgets.index.confirm_remove", name: category_name(line.name), month: month_label(month)) %>">
+                <input type="hidden" name="category_id" value="<%= line.category_id %>">
+                <input type="hidden" name="month" value="<%= month %>">
+                <button type="submit" class="danger"><%= t("budgets.index.remove") %></button>
+              </form>
+            </td>
           </tr>
         <% end %>
       </tbody>
     </table></div>
-    <p class="note"><%= t("budgets.index.pace_note", month: month_label(month), amount: money(budget_month.unbudgeted_cents)) %></p>
+    <p class="note"><%= t("budgets.index.pace_note", month: month_label(month), amount: money(budget_month.unbudgeted_cents)) %>
+      <%= t("budgets.index.remove_note", month: month_label(month)) %></p>
+    <form action="/budgets/remove" method="post" data-confirm="<%= t("budgets.index.confirm_clear", month: month_label(month)) %>">
+      <input type="hidden" name="all" value="1">
+      <input type="hidden" name="month" value="<%= month %>">
+      <button type="submit" class="danger"><%= t("budgets.index.clear", month: month_label(month)) %></button>
+    </form>
   <% end %>
 
   <h2><%= t("budgets.index.add") %></h2>

@@ -164,7 +164,13 @@ button, input[type=file]::file-selector-button {
 button:hover { background: var(--surface-3); }
 button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
 button.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
+/* Deletes or removes something: red words, asked again before it is sent (confirm.js). */
+button.danger { color: var(--bad-ink); border-color: rgba(208, 59, 59, 0.45); }
+button.danger:hover { background: rgba(208, 59, 59, 0.12); }
 table button { padding: 3px 10px; min-height: 26px; font-size: 12.5px; }
+details.danger { margin-top: 24px; }
+details.danger summary { cursor: pointer; color: var(--ink-subtle); }
+details.danger form { margin-top: 12px; }
 label { color: var(--ink-muted); }
 input[type=checkbox] { accent-color: var(--accent); }
 .filters, form.inline, .group form { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 16px; }

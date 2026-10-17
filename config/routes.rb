@@ -29,8 +29,10 @@ module Tally
     post "/plan", to: "plans.create"
     get "/plan/:id", to: "plans.show", as: :plan
     post "/plan/:id/accept", to: "plans.accept", as: :accept_plan
+    post "/plan/:id/delete", to: "plans.delete", as: :delete_plan
     get "/budgets", to: "budgets.index", as: :budgets
     post "/budgets", to: "budgets.update"
+    post "/budgets/remove", to: "budgets.remove", as: :remove_budgets
 
     get "/review", to: "review.index", as: :review
     post "/review", to: "review.assign"

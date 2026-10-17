@@ -8,6 +8,8 @@ module Tally
 
         # The error the last form sent back, if any (config/i18n, "errors").
         expose :error_code, decorate: false
+        # What the last action did, if it says (config/i18n, "plans.index.notices").
+        expose :notice_code, decorate: false
 
         expose :plans do
           plan_repo.all
