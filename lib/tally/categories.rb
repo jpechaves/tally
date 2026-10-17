@@ -42,6 +42,8 @@ module Tally
       "Receitas" => ["Salário", "Pró-labore", "Restituição de IR", "Reembolsos", "Outros recebimentos"]
     }.freeze
 
+    STREAMING = "\\b(netflix|spotify|prime video|amazon prime|disney ?plus|hbo ?max|max\\.com|globoplay|youtube|deezer|apple\\.com/bill|itunes\\.com/bill|dl\\*google|google one)\\b|\\bdisney\\+"
+
     # [field, operator, pattern, category, options]. Regexes are matched without accents
     # and ignoring case, so write them without accents. Lower priority runs first; the
     # catch-alls at 900 run after everything else.
@@ -54,7 +56,8 @@ module Tally
       ["description", "regex", "\\b(drogasil|droga ?raia|raia drogasil|pague menos|drogaria|panvel)\\b", "Farmácia"],
       ["description", "regex", "\\b(petz|petlove|cobasi)\\b", "Pet shop e veterinário"],
       ["description", "regex", "\\b(latam|gol linhas|voegol|azul linhas|voeazul|airbnb|booking\\.com|decolar)\\b", "Viagens"],
-      ["description", "regex", "\\b(netflix|spotify|prime video|amazon prime|disney|hbo ?max|max\\.com|globoplay|youtube|deezer|apple\\.com|dl\\*google|google one)\\b", "Streaming e apps"],
+      # Only subscription descriptors: "Apple.com/Us" or a Disney park store is a purchase.
+      ["description", "regex", STREAMING, "Streaming e apps"],
       ["description", "regex", "\\b(amazon|amzn|mercado ?livre|mercadolivre|shopee|magalu|magazine luiza|aliexpress|shein)\\b", "Compras online", {priority: 110}],
       ["description", "regex", "\\b(carrefour|pao de acucar|assai|atacadao|extra mercado|sams club|dia supermercado)\\b", "Supermercado"],
       ["description", "regex", "\\b(sabesp|copasa|sanepar|cedae)\\b", "Água"],
@@ -69,6 +72,13 @@ module Tally
       ["counterparty_document", "starts_with", "•••", PIX_TO_PEOPLE, {priority: 900, amount_max_cents: -1}],
       ["description", "regex", "^pix no credito\\b", PIX_TO_PEOPLE, {priority: 900, amount_max_cents: -1}]
     ].freeze
+
+    # Starting rules a later version rewrote: [field, operator, old pattern] => new
+    # pattern. Seeding moves a starting rule still on its old pattern to the new one, so
+    # the rows it categorized follow; a rule you edited is yours and stays as it is.
+    REVISED_RULES = {
+      ["description", "regex", "\\b(netflix|spotify|prime video|amazon prime|disney|hbo ?max|max\\.com|globoplay|youtube|deezer|apple\\.com|dl\\*google|google one)\\b"] => STREAMING
+    }.freeze
 
     # Itaú prints its own category under each card row. It only suggests a category
     # (category_source "bank"), shown as such in the review list. Keys are folded:

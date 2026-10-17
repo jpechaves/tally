@@ -9,3 +9,7 @@ Hanami.app["operations.seed_categories"].call
 # Put them in data/seeds.rb, which is gitignored, and they load here too.
 local = File.expand_path("../../data/seeds.rb", __dir__)
 load local if File.exist?(local)
+
+# Rows follow the rules as they are now, including a starting rule seeding just
+# rewrote; manual categories stay.
+Hanami.app["operations.categorize"].call
