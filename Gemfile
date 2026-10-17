@@ -19,6 +19,7 @@ gem "i18n", "~> 1.14"
 gem "puma", ">= 7.1"
 gem "rake"
 gem "sqlite3"
+gem "tzinfo", "~> 2.0" # times shown in the TIME_ZONE setting, from the system zoneinfo
 
 group :development do
   gem "hanami-webconsole", "~> 3.0.0"

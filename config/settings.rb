@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "tzinfo"
+
 module Tally
   class Settings < Hanami::Settings
     # HTTP basic auth for the whole app (it runs on the home network only).
@@ -20,5 +22,8 @@ module Tally
     setting :default_locale, default: "pt-BR", constructor: Types::String.enum("pt-BR", "en")
 
     setting :pass_through_tolerance_cents, default: 5_000, constructor: Types::Params::Integer
+
+    # The time zone times are shown in (the database keeps them in UTC), by its IANA name.
+    setting :time_zone, default: "America/Sao_Paulo", constructor: ->(name) { TZInfo::Timezone.get(name.to_s) }
   end
 end
