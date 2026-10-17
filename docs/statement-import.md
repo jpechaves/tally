@@ -49,12 +49,14 @@ Data,Valor,Identificador,Descrição
 |---|---|---|
 | `Transferência enviada pelo Pix - NAME - DOC - BANK (CODE) Agência: A Conta: C` | purchase, or transfer if the counterparty is you | counterparty name, CPF/CNPJ, bank, branch, account |
 | `Transferência recebida pelo Pix - …` / `Transferência Recebida - …` | income or refund, or transfer | same fields |
+| `Reembolso recebido pelo Pix - …` | refund (lowers spending, not income) | same fields |
 | `Pagamento de boleto efetuado - NAME` | bill_payment | counterparty name (truncated by the bank, e.g. "FINANCEIRA EXEMPLO SOCIEDADE DE CREDITO") |
 | `Pagamento de fatura` | transfer → Nubank cartão (pairs with the card's "Pagamento recebido") | none |
 | `Valor adicionado na conta por cartão de crédito - Valor adicionado para Pix no Crédito` + the Pix with the same UUID | transfer pair (card → account → payee) | the spending is counted once, on the card's `Pix no Crédito - NAME` row (the Pix amount plus the card fee), so both account rows are marked as pass-through |
 | `Conversão para Conta Global` | transfer → Nubank Conta Global (dollar account, balance only) | none |
 | `Aplicação RDB` / `Resgate RDB` | transfer → / ← Nubank RDB account | none |
-| `Compra no débito via NuPay - MERCHANT` | purchase | merchant |
+| `Compra no débito via NuPay - MERCHANT` / `Compra no débito - MERCHANT` | purchase | merchant |
+| `Recarga de celular` | purchase | counterparty "Recarga de celular" (Internet e telefone, by a starting rule) |
 | anything else | purchase / income by sign, flagged "unparsed description" | raw text kept |
 
 The document field is a full CNPJ for companies (`12.345.678/0001-00`) and a masked CPF for people (`•••.123.456-••`). A CNPJ is the most reliable key for categorizing merchants. Most rows in a typical month are Pix transfers.
