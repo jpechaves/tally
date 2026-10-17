@@ -24,6 +24,8 @@ module Tally
       PIX_INSTALLMENT = /\A(Pix no Crédito - .+?) - (\d+)\/(\d+)\z/
       NUPAY = / - NuPay\z/
       IOF = /\AIOF de "(.+)"\z/
+      # Newer exports name no purchase: "IOF de compra internacional".
+      IOF_INTERNATIONAL = /\AIOF de (?:volta de )?compra internacional\z/i
       IOF_REFUND = /\AIOF de volta de (.+)\z/
       REFUND = /\A(?:Estorno de "?(.+?)"?|Desconto Antecipação (.+))\z/
 
@@ -99,6 +101,9 @@ module Tally
 
         if title == PAYMENT
           return {kind: "transfer", description: title, counter_account: "Nubank conta"}
+        end
+        if IOF_INTERNATIONAL.match?(title)
+          return {kind: amount.negative? ? "fee" : "refund", description: title}
         end
         if (match = IOF.match(title))
           return {kind: amount.negative? ? "fee" : "refund", description: title, counterparty: {name: match[1]}}

@@ -86,6 +86,7 @@ Title patterns:
 | `… - Parcela N/M` | purchase, installment N of M | `purchase_key` links the installments across bills. The export has no purchase date, so the key is merchant + installment count + installment amount |
 | `Pix no Crédito - NAME - N/M` | purchase (a Pix paid with the card), installments | |
 | `IOF de "X"` / `IOF de volta de X` | fee / refund of that fee | international purchases; Nubank refunds the IOF, so the pair nets to zero and both link to purchase X |
+| `IOF de compra internacional` | fee (no counterparty) | newer exports' wording, which names no purchase; `IOF de volta de compra internacional` is its refund |
 | `Estorno de "X"` | refund | linked to X when found |
 | `Desconto Antecipação X` | refund | discount for paying installments early |
 | `… - NuPay` | purchase | merchants paid via NuPay |

@@ -8,6 +8,25 @@ RSpec.describe Tally::Importers::NubankCardCSV do
 
   def parse(content, file_name = "Nubank_2026-07-09.csv") = described_class.new.call(file_name, content)
 
+  describe "IOF in the newer wording, which names no purchase" do
+    let(:statement) { parse_fixture("Nubank_2026-11-09.csv") }
+
+    it "imports \"IOF de compra internacional\" as a fee with no payee" do
+      iofs = rows.select { _1.raw_description == "IOF de compra internacional" }
+      expect(iofs.map { [_1.kind, _1.amount.cents, _1.counterparty] }).to eq([["fee", -350, nil], ["fee", -700, nil]])
+      expect(row("IOF de volta de Loja Exemplo")).to have_attributes(kind: "refund", counterparty: {name: "Loja Exemplo"})
+    end
+
+    it "counts it in the bill's fees" do
+      expect(statement.card_statement).to include(total_cents: 30_700, purchases_cents: 29_650, fees_cents: 1_050)
+    end
+
+    it "reads a refund of it as a refund" do
+      refund = parse("date,title,amount\n2026-10-08,IOF de volta de compra internacional,\"- 3,50\"\n").rows.first
+      expect(refund).to have_attributes(kind: "refund", counterparty: nil)
+    end
+  end
+
   describe "the synthetic bill due 2026-07-09" do
     it "reads every row, with the bill's due date from the file name" do
       expect(statement.source).to eq("nubank_card_csv")
