@@ -247,4 +247,57 @@ RSpec.describe "Savings plan and budgets", :db, type: :request do
       expect(last_response.body).to include("No budgets for Sep 2026 yet.")
     end
   end
+
+  describe "the way from a plan to budgets" do
+    def current_step = last_response.body[%r{<li aria-current="step">\s*<strong>(.*?)</strong>}m, 1]
+
+    it "walks a first-time user through each step, saying what each one changes" do
+      get "/plan"
+      body = last_response.body
+      expect(body).to include("<h1>Savings plan</h1>", %(<a href="/plan" aria-current="page">Savings plan</a>))
+      expect(body).to include("A savings plan is a proposal", %(<details class="flow" open>))
+      expect(current_step).to eq("1. Make a plan.")
+
+      get "/budgets"
+      expect(last_response.body).to include("A budget is a monthly limit for one category.")
+      expect(current_step).to eq("1. Make a plan.")
+
+      post "/plan", target: "1,000.00", starts_month: "2026-09"
+      id = db[:savings_plans].max(:id)
+      get "/plan/#{id}"
+      expect(last_response.body).to include("This is a draft: nothing has changed yet.")
+      get "/plan"
+      expect(last_response.body).to include("A draft to save R$ 1,000.00 a month is waiting", %(<a href="/plan/#{id}">Review and accept</a>))
+      expect(current_step).to eq("2. Accept it.")
+
+      post "/plan/#{id}/accept"
+      count = db[:budgets].where(savings_plan_id: id).count
+      get "/plan"
+      body = last_response.body
+      expect(body).to include(%(<details class="flow">), "<td>Accepted</td>", %(<a href="/budgets?month=2026-09">#{count} budgets from Sep 2026</a>))
+      expect(current_step).to eq("3. Follow your budgets.")
+
+      get "/plan/#{id}"
+      expect(last_response.body).to include("Accepted: its #{count} limits are your budgets from Sep 2026.", %(<a href="/budgets?month=2026-09">See them on Budgets</a>))
+
+      get "/budgets", month: "2026-09"
+      expect(last_response.body).to include("These limits come from your plan to save R$ 1,000.00 a month, accepted from Sep 2026.", %(<a href="/plan/#{id}">See the plan</a>))
+
+      post "/plan", target: "500.00", starts_month: "2026-09"
+      post "/plan/#{db[:savings_plans].max(:id)}/accept"
+      get "/plan/#{id}"
+      expect(last_response.body).to include("A newer plan replaced this one.")
+    end
+
+    it "uses the same words in Portuguese" do
+      set_cookie "locale=pt-BR"
+      post "/plan", target: "1.000,00", starts_month: "2026-09"
+      post "/plan/#{db[:savings_plans].max(:id)}/accept"
+
+      get "/plan"
+      body = last_response.body
+      expect(body).to include("<h1>Plano de economia</h1>", %(aria-current="page">Plano de economia</a>), "<td>Aceito</td>", "orçamentos a partir de set/2026")
+      expect(current_step).to eq("3. Acompanhe seus orçamentos.")
+    end
+  end
 end

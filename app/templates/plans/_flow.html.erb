@@ -1,0 +1,12 @@
+<%# How a plan becomes budgets, with the step you are on. Open until a plan is accepted. %>
+<details class="flow"<%= " open" if step < 3 %>>
+  <summary><%= t("plans.flow.title") %></summary>
+  <ol class="steps">
+    <% %w[make accept follow undo].each.with_index(1) do |key, number| %>
+      <% if number == step %><li aria-current="step"><% else %><li><% end %>
+        <strong><%= t("plans.flow.#{key}_title") %></strong> <%= t("plans.flow.#{key}") %>
+        <% if number == step %><span class="here"><%= t("plans.flow.you_are_here") %></span><% end %>
+      </li>
+    <% end %>
+  </ol>
+</details>
