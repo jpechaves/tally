@@ -8,7 +8,7 @@
     <%= render "shared/pages", page: pagination, path: page_path %>
     <% groups.each do |group| %>
       <section class="group">
-        <h2><%= group.label %> · <%= t("common.row_count", count: group.rows.size) %> · <%= money(group.total_cents) %>
+        <h2><%= group.label %> · <%= t("common.row_count", count: group.rows.size) %> · <%= money_each(group.totals) %>
           <% if group.suggested_category_id %><span class="suggested">· <%= t("review.index.bank_suggests", category: category_name(group.suggested_category_name)) %></span><% end %></h2>
         <form action="/review" method="post">
           <input type="hidden" name="ids" value="<%= group.ids.join(",") %>">

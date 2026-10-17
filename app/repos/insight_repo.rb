@@ -4,7 +4,8 @@ module Tally
   module Repos
     # The rows behind the report, the cut suggestions and the installment calendar, as
     # plain hashes with their category, parent category and counterparty. Transfers and
-    # rows a re-import flagged as missing are left out.
+    # rows a re-import flagged as missing are left out, and so are accounts in another
+    # currency (Conta Global, in USD): every figure here is in reais.
     class InsightRepo < Tally::DB::Repo
       # @param from [String] "YYYY-MM", first month included
       # @param to [String] "YYYY-MM", last month included
@@ -36,6 +37,7 @@ module Tally
           .exclude(Sequel[:transactions][:kind] => "transfer")
           .where(Sequel[:transactions][:missing_since_import_id] => nil)
           .join(:accounts, id: :account_id)
+          .where(Sequel[:accounts][:currency] => Tally::Money::DEFAULT_CURRENCY)
           .left_join(:counterparties, id: Sequel[:transactions][:counterparty_id])
           .left_join(:categories, id: Sequel[:transactions][:category_id])
           .left_join(Sequel[:categories].as(:parents), id: Sequel[:categories][:parent_id])

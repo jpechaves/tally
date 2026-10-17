@@ -90,6 +90,7 @@ en:
     unset: no nature
 
   sources:
+    conta_global_csv: Nubank Conta Global (CSV)
     itau_card_pdf: Itaú card (PDF)
     nubank_account_csv: Nubank account (CSV)
     nubank_card_csv: Nubank card (CSV)
@@ -148,7 +149,8 @@ en:
       import: Import
       intro_html: >-
         Nubank account CSV (<code>NU_..._01JUN2026_30JUN2026.csv</code>), Nubank card CSV
-        (<code>Nubank_2026-09-09.csv</code>, named after the due date) or Itaú card bill PDF.
+        (<code>Nubank_2026-09-09.csv</code>, named after the due date), Conta Global CSV (in
+        dollars) or Itaú card bill PDF.
         Importing a file again updates its rows instead of duplicating them.
       title: Import statements
       when: When
@@ -218,6 +220,7 @@ en:
       date: Date
       description: Description
       details: Details
+      fee: "fee %{amount}"
       kind: Kind
       one_leg: (one leg)
     index:

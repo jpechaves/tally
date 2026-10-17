@@ -29,7 +29,7 @@ module Tally
 
     DEFAULT_CURRENCY = "BRL"
 
-    SYMBOLS = {"BRL" => "R$"}.freeze
+    SYMBOLS = {"BRL" => "R$", "USD" => "US$"}.freeze
 
     SEPARATORS = {
       # decimal mark => thousands separator

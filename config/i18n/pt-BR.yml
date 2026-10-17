@@ -102,6 +102,7 @@ pt-BR:
     unset: sem natureza
 
   sources:
+    conta_global_csv: Nubank Conta Global (CSV)
     itau_card_pdf: Itaú cartão (PDF)
     nubank_account_csv: Nubank conta (CSV)
     nubank_card_csv: Nubank cartão (CSV)
@@ -160,8 +161,8 @@ pt-BR:
       import: Importar
       intro_html: >-
         CSV da conta Nubank (<code>NU_..._01JUN2026_30JUN2026.csv</code>), CSV do cartão Nubank
-        (<code>Nubank_2026-09-09.csv</code>, com o nome da data de vencimento) ou PDF da fatura
-        do cartão Itaú. Importar um arquivo de novo atualiza os lançamentos em vez de duplicá-los.
+        (<code>Nubank_2026-09-09.csv</code>, com o nome da data de vencimento), CSV da Conta Global
+        (em dólares) ou PDF da fatura do cartão Itaú. Importar um arquivo de novo atualiza os lançamentos em vez de duplicá-los.
       title: Importar extratos
       when: Quando
     show:
@@ -230,6 +231,7 @@ pt-BR:
       date: Data
       description: Descrição
       details: Detalhes
+      fee: "tarifa %{amount}"
       kind: Tipo
       one_leg: (só um lado)
     index:

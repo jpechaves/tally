@@ -9,7 +9,7 @@ Companion: [statement-import.md](statement-import.md) (parsers, re-import rules,
 ## TL;DR
 
 - **Why the app exists:** to show where your money goes, point out what you can cut, and answer "if I want to save R$ X a month, what has to change?" with a concrete per-category plan that you can track every month.
-- **Data in:** three statement sources: the Nubank account CSV (where the salary lands), the Nubank card CSV and the Itaú card PDF. Importing the same file again updates rows instead of duplicating them. An Itaú bill that doesn't add up to its printed total to the cent is rejected, and each Nubank card bill is checked against the payment that settled it.
+- **Data in:** four statement sources: the Nubank account CSV (where the salary lands), the Nubank card CSV, the Itaú card PDF and the Nubank Conta Global CSV (in dollars, checked against its running balance). Importing the same file again updates rows instead of duplicating them. An Itaú bill that doesn't add up to its printed total to the cent is rejected, and each Nubank card bill is checked against the payment that settled it.
 - **No double counting:** moving money between your own accounts (Pix to your other bank, paying the card, RDB savings) is a transfer, not spending. Spending is counted once: on card purchases, and on Pix, boleto or debit payments to other people and companies.
 - **Categorization:** company tax ID (CNPJ) rules first, then Itaú's own category as a suggestion, then a review list grouped by who you paid. Every category is also tagged **fixed**, **essential** or **discretionary**, which is what the cut suggestions and the savings planner work from.
 - **Insights:** where the money went (by category and by payee, vs your 3-month average), cut candidates (discretionary spending, recurring charges, many small purchases, fees, installments), and when current installments end.
@@ -34,7 +34,7 @@ Constraints:
 
 ## 2. How the money moves (what the app has to model)
 
-`[imported]` marks the three statement sources. Arrows marked `transfer` are between your own accounts and never count as spending or income.
+`[imported]` marks the statement sources. Not drawn: Nubank Conta Global, a dollar account topped up from Nubank conta ("Conversão para Conta Global", a transfer) whose own card purchases abroad are spending in dollars, kept apart from the reais. Arrows marked `transfer` are between your own accounts and never count as spending or income.
 
 ```
         Employer (salary)               Own company (pró-labore)
@@ -125,7 +125,7 @@ Implemented in `lib/tally/money.rb` (milestone 1).
 4. **Parse at the edges with `BigDecimal`**: `"1.234,56"` (Itaú, forms) and `-518.54` (Nubank CSV) both become cents. More than 2 decimals is rejected, never silently rounded.
 5. **Division** (splits, percentages) uses `Money#allocate` with the largest-remainder method, so parts always add back up to the total.
 6. **The database enforces it**: SQLite `STRICT` tables (Sequel's `create_table(..., strict: true)`), so a `12.5` in an `INTEGER` column is an error, not a stored value.
-7. **BRL only** for now; accounts carry a `currency` column for later.
+7. **One currency per account.** Amounts are stored in their account's currency (`accounts.currency`): BRL everywhere except Nubank Conta Global, in USD. Nothing converts between them. The report, cuts, budgets and the category and counterparty totals count only BRL accounts; a list over several currencies shows a total per currency.
 
 ## 6. Data model
 
@@ -205,11 +205,15 @@ transactions
   memo              TEXT NULL         -- yours; imports never touch it
   external_id       TEXT NULL         -- upsert key (Nubank UUID, or derived for Itaú)
   first_import_id, last_import_id, missing_since_import_id  INTEGER NULL REFERENCES imports(id)
+  exchange_currency TEXT NULL         -- the other side of a currency exchange (GBP for a purchase abroad, BRL for a top-up)
+  exchange_amount_cents INTEGER NULL  -- that amount, when the statement prints it
+  exchange_rate     TEXT NULL         -- units of exchange_currency per unit of the account's currency, decimal text
+  fee_cents         INTEGER NULL      -- the bank's fee, already inside amount_cents
   raw_json          TEXT NULL         -- parsed source row, for audit
   UNIQUE(account_id, external_id)
   INDEX (account_id, occurred_on), INDEX (category_id, occurred_on), INDEX (counterparty_id)
 
-transfers                       -- exactly two legs that sum to 0 (one leg until the other account is imported)
+transfers                       -- exactly two legs that sum to 0, or match through the rate between currencies (one leg until the other account is imported)
   occurred_on   TEXT NOT NULL
   memo          TEXT NULL
 
@@ -482,10 +486,10 @@ Actions validate input and call one operation. Operations hold the rules and the
 
 ## 13. Decisions so far
 
-- Statement sources: Nubank account CSV, Nubank card CSV and Itaú card PDF.
+- Statement sources: Nubank account CSV, Nubank card CSV, Itaú card PDF and Nubank Conta Global CSV.
 - The Pi is the single live instance; a laptop is for development.
 - The code lives in a public GitHub repository with no personal data in it (§17).
-- BRL only for now.
+- Each account keeps its own currency and nothing converts between them; the reports are in reais. Conta Global (USD) gets its own report later (issue #22).
 - Pix sent to people is its own category, Transferências (Pix), counted as spending.
 - Version 1 is deterministic (rules + arithmetic); smart features come later and only suggest.
 - Two languages: Brazilian Portuguese (default) and English, with Hanami's built-in i18n. What you type stays as typed: rules, memos and categories you name or rename are data, not translated. Starting categories are named in the default language when a database is seeded, and show in the page's language whichever language seeded them; saving one under its translated name keeps the stored name. Importer diagnostics (a rejected file's reason, parser warnings) are stored with the import and stay in English.
@@ -496,8 +500,8 @@ Version 1 has **no AI running inside it**. Its "intelligent" parts are plain rul
 
 | Feature | How it works (deterministic) | Where | Milestone |
 |---|---|---|---|
-| Parsing 3 sources | CSV reader; poppler `pdftotext -bbox` for Itaú, totals checked to the cent | Ruby importers, golden-file tests | 2 |
-| Transfers | Fixed patterns: RDB, Pagamento de fatura, Pix to your own accounts, Conta Global, Pix no Crédito pair (same ID) | `pair_transfers` operation | 2 |
+| Parsing 4 sources | CSV reader; poppler `pdftotext -bbox` for Itaú, totals checked to the cent; Conta Global's running balance checked row by row | Ruby importers, golden-file tests | 2 |
+| Transfers | Fixed patterns: RDB, Pagamento de fatura, Pix to your own accounts, Conta Global top-ups (matched through the printed rate), Pix no Crédito pair (same ID) | `pair_transfers` operation, `Tally::Exchange` | 2 |
 | Categorization | Ordered list of rules on payee/description, then Itaú's printed category mapped, then "Pix to a CPF" → Transferências (Pix) | `category_rules` table, cascade in §7 | 3 |
 | Payee clean-up | Strip installment suffix (`\s?\d\d/\d\d$`), merge names that only differ in spaces/punctuation | `counterparties` normalizer | 3 |
 | Review list | Group uncategorized rows by payee, biggest total first; "Always use" creates a rule | Same, rule back-fills past rows | 3 |
@@ -531,6 +535,7 @@ Only after version 1 is correct and in daily use. Each one only **suggests**; no
 - **Milestone 5 (savings planner and budgets)**: done. The "save X a month" planner over the last three complete months (`Tally::Planner`, with the worked example of §8.4 as a test), a draft you edit line by line with a live total, accepting writes the budgets from its first month and replaces the previous plan, the on-track dashboard with pace and projection (`Tally::BudgetMonth`), editable limits, and month-end scores. A budget row applies from its month until the category's next row. Plans can be deleted, with or without the budgets they wrote, and budgets removed from a month on, one category or all (issue #15).
 - **Milestone 6 (localization)**: done. Brazilian Portuguese and English for every page, form error and cut suggestion (`config/i18n`, with a spec that keeps both files in step), a language switch in the menu remembered per browser, locale-aware amounts, dates and months, form amounts read with the language's decimal mark, and starting categories named in the default language (`DEFAULT_LOCALE`). Cut suggestions and bill checks now carry facts instead of English sentences, so the page words them.
 - **Milestone 7 (design and charts)**: done. The stylesheet in `public/assets/app.css` (served by `Actions::Assets::Show`, like the planner's script), a sidebar layout that folds into a top bar on phones, the home dashboard, and `Tally::Charts` for the column charts. Every chart sits next to a table with the same numbers, and each mark shows its value on hover.
+- **Conta Global import** (issue #22, first part): done. The dollar account's CSV (`Importers::ContaGlobalCSV`), checked row by row against its running balance; card purchases and refunds in dollars with the foreign amount, rate and fee in their own columns; top-ups paired with Nubank conta's conversion through the rate (`Tally::Exchange`); dollar rows kept out of every BRL total and shown in US$. Still to do: the account's own report.
 - **Next, milestone 8 (Pi deployment)**, postponed while the app is tried by hand.
 
 ## 17. Public repository: keeping personal data out

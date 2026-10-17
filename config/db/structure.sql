@@ -107,6 +107,10 @@ CREATE TABLE `transactions`(
   `category_id` integer REFERENCES `categories`,
   `category_source` text DEFAULT('none') NOT NULL,
   `category_rule_id` integer REFERENCES `category_rules`,
+  exchange_currency text CHECK(exchange_currency IS NULL OR exchange_currency GLOB '[A-Z][A-Z][A-Z]'),
+  exchange_amount_cents integer,
+  exchange_rate text,
+  fee_cents integer CHECK(fee_cents IS NULL OR fee_cents > 0),
   CONSTRAINT `transactions_amount` CHECK(amount_cents <> 0),
   CONSTRAINT `transactions_kind` CHECK(kind IN('purchase', 'refund', 'fee', 'income', 'transfer', 'bill_payment')),
   CONSTRAINT `transactions_installment` CHECK((installment_number IS NULL) =(installment_total IS NULL)),
@@ -225,4 +229,5 @@ INSERT INTO schema_migrations (filename) VALUES
 ('20261016000000_create_categories.rb'),
 ('20261017000000_create_dismissed_suggestions.rb'),
 ('20261018000000_create_savings_plans_and_budgets.rb'),
-('20261019000000_add_removed_to_budgets.rb');
+('20261019000000_add_removed_to_budgets.rb'),
+('20261020000000_add_exchange_to_transactions.rb');

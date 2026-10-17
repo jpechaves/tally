@@ -15,8 +15,12 @@ module Tally
         scope = categories.dataset
         scope = scope.where(archived_at: nil) unless include_archived
         rows = scope.all
-        usage = transactions.dataset.unordered.exclude(category_id: nil).group_and_count(:category_id)
-          .select_append { sum(:amount_cents).as(:total_cents) }.to_h { [_1[:category_id], _1] }
+        # Totals in reais: rows in a dollar account count, but their amounts don't add up here.
+        usage = transactions.dataset.unordered.exclude(category_id: nil)
+          .join(:accounts, id: Sequel[:transactions][:account_id])
+          .group_and_count(Sequel[:transactions][:category_id])
+          .select_append(Sequel.function(:sum, Tally::DB::Repo.in_reais(Sequel[:transactions][:amount_cents])).as(:total_cents))
+          .to_h { [_1[:category_id], _1] }
         names = categories.dataset.select_hash(:id, :name)
 
         rows.each do |row|

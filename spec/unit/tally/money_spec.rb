@@ -207,7 +207,11 @@ RSpec.describe Tally::Money do
     end
 
     it "uses the currency code when there is no symbol" do
-      expect(money(1_050, "USD").format).to eq("USD 10,50")
+      expect(money(1_050, "GBP").format).to eq("GBP 10,50")
+    end
+
+    it "writes dollars as US$" do
+      expect(money(-1_050, "USD").format).to eq("-US$ 10,50")
     end
 
     it "round-trips through .parse" do

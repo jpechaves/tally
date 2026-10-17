@@ -12,8 +12,15 @@ module Tally
       def locale = _context.i18n.locale.to_s
 
       # "R$ 1.234,56" / "-R$ 7,06" in Portuguese, "R$ 1,234.56" in English; blank for nil.
-      def money(cents)
-        cents.nil? ? "" : Tally::Money.new(cents).format(locale)
+      # Another currency shows its own symbol or code: "US$ 12,50", "GBP 41,20".
+      def money(cents, currency = Tally::Money::DEFAULT_CURRENCY)
+        cents.nil? ? "" : Tally::Money.new(cents, currency).format(locale)
+      end
+
+      # Amounts in several currencies, which never add up: "R$ 1.234,56 + US$ 45,10".
+      # @param amounts [Hash] currency => cents
+      def money_each(amounts)
+        amounts.map { |currency, cents| money(cents, currency) }.join(" + ")
       end
 
       # A short amount for chart axes: "R$ 1,5 mil" ("R$ 1.5K" in English), "R$ 300".

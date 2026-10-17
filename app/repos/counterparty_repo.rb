@@ -32,20 +32,23 @@ module Tally
         document ? "#{document}|#{name.strip.squeeze(" ").upcase}" : "|#{Tally::Merchants.key(name)}"
       end
 
-      # Everyone you paid or were paid by, with how many rows and how much: you first, then
+      # Everyone you paid or were paid by, with how many rows and how much in reais (rows in
+      # a dollar account count, but their amounts don't add to the total): you first, then
       # biggest first (ties by id, so pages never shuffle).
       #
       # @param search [String, nil] part of the name, any accents or case (Tally::Search)
       def with_totals(search: nil, limit: nil, offset: nil)
+        total = Sequel.function(:coalesce, Sequel.function(:sum, Tally::DB::Repo.in_reais(Sequel[:transactions][:amount_cents])), 0)
         named(search)
           .left_join(:transactions, counterparty_id: :id)
+          .left_join(:accounts, id: Sequel[:transactions][:account_id])
           .group(Sequel[:counterparties][:id])
           .select_all(:counterparties)
           .select_append { count(Sequel[:transactions][:id]).as(:rows) }
-          .select_append { coalesce(sum(Sequel[:transactions][:amount_cents]), 0).as(:total_cents) }
+          .select_append(total.as(:total_cents))
           .order(
             Sequel.desc(:is_self),
-            Sequel.function(:abs, Sequel.function(:coalesce, Sequel.function(:sum, Sequel[:transactions][:amount_cents]), 0)).desc,
+            Sequel.function(:abs, total).desc,
             Sequel[:counterparties][:id]
           )
           .limit(limit, offset)

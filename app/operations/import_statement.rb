@@ -35,7 +35,8 @@ module Tally
       BANK_FIELDS = %i[
         occurred_on purchased_on amount_cents kind description raw_description bank_category
         location installment_number installment_total purchase_key counterparty_id
-        counter_account_id card_statement_id raw_json
+        counter_account_id card_statement_id exchange_currency exchange_amount_cents exchange_rate
+        fee_cents raw_json
       ].freeze
 
       EXTENSIONS = {"itau_card_pdf" => "pdf"}.freeze
@@ -52,7 +53,7 @@ module Tally
         end
 
         statement = begin
-          Importers.parse(file[:file_name], content)
+          Importers.parse(file[:file_name], content).tap { same_currency!(_1) }
         rescue Importers::Error => e
           step Failure(import_repo.create(**file, status: "rejected", source: source_of(content), error: e.message))
         end
@@ -103,6 +104,14 @@ module Tally
           rows_unchanged: counts[:unchanged], rows_missing: missing)
       end
 
+      # Amounts are stored in their account's currency, so a parser that read another one
+      # would mix currencies in one balance.
+      def same_currency!(statement)
+        currency = Importers::ACCOUNTS.fetch(statement.account_name).fetch(:currency, Money::DEFAULT_CURRENCY)
+        wrong = statement.rows.find { _1.amount.currency != currency }
+        raise Importers::Error, "#{wrong.raw_description}: amount in #{wrong.amount.currency}, but #{statement.account_name} is in #{currency}" if wrong
+      end
+
       def attributes(row, card_statement_id)
         counterparty = row.counterparty && counterparty_repo.upsert(**row.counterparty)
         kind = row.kind
@@ -129,6 +138,10 @@ module Tally
           counterparty_id: counterparty&.id,
           counter_account_id: counter_account && account_repo.ensure(counter_account).id,
           card_statement_id:,
+          exchange_currency: row.exchange_currency,
+          exchange_amount_cents: row.exchange_amount&.cents,
+          exchange_rate: row.exchange_rate,
+          fee_cents: row.fee&.cents,
           raw_json: JSON.generate(row.raw)
         }
       end

@@ -14,7 +14,7 @@ module Tally
 
     # What a parser returns.
     #
-    # - source: "nubank_account_csv" | "nubank_card_csv" | "itau_card_pdf"
+    # - source: "nubank_account_csv" | "nubank_card_csv" | "itau_card_pdf" | "conta_global_csv"
     # - account_name: the account the rows belong to (one of {ACCOUNTS})
     # - period_start, period_end: the dates the file covers; on re-import, rows of this
     #   account in that range (or on this bill) that are missing from the file get flagged
@@ -37,16 +37,24 @@ module Tally
     # - counterparty: who the money went to or came from, as a Hash (name, document,
     #   document_kind, bank_name, bank_code, branch, account_number), or nil
     # - counter_account: for transfers, the name of the other account (one of {ACCOUNTS})
+    # - exchange_amount: the other side of a currency exchange, as Money in its currency
+    #   (41,20 GBP for a card purchase in London), or nil; exchange_currency names that
+    #   currency even when the statement doesn't print the amount (a top-up from BRL)
+    # - exchange_rate: units of exchange_currency per one unit of the row's currency, as
+    #   decimal text, or nil
+    # - fee: the bank's fee as Money in the row's currency, already inside amount, or nil
     # - raw: the source row's own fields, stored as raw_json for audit
     Row = Data.define(
       :external_id, :occurred_on, :purchased_on, :amount, :kind, :description, :raw_description,
       :bank_category, :location, :installment_number, :installment_total, :purchase_key,
-      :counterparty, :counter_account, :raw
+      :counterparty, :counter_account, :exchange_currency, :exchange_amount, :exchange_rate, :fee, :raw
     ) do
       def initialize(purchased_on: nil, bank_category: nil, location: nil, installment_number: nil,
-        installment_total: nil, purchase_key: nil, counterparty: nil, counter_account: nil, **rest)
+        installment_total: nil, purchase_key: nil, counterparty: nil, counter_account: nil,
+        exchange_currency: nil, exchange_amount: nil, exchange_rate: nil, fee: nil, **rest)
         super(purchased_on:, bank_category:, location:, installment_number:, installment_total:,
-          purchase_key:, counterparty:, counter_account:, **rest)
+          purchase_key:, counterparty:, counter_account:, exchange_currency:, exchange_amount:,
+          exchange_rate:, fee:, **rest)
       end
     end
 
@@ -67,7 +75,8 @@ module Tally
     SOURCES = {
       "nubank_account_csv" => "Nubank conta (CSV)",
       "nubank_card_csv" => "Nubank cartão (CSV)",
-      "itau_card_pdf" => "Itaú cartão (PDF)"
+      "itau_card_pdf" => "Itaú cartão (PDF)",
+      "conta_global_csv" => "Nubank Conta Global (CSV)"
     }.freeze
 
     # Picks the parser for a file from its first bytes.
@@ -83,8 +92,11 @@ module Tally
         NubankAccountCSV.new
       elsif head.start_with?(NubankCardCSV::HEADER.b)
         NubankCardCSV.new
+      elsif head.start_with?(ContaGlobalCSV::HEADER_START.b)
+        ContaGlobalCSV.new
       else
-        raise Error, "unknown file format: expected a Nubank account CSV, a Nubank card CSV or an Itaú bill PDF"
+        raise Error, "unknown file format: expected a Nubank account CSV, a Nubank card CSV, " \
+          "a Conta Global CSV or an Itaú bill PDF"
       end
     end
 
