@@ -82,6 +82,11 @@ RSpec.describe Tally::BudgetMonth do
     expect(september.projected_saved_cents).to eq(1_000_000 - 110_000 - 140_000 - 70_000)
   end
 
+  it "is never on track without a target" do
+    expect(month(Date.new(2026, 9, 15), target: nil)).not_to be_on_track
+    expect(month(Date.new(2026, 10, 2), target: nil).score).to be_nil
+  end
+
   it "scores the month once it is over" do
     september = month(Date.new(2026, 10, 2), target: 9_000_00)
 

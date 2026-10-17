@@ -84,6 +84,22 @@ RSpec.describe "Savings plan and budgets", :db, type: :request do
     expect(last_response.body).to include("Month-end scores")
   end
 
+  it "shows no target or plan banner for a month before the plan starts" do
+    post "/plan", target: "1,000.00", starts_month: "2026-09"
+    post "/plan/#{db[:savings_plans].max(:id)}/accept", proposed: {category_id("Delivery").to_s => "10.00"}
+    post "/budgets", category_id: category_id("Delivery").to_s, month: "2026-08", amount: "5.00"
+
+    allow(Date).to receive(:today).and_return(Date.new(2026, 8, 15))
+    get "/budgets", month: "2026-08"
+    body = last_response.body
+    expect(body).to include("Your plan to save R$ 1,000.00 a month starts in Sep 2026, so Aug 2026 has no target")
+    expect(body).to include("no savings target this month")
+    expect(body).not_to include("These limits come from your plan", "on track", "Target<strong>")
+
+    get "/budgets", month: "2026-09"
+    expect(last_response.body).to include("These limits come from your plan", "Target<strong>R$ 1,000.00</strong>")
+  end
+
   it "counts a row dated after today as committed, not spent" do
     db[:transactions].where(raw_description: "Compra no débito via NuPay - iFood").update(occurred_on: "2026-09-20")
     post "/plan", target: "1,000.00", starts_month: "2026-09"

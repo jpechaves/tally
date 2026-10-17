@@ -94,7 +94,8 @@ module Tally
       [@expected_unbudgeted_cents - unbudgeted_cents, unbudgeted_committed_cents, 0].max
     end
 
-    def on_track? = target_cents.nil? || projected_saved_cents >= target_cents
+    # Only a month with a target can be on track: before a plan starts there is none.
+    def on_track? = !target_cents.nil? && projected_saved_cents >= target_cents
 
     def over_lines = lines.select(&:over?)
 

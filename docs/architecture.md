@@ -403,6 +403,7 @@ Small worked example (made-up numbers): income averages R$ 12.000 and spending R
 - Each budget line shows spent, limit and **pace** (spent ÷ share of the month elapsed). A category is flagged once it's ahead of pace by more than 10%.
 - Card purchases count in the month of the bill they land on (see statement-import.md §5), so the dashboard also shows what's already on the open Itaú bill and the installments committed to the next one.
 - At month end, the plan line is scored: target vs actually saved, and which categories went over.
+- A month before the plan starts has no target: its budgets were set by hand, so it shows the projection with no "on track" label and no score.
 
 ### 8.6 From a number to its rows
 
