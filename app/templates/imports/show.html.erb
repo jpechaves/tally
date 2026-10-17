@@ -12,7 +12,7 @@
   </table></div>
 
   <% if import.status == "rejected" %>
-    <p class="error"><%= t("imports.show.rejected", error: import.error) %></p>
+    <p class="error"><%= t("imports.show.rejected", error: notice(error)) %></p>
   <% elsif import.status == "duplicate_file" %>
     <p><%= t("imports.show.duplicate_file") %></p>
   <% else %>
@@ -21,7 +21,7 @@
 
   <% if warnings.any? %>
     <h2><%= t("imports.show.warnings") %></h2>
-    <ul><% warnings.each do |warning| %><li><%= warning %></li><% end %></ul>
+    <ul><% warnings.each do |warning| %><li><%= notice(warning) %></li><% end %></ul>
   <% end %>
 
   <% if missing.any? %>

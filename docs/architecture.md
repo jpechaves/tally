@@ -494,7 +494,7 @@ Actions validate input and call one operation. Operations hold the rules and the
 - Each account keeps its own currency and nothing converts between them; the reports are in reais. Conta Global (USD) gets its own report later (issue #22).
 - Pix sent to people is its own category, Transferências (Pix), counted as spending.
 - Version 1 is deterministic (rules + arithmetic); smart features come later and only suggest.
-- Two languages: Brazilian Portuguese (default) and English, with Hanami's built-in i18n. What you type stays as typed: rules, memos and categories you name or rename are data, not translated. Starting categories are named in the default language when a database is seeded, and show in the page's language whichever language seeded them; saving one under its translated name keeps the stored name. Importer diagnostics (a rejected file's reason, parser warnings) are stored with the import and stay in English.
+- Two languages: Brazilian Portuguese (default) and English, with Hanami's built-in i18n. What you type stays as typed: rules, memos and categories you name or rename are data, not translated. Starting categories are named in the default language when a database is seeded, and show in the page's language whichever language seeded them; saving one under its translated name keeps the stored name. Importer diagnostics (a rejected file's reason, parser warnings) are stored with the import as a key and its values (`Tally::Importers::Notice`, JSON in `imports.error` and `imports.warnings`), and the import's page words them in the reader's language, amounts included; imports logged before that kept English text, shown as it is. The command line prints them in English.
 
 ## 14. Version 1 is deterministic
 

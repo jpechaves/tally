@@ -12,8 +12,12 @@ module Tally
           import.account_id && account_repo.find(import.account_id)
         end
 
-        expose :warnings do |import|
+        expose :warnings, decorate: false do |import|
           import_repo.warnings(import)
+        end
+
+        expose :error, decorate: false do |import|
+          import_repo.error(import)
         end
 
         expose :missing do |import|

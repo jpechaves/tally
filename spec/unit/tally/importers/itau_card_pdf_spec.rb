@@ -129,7 +129,7 @@ RSpec.describe Tally::Importers::ItauCardPdf do
       )
       expect(credits.map(&:kind).uniq).to eq(["refund"])
       expect(statement.rows.reject { _1.kind == "transfer" }.sum { _1.amount.cents }).to eq(-54_437)
-      expect(statement.warnings).to contain_exactly(/4 rows adding up to -R\$ 0,20 are printed twice/)
+      expect(statement.warnings.map(&:to_s)).to contain_exactly(/4 rows adding up to -R\$ 0\.20 are printed twice/)
     end
 
     it "rejects the bill when its total doesn't count the repeated rows once" do
@@ -149,7 +149,7 @@ RSpec.describe Tally::Importers::ItauCardPdf do
       tampered = ItauBills.october.to_pdf.sub("(189,30)", "(189,31)")
 
       expect { parse(tampered) }.to raise_error(
-        Tally::Importers::Error, /purchases \(Lançamentos no cartão\): the rows add up to R\$ 2\.609,09, but the bill prints R\$ 2\.609,08/
+        Tally::Importers::Error, /purchases \(Lançamentos no cartão\): the rows add up to R\$ 2,609\.09, but the bill prints R\$ 2,609\.08/
       )
     end
 
@@ -169,7 +169,7 @@ RSpec.describe Tally::Importers::ItauCardPdf do
       pdf = bill.to_pdf.sub("(1.887,88)", "(1.887,89)")
 
       statement = parse(pdf)
-      expect(statement.warnings.first).to match(/future installments list adds up to R\$ 1\.887,88/)
+      expect(statement.warnings.first.to_s).to match(/future installments list adds up to R\$ 1,887\.88/)
       expect(statement.card_statement[:next_statement_cents]).to eq(188_789)
     end
   end

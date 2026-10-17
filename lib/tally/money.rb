@@ -24,8 +24,16 @@ module Tally
     # Raised when two amounts in different currencies are combined or compared.
     class CurrencyMismatch < Error; end
 
-    # Raised when text can't be read as an exact amount.
-    class ParseError < Error; end
+    # Raised when text can't be read as an exact amount. `reason` says why: :not_text,
+    # :invalid or :decimals (more than 2 decimal places).
+    class ParseError < Error
+      attr_reader :reason
+
+      def initialize(message = nil, reason: :invalid)
+        @reason = reason
+        super(message)
+      end
+    end
 
     DEFAULT_CURRENCY = "BRL"
 
@@ -76,7 +84,7 @@ module Tally
       thousands = SEPARATORS.fetch(decimal) do
         raise ArgumentError, "decimal must be \",\" or \".\", got #{decimal.inspect}"
       end
-      raise ParseError, "expected text, got #{input.inspect}" unless input.is_a?(String)
+      raise ParseError.new("expected text, got #{input.inspect}", reason: :not_text) unless input.is_a?(String)
 
       # Statements write negatives as "- 7,06" and prefix "R$", so drop spaces and the symbol.
       text = input.gsub(/[[:space:]]+/, "").sub("R$", "")
@@ -84,11 +92,11 @@ module Tally
       dec = Regexp.escape(decimal)
       sep = Regexp.escape(thousands)
       match = /\A(?<sign>[+-]?)(?<int>\d{1,3}(?:#{sep}\d{3})+|\d+)(?:#{dec}(?<frac>\d+))?\z/.match(text)
-      raise ParseError, "not an amount: #{input.inspect}" unless match
+      raise ParseError.new("not an amount: #{input.inspect}", reason: :invalid) unless match
 
       frac = match[:frac].to_s
       if frac.length > 2
-        raise ParseError, "more than 2 decimal places in #{input.inspect}; refusing to round"
+        raise ParseError.new("more than 2 decimal places in #{input.inspect}; refusing to round", reason: :decimals)
       end
 
       value = BigDecimal("#{match[:sign]}#{match[:int].delete(thousands)}.#{frac.ljust(2, "0")}")

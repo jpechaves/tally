@@ -22,18 +22,31 @@ module Tally
           .order(:id).last
       end
 
-      def create(warnings: [], **attributes)
-        id = imports.dataset.insert(**attributes, warnings: JSON.generate(warnings))
+      # @param warnings [Array<Importers::Notice>]
+      # @param error [Importers::Notice, nil]
+      def create(warnings: [], error: nil, **attributes)
+        id = imports.dataset.insert(**attributes, warnings: dump(warnings), error: error && JSON.generate(error.to_h))
         find(id)
       end
 
       def update(id, warnings: nil, **attributes)
-        attributes[:warnings] = JSON.generate(warnings) if warnings
+        attributes[:warnings] = dump(warnings) if warnings
         imports.dataset.where(id:).update(**attributes, updated_at: Repos.now)
         find(id)
       end
 
-      def warnings(import) = JSON.parse(import.warnings)
+      # The import's warnings as Importers::Notice, or the English text older imports kept.
+      def warnings(import) = JSON.parse(import.warnings).map { Tally::Importers::Notice.load(_1) }
+
+      # Why the import was rejected (Importers::Notice, or older English text), or nil.
+      def error(import)
+        text = import.error or return nil
+        text.start_with?("{") ? Tally::Importers::Notice.load(JSON.parse(text)) : text
+      end
+
+      private
+
+      def dump(warnings) = JSON.generate(warnings.map { _1.is_a?(Tally::Importers::Notice) ? _1.to_h : _1 })
     end
   end
 end

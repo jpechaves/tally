@@ -59,6 +59,35 @@ RSpec.describe "Importing statements", :db, type: :request do
     expect(last_response.body).to include("Rejected, nothing was written: unknown file format")
   end
 
+  it "words the importer's errors and warnings in the reader's language" do
+    tampered = ItauBills.october.to_pdf.sub("(189,30)", "(189,31)")
+    post "/imports", "files" => [Rack::Test::UploadedFile.new(StringIO.new(tampered), "application/pdf", original_filename: "fatura.pdf")]
+    rejected = db[:imports].max(:id)
+    upload("NU_12345678_01JUL2026_31JUL2026.csv")
+    applied = db[:imports].max(:id)
+
+    get "/imports/#{rejected}"
+    expect(last_response.body).to include("Rejected, nothing was written: purchases (Lançamentos no cartão): " \
+      "the rows add up to R$ 2,609.09, but the bill prints R$ 2,609.08")
+    get "/imports/#{applied}"
+    expect(last_response.body).to include("line 17: description not recognized, kept as is")
+
+    set_cookie "locale=pt-BR"
+    get "/imports/#{rejected}"
+    expect(last_response.body).to include("Recusado, nada foi gravado: compras (Lançamentos no cartão): " \
+      "os lançamentos somam R$ 2.609,09, mas a fatura imprime R$ 2.609,08")
+    get "/imports/#{applied}"
+    expect(last_response.body).to include("linha 17: descrição não reconhecida, mantida como está")
+  end
+
+  it "shows the English text older imports kept as it is" do
+    import = db[:imports].insert(source: "itau_card_pdf", file_name: "old.pdf", file_sha256: "0" * 64, file_size: 1,
+      status: "rejected", error: "the PDF has no text pages", warnings: JSON.generate(["an old warning"]))
+
+    get "/imports/#{import}"
+    expect(last_response.body).to include("Rejected, nothing was written: the PDF has no text pages", "an old warning")
+  end
+
   it "shows accounts, balances and the bill checks" do
     upload("NU_12345678_01JUL2026_31JUL2026.csv", "Nubank_2026-07-09.csv", "Nubank_2026-08-09.csv")
     get "/accounts"

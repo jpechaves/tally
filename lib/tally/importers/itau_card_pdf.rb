@@ -83,7 +83,7 @@ module Tally
 
       def call(_file_name, content)
         pages = words(content)
-        raise Error, "the PDF has no text pages" if pages.size < 2
+        raise Error.new(:pdf_no_text) if pages.size < 2
 
         figures = {}
         dates = summary_dates(pages.first, figures)
@@ -109,12 +109,12 @@ module Tally
           file.write(content)
           file.flush
           output, error, status = Open3.capture3(@pdftotext, "-bbox", file.path, "-")
-          raise Error, "pdftotext could not read the PDF: #{error.strip}" unless status.success?
+          raise Error.new(:pdftotext_failed, details: error.strip) unless status.success?
 
           parse_bbox(output.force_encoding(Encoding::UTF_8))
         end
       rescue Errno::ENOENT
-        raise Error, "pdftotext is not installed (Debian/Raspberry Pi OS: apt install poppler-utils)"
+        raise Error.new(:pdftotext_missing)
       end
 
       def parse_bbox(html)
@@ -277,8 +277,8 @@ module Tally
       # --- Building the statement -----------------------------------------------------
 
       def build(entries, figures, dates)
-        due_on = dates[:due_on] or raise Error, "due date (Vencimento) not found on page 1"
-        closing_on = dates[:closing_on] or raise Error, "closing date (Postagem) not found on page 1"
+        due_on = dates[:due_on] or raise Error.new(:due_date_missing)
+        closing_on = dates[:closing_on] or raise Error.new(:closing_date_missing)
 
         current = entries.select { %i[payments purchases international iof fees].include?(_1[:section]) }
         future = entries.select { _1[:section] == :future }
@@ -290,28 +290,24 @@ module Tally
         iof = cents.(:iof)
         fees = cents.(:fees)
         payments = cents.(:payments)
-        check!(figures, :purchases, purchases, "purchases (Lançamentos no cartão)")
-        check!(figures, :international, international + iof, "international purchases (Total lançamentos inter.)",
-          optional: true)
-        check!(figures, :fees, fees, "fees (Lançamentos produtos e serviços)", optional: true)
-        check!(figures, :current, purchases + international + iof + fees, "this bill's charges (Lançamentos atuais)")
-        check!(figures, :payments, payments, "payments (Total dos pagamentos)", optional: true)
-        raise Error, "this bill's total (Total desta fatura) not found" unless figures[:total]
+        check!(figures, :purchases, purchases)
+        check!(figures, :international, international + iof, optional: true)
+        check!(figures, :fees, fees, optional: true)
+        check!(figures, :current, purchases + international + iof + fees)
+        check!(figures, :payments, payments, optional: true)
+        raise Error.new(:total_missing) unless figures[:total]
 
         warnings = []
         unless reprinted.empty?
           reprint = cents.(:reprinted)
-          raise Error, "the financed balance (Saldo financiado) not found on page 1" unless figures[:financed]
+          raise Error.new(:financed_missing) unless figures[:financed]
 
-          check!(figures, :total, figures[:financed] + figures[:current] + reprint,
-            "this bill's total (Total desta fatura), counting the #{reprinted.size} rows printed twice once")
-          warnings << "#{reprinted.size} rows adding up to #{Money.new(reprint)} are printed twice on the bill and left " \
-            "out of its purchases total; imported once, as the bill's total counts them"
+          check!(figures, :total, figures[:financed] + figures[:current] + reprint, rows: reprinted.size)
+          warnings << Notice[:reprinted, rows: reprinted.size, amount_cents: reprint]
         end
         future_cents = future.sum { Money.parse(_1[:amount]).cents }
         if figures[:next_statement] && future_cents != figures[:next_statement]
-          warnings << "the future installments list adds up to #{Money.new(future_cents)}, " \
-            "not the printed next bill (#{Money.new(figures[:next_statement])}); kept the printed figure"
+          warnings << Notice[:future_installments, sum_cents: future_cents, printed_cents: figures[:next_statement]]
         end
 
         repeats = Repeats.new
@@ -337,16 +333,18 @@ module Tally
         )
       end
 
-      def check!(figures, key, parsed, name, optional: false)
+      # `key` is also the section's name in importer.sections (config/i18n); `values` go
+      # into it.
+      def check!(figures, key, parsed, optional: false, **values)
         printed = figures[key]
         if printed.nil?
           return if optional && parsed.zero?
 
-          raise Error, "the printed total for #{name} was not found, so the rows can't be checked"
+          raise Error.new(:section_total_missing, section: key, **values)
         end
         return if printed == parsed
 
-        raise Error, "#{name}: the rows add up to #{Money.new(parsed)}, but the bill prints #{Money.new(printed)}"
+        raise Error.new(:section_mismatch, section: key, sum_cents: parsed, printed_cents: printed, **values)
       end
 
       # Some bills print a block of rows twice, word for word: once at the top of the
@@ -376,7 +374,7 @@ module Tally
         # The IOF line has no date; it is charged on this bill.
         date = entry[:date] ? row_date(entry, closing_on) : closing_on
         printed = Money.parse(entry[:amount])
-        raise Error, "zero amount: #{entry[:description]}" if printed.zero?
+        raise Error.new(:entry_zero_amount, text: entry[:description]) if printed.zero?
 
         amount = -printed
         raw_description = entry[:description]
@@ -433,7 +431,7 @@ module Tally
         year = month > closing_on.month ? closing_on.year - 1 : closing_on.year
         Date.new(year, month, day)
       rescue Date::Error
-        raise Error, "not a date: #{entry[:date]} (#{entry[:description]})"
+        raise Error.new(:entry_not_a_date, date: entry[:date], text: entry[:description])
       end
 
       # Merchant names are cut at about 23 characters with the city glued on

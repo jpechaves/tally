@@ -114,6 +114,10 @@ module Tally
         end
       end
 
+      # An importer's error or warning in the reader's language (Importers::Notice); older
+      # imports kept English text, shown as it is.
+      def notice(value) = value.is_a?(Tally::Importers::Notice) ? value.text(locale) : value.to_s
+
       def source_label(source) = t("sources.#{source}", default: source.to_s)
 
       # A row dated after today, like an installment on a bill exported early: committed,

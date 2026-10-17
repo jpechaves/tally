@@ -117,7 +117,7 @@ RSpec.describe Tally::Importers::NubankCardCSV do
       statement = parse(%(date,title,amount\n2026-06-10,Loja,"0,00"\n2026-06-11,Loja,"1,00"\n))
 
       expect(statement.rows.size).to eq(1)
-      expect(statement.warnings).to eq(["line 2: zero amount, skipped: Loja"])
+      expect(statement.warnings.map(&:to_s)).to eq(["line 2: zero amount, skipped: Loja"])
     end
   end
 end

@@ -33,7 +33,7 @@ module Tally
         text = Text.utf8(content)
         table = CSV.parse(text, headers: true, skip_blanks: true)
         unless table.headers == HEADER.split(",")
-          raise Error, "not a Nubank card CSV: expected the header #{HEADER.inspect}"
+          raise Error.new(:nubank_card_header, header: HEADER.inspect)
         end
 
         due_on = due_date(file_name)
@@ -43,7 +43,7 @@ module Tally
         rows = table.each.with_index(2).filter_map do |record, line|
           row(record, line, due_on, repeats, warnings)
         end
-        raise Error, "the bill has no rows" if rows.empty?
+        raise Error.new(:bill_no_rows) if rows.empty?
 
         dates = rows.map(&:occurred_on)
         Statement.new(
@@ -58,27 +58,23 @@ module Tally
       def due_date(file_name)
         match = DUE_DATE.match(File.basename(file_name.to_s))
         unless match
-          raise Error, "can't tell which bill this is: name the file after its due date, like Nubank_2026-09-09.csv"
+          raise Error.new(:nubank_card_file_name)
         end
 
         Date.iso8601(match[1])
       rescue Date::Error
-        raise Error, "the due date in the file name is not a valid date"
+        raise Error.new(:invalid_due_date)
       end
 
       def row(record, line, due_on, repeats, warnings)
         date_text, title, value = record.fields
-        raise Error, "line #{line}: expected 3 columns" if value.nil? || record.fields.size != 3
+        raise Error.new(:columns, line:, columns: 3) if value.nil? || record.fields.size != 3
 
         date = Text.date(date_text, "%Y-%m-%d", line)
         title = title.strip
-        charge = begin
-          Money.parse(value, decimal: ",")
-        rescue Money::ParseError => e
-          raise Error, "line #{line}: #{e.message}"
-        end
+        charge = Text.amount(value, line, decimal: ",")
         if charge.zero?
-          warnings << "line #{line}: zero amount, skipped: #{title}"
+          warnings << Notice[:zero_amount_skipped, line:, text: title]
           return nil
         end
 
