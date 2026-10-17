@@ -203,6 +203,8 @@ Overlapping files work too: a Nubank export for 15 Jun to 15 Jul followed by one
 
 This is a default and easy to switch. It only changes which month a row counts toward in reports.
 
+A row dated after today (a bill exported before it closes holds installments dated later) is **committed, not spent**, until its date: the report, the home page, cut suggestions and the planner leave it out, Budgets shows it as "to come" next to each category and counts it in the month's projection, and Transactions marks it "not charged yet".
+
 ## 6. Categorization
 
 The goal is to fill in as much as possible automatically, then make the remaining rows quick to fix by hand.

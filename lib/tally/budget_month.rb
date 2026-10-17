@@ -7,8 +7,13 @@ module Tally
   class BudgetMonth
     AHEAD_OF_PACE_PCT = 10
 
-    Line = Data.define(:category_id, :name, :parent_name, :limit_cents, :spent_cents, :expected_cents) do
+    Line = Data.define(:category_id, :name, :parent_name, :limit_cents, :spent_cents, :expected_cents,
+      :committed_cents) do
       def left_cents = limit_cents - spent_cents
+
+      # What is still to be spent this month at least: what's left of the limit, or what is
+      # already committed (rows dated later in the month), whichever is more.
+      def to_spend_cents = [left_cents, committed_cents, 0].max
 
       def over? = spent_cents > limit_cents
 
@@ -20,7 +25,8 @@ module Tally
 
     attr_reader :month, :target_cents
 
-    # @param rows [Array<Hash>] the month's rows (InsightRepo#rows)
+    # @param rows [Array<Hash>] the month's rows (InsightRepo#rows), with those dated after
+    #   today: they are committed, not spent, until their date
     # @param budgets [Hash{Integer => Integer}] category id => monthly limit in cents
     # @param categories [Hash{Integer => Hash}] category id => {name:, parent_name:}
     # @param target_cents [Integer, nil] the active plan's target
@@ -30,7 +36,8 @@ module Tally
     def initialize(rows, month:, budgets:, categories:, today:, target_cents: nil, expected_income_cents: 0,
       expected_unbudgeted_cents: 0)
       @month = month
-      @rows = rows.select { Insights.month_of(_1) == month }
+      @rows, @committed = rows.select { Insights.month_of(_1) == month }
+        .partition { _1[:occurred_on] <= today.iso8601 }
       @budgets = budgets
       @categories = categories
       @target_cents = target_cents
@@ -55,27 +62,37 @@ module Tally
 
     def saved_cents = income_cents - spending_cents
 
+    # Spending dated later this month, already on a bill.
+    def committed_cents = Insights.spent_cents(@committed)
+
     def lines
       @lines ||= @budgets.map do |category_id, limit|
-        rows = @rows.select { _1[:category_id] == category_id && Insights.spending?(_1) }
+        in_category = ->(rows) { rows.select { _1[:category_id] == category_id } }
         category = @categories.fetch(category_id, {})
         Line.new(category_id:, name: category.fetch(:name, "##{category_id}"), parent_name: category[:parent_name],
-          limit_cents: limit, spent_cents: Insights.spent_cents(rows), expected_cents: (limit * elapsed).round)
+          limit_cents: limit, spent_cents: Insights.spent_cents(in_category.(@rows)),
+          expected_cents: (limit * elapsed).round, committed_cents: Insights.spent_cents(in_category.(@committed)))
       end.sort_by { [-_1.limit_cents, _1.name] }
     end
 
     # Spending in categories with no budget (and rows with no category).
     def unbudgeted_cents = spending_cents - lines.sum(&:spent_cents)
 
+    def unbudgeted_committed_cents = committed_cents - lines.sum(&:committed_cents)
+
     # Income so far plus what's still expected, minus spending so far, what's left in each
-    # budget, and what's still expected outside the budgets: spending there is treated like
-    # one more budget whose limit is its usual amount.
+    # budget (or what's committed to it, if more), and what's still expected outside the
+    # budgets: spending there is treated like one more budget whose limit is its usual amount.
     def projected_saved_cents
       income = [income_cents, @expected_income_cents].max
-      income - spending_cents - lines.sum { [_1.left_cents, 0].max } - unbudgeted_left_cents
+      income - spending_cents - lines.sum(&:to_spend_cents) - unbudgeted_left_cents
     end
 
-    def unbudgeted_left_cents = complete? ? 0 : [@expected_unbudgeted_cents - unbudgeted_cents, 0].max
+    def unbudgeted_left_cents
+      return 0 if complete?
+
+      [@expected_unbudgeted_cents - unbudgeted_cents, unbudgeted_committed_cents, 0].max
+    end
 
     def on_track? = target_cents.nil? || projected_saved_cents >= target_cents
 

@@ -6,11 +6,16 @@ module Tally
     # plain hashes with their category, parent category and counterparty. Transfers and
     # rows a re-import flagged as missing are left out, and so are accounts in another
     # currency (Conta Global, in USD): every figure here is in reais.
+    #
+    # Rows dated after today (installments on a future bill that is already exported) are
+    # committed, not spent yet, so #rows leaves them out unless asked for them.
     class InsightRepo < Tally::DB::Repo
       # @param from [String] "YYYY-MM", first month included
       # @param to [String] "YYYY-MM", last month included
-      def rows(from:, to:)
-        scope.where(Sequel[:transactions][:occurred_on] => "#{from}-01".."#{to}-31").all
+      # @param through [Date, nil] the last day included; nil includes rows dated later too
+      def rows(from:, to:, through: Date.today)
+        last = [("#{to}-31"), through&.iso8601].compact.min
+        scope.where(Sequel[:transactions][:occurred_on] => "#{from}-01"..last).all
       end
 
       def installment_rows

@@ -16,7 +16,7 @@ module Tally
         step Failure(:invalid_target) unless target_cents.is_a?(Integer) && target_cents.positive?
 
         months = Insights.previous_months(today.strftime("%Y-%m"), BASELINE_MONTHS)
-        rows = insight_repo.rows(from: months.first, to: months.last)
+        rows = insight_repo.rows(from: months.first, to: months.last, through: today)
         step Failure(:no_data) if rows.empty?
 
         planner = Planner.new(rows, months:, target_cents:)
