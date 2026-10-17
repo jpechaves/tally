@@ -14,7 +14,8 @@ module Tally
     # 2. Parse and check. A file that fails is logged as rejected, and nothing else is
     #    written.
     # 3. In one DB transaction: upsert each row by (account, external_id), flag rows the
-    #    file no longer has, pair transfers, categorize, and log the import with its counts.
+    #    file no longer has, link card merchants to the same company paid with a CNPJ,
+    #    pair transfers, categorize, and log the import with its counts.
     # 4. Keep the original file under the import storage folder, named by its SHA-256.
     #
     # Every outcome is an `imports` row: Success(import) when applied or a duplicate,
@@ -97,8 +98,9 @@ module Tally
           account_id: account.id, import_id: import.id, keep_ids: ids,
           **(card_statement_id ? {card_statement_id:} : {period: statement.period_start..statement.period_end})
         )
+        linked = counterparty_repo.link_merchants
         pair_transfers.(touched_ids: ids)
-        categorize.(ids:)
+        categorize.(ids: ids | linked)
 
         import_repo.update(import.id, rows_inserted: counts[:inserted], rows_updated: counts[:updated],
           rows_unchanged: counts[:unchanged], rows_missing: missing)

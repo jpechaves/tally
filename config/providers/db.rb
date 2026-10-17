@@ -13,11 +13,13 @@ Hanami.app.configure_provider :db do
       synchronous: :full,
       # Readers don't block the writer, and a crash mid-write is safer.
       connect_sqls: ["PRAGMA journal_mode = WAL"],
-      # Name searches that ignore accents and case (Tally::Search), and payees grouped
-      # like the review list and the report (Tally::Review.key).
+      # Name searches that ignore accents and case (Tally::Search), payees grouped
+      # like the review list and the report (Tally::Review.key), and card merchants
+      # matched to companies (Tally::Merchants.key).
       after_connect: lambda { |connection|
         Tally::Search.register(connection)
         Tally::Review.register(connection)
+        Tally::Merchants.register(connection)
       }
     )
   end

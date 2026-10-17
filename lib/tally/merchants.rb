@@ -36,5 +36,16 @@ module Tally
     end
 
     def fold(text) = text.unicode_normalize(:nfkd).gsub(/\p{Mn}/, "").upcase.gsub(/[^A-Z0-9]/, "")
+
+    # #key for SQL, as KEY_FUNCTION(name), so a card merchant finds the same company paid
+    # by Pix or boleto, which has a CNPJ (CounterpartyRepo).
+    KEY_FUNCTION = "tally_merchant_key"
+
+    # Adds KEY_FUNCTION to a new SQLite connection (config/providers/db.rb).
+    def register(connection)
+      connection.create_function(KEY_FUNCTION, 1) do |function, name|
+        function.result = key(name.to_s)
+      end
+    end
   end
 end
