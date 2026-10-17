@@ -168,6 +168,14 @@ button.primary:hover { background: var(--accent-hover); border-color: var(--acce
 button.danger { color: var(--bad-ink); border-color: rgba(208, 59, 59, 0.45); }
 button.danger:hover { background: rgba(208, 59, 59, 0.12); }
 table button { padding: 3px 10px; min-height: 26px; font-size: 12.5px; }
+/* How a plan becomes budgets (plans/_flow): numbered steps, the current one marked. */
+details.flow { background: var(--surface-1); border: 1px solid var(--hairline); border-radius: var(--radius-lg); padding: 12px 16px; margin: 0 0 20px; }
+details.flow summary { cursor: pointer; color: var(--ink-muted); font-weight: 500; }
+.steps { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 8px; }
+.steps li { padding: 8px 12px; border-left: 2px solid var(--hairline-strong); color: var(--ink-muted); }
+.steps li strong { color: var(--ink); font-weight: 500; }
+.steps li[aria-current] { border-left-color: var(--accent); background: var(--surface-2); border-radius: 0 var(--radius-md) var(--radius-md) 0; }
+.steps .here { margin-left: 6px; color: var(--accent-hover); font-size: 12.5px; white-space: nowrap; }
 details.danger { margin-top: 24px; }
 details.danger summary { cursor: pointer; color: var(--ink-subtle); }
 details.danger form { margin-top: 12px; }

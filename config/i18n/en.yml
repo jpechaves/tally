@@ -41,7 +41,7 @@ en:
       home: Home
       imports: Import
       installments: Installments
-      plan: Plan
+      plan: Savings plan
       report: Report
       review: Review
       rules: Rules
@@ -108,7 +108,7 @@ en:
       duplicate_file: duplicate file
       rejected: rejected
     plan:
-      active: Active
+      active: Accepted
       draft: Draft
       replaced: Replaced
     rule:
@@ -427,10 +427,26 @@ en:
     left: "%{count} × %{each} = %{total}"
 
   plans:
+    flow:
+      accept: Review the limits, change any, and accept. They become your budgets from the month you picked.
+      accept_title: 2. Accept it.
+      follow: Budgets shows each month's spending against its limits, whether you are on pace for the target, and once the month is over, its score.
+      follow_title: 3. Follow your budgets.
+      make: Say how much to save each month. Tally proposes a limit for each category from your last three months. It is a draft, so nothing changes yet.
+      make_title: 1. Make a plan.
+      title: How plans and budgets work
+      undo: Edit or remove a budget on Budgets. Delete the plan to take back every budget it wrote. Your transactions are never touched.
+      undo_title: 4. Change or undo it.
+      you_are_here: you are here
     index:
       a_month: a month
-      active_html: "Active plan: save <strong>%{amount}</strong> a month from %{month}."
+      active_html: "Accepted plan: save <strong>%{amount}</strong> a month from %{month}."
       baseline: Baseline
+      budgets: Budgets
+      budgets_from:
+        one: "1 budget from %{month}"
+        other: "%{count} budgets from %{month}"
+      draft_waiting: "A draft to save %{amount} a month is waiting: nothing changes until you accept it."
       how_doing: How you're doing
       intro_html: >-
         Say how much you want to save each month. The planner takes your average income and
@@ -440,19 +456,28 @@ en:
         review every line before anything is saved.
       made: Made
       make: Make a plan
+      new: Make a new plan
+      no_budgets: none left
       notices:
         plan_deleted: The plan was deleted.
         plan_deleted_kept_budgets: The plan was deleted. The budgets it wrote stay, as if you had set them.
         plan_deleted_with_budgets: The plan was deleted, and so were the budgets it wrote.
       plans: Plans
+      review_and_accept: Review and accept
       see_it: See it
       starting: starting
       starts: Starts
       status: Status
       target: Target
-      title: Save every month
+      title: Savings plan
+      what: >-
+        A savings plan is a proposal, like "save R$ 500 a month by trimming these categories".
+        Accepting it writes those limits as your budgets.
     show:
       accept: "Accept and write budgets from %{month}"
+      active_note:
+        one: "Accepted: its limit is your budget from %{month}. To undo it, delete the plan at the bottom of this page."
+        other: "Accepted: its %{count} limits are your budgets from %{month}. To undo it, delete the plan at the bottom of this page."
       already_there: >-
         You already save %{saved} a month, %{extra} more than the target. Consider moving the
         extra to savings (the Nubank RDB) each month. Accepting still writes today's spending
@@ -466,6 +491,7 @@ en:
       delete: Delete this plan
       delete_button: Delete plan
       delete_note: Deleting a plan never touches your transactions or categories.
+      draft_note: "This is a draft: nothing has changed yet. Edit any new limit, then accept to turn the limits into budgets from %{month}."
       fixed_lever: "Fixed costs can't be trimmed month to month, but a contract can be renegotiated or switched:"
       gap: Gap
       income: Income
@@ -482,7 +508,9 @@ en:
       remove_budgets:
         one: Also remove the budget it wrote, going back to the limit you had before
         other: Also remove the %{count} budgets it wrote, going back to the limits you had before
+      replaced_note: A newer plan replaced this one. The budgets it wrote that the newer plan didn't change still apply.
       saved_today: Saved today
+      see_budgets: See them on Budgets
       short: short of the target
       shortfall: >-
         Cutting everything the categories allow saves %{cuts} a month, %{shortfall} short of
@@ -506,6 +534,7 @@ en:
         %{pct}% of %{month} has gone by. The projection assumes the income the plan expects
         (or the last three months' average), that each budget is spent in full, and that
         spending outside the budgets reaches its average of the last three months.
+      from_plan: "These limits come from your plan to save %{amount} a month, accepted from %{month}. Change or remove one here, or delete the plan to undo all of it."
       empty_html: 'No budgets for %{month} yet. <a href="/plan">Make a savings plan</a> and accept it, and its limits become your budgets.'
       in_out: "%{in} in, %{out} out"
       left: Left
@@ -535,6 +564,8 @@ en:
       saved_so_far: Saved so far
       score: "%{result}: saved %{saved} against %{target} (%{difference})."
       scores: Month-end scores
+      see_plan: See the plan
       spent: Spent
       target: Target
       title: Budgets
+      what: A budget is a monthly limit for one category. Accepting a savings plan writes them for you, or add one by hand below.

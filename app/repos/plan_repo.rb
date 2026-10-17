@@ -10,6 +10,18 @@ module Tally
 
       def all = savings_plans.dataset.order(Sequel.desc(:id)).all
 
+      # The newest plan still waiting to be accepted, or nil.
+      def latest_draft = savings_plans.dataset.where(status: "draft").order(Sequel.desc(:id)).first
+
+      # Where you are from a plan to budgets (the steps on /plan and /budgets): 1 with no
+      # plan, 2 with a draft to accept, 3 once a plan is accepted.
+      def step
+        if active then 3
+        elsif latest_draft then 2
+        else 1
+        end
+      end
+
       # @param planner [Tally::Planner]
       # @return [Integer] the draft's id
       def create_draft(planner, starts_month:)
@@ -67,7 +79,12 @@ module Tally
 
       # How many budget rows the plan wrote that are still its own (a limit you edit by hand
       # in the plan's first month becomes yours).
-      def budget_count(plan_id) = budgets.dataset.where(savings_plan_id: plan_id, removed: 0).count
+      def budget_count(plan_id) = budget_counts.fetch(plan_id, 0)
+
+      # Plan id => budget_count, for every plan that still has budgets.
+      def budget_counts
+        budgets.dataset.where(removed: 0).exclude(savings_plan_id: nil).group_and_count(:savings_plan_id).as_hash(:savings_plan_id, :count)
+      end
 
       # --- Budgets ----------------------------------------------------------------------
 
