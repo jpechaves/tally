@@ -17,6 +17,10 @@ require "bigdecimal"
 # - words 1.2 pt apart (a real bill's spacing), or, with `tight: true`, every word split
 #   into fragments 0.9 pt apart, the way poppler reads bills drawn with tight letter
 #   spacing ("DAT A", "1.234 ,56")
+# - optionally, international purchases (with the original amount on the line below and
+#   the IOF tax without a date), and a block of rows printed twice: at the top of the
+#   purchases and again before their total, left out of the purchases and the current
+#   charges but counted once in the bill's total
 #
 # Run `bundle exec ruby spec/support/statements/build_fixtures.rb` to rewrite the fixture
 # files after changing a bill here.
@@ -36,14 +40,19 @@ class FakeItauBill
   # @param payments [Array<Row>] the previous bill's payment(s), negative amounts
   # @param purchases [Array<Row>] amounts as printed: charges positive, refunds negative
   # @param fees [Array<Row>]
+  # @param international [Array<Row>] amounts in R$; the detail is the original amount
+  # @param iof [String, nil] "Repasse de IOF em R$"
+  # @param reprinted [Array<Row>] the block printed twice (see above)
   # @param future [Array<Row>] next bill's installments (not this bill's transactions)
   # @param later [String] "Demais faturas"
   # @param layout [Array<Array<Integer>>] for each transaction page, the x of each column
   # @param split [Array<Integer>] how many purchase rows go in each column before the
   #   totals; the rest go in the last column that holds purchases
   def initialize(closing:, due:, previous_total:, payments:, purchases:, fees:, future:, later:,
-    cardholder:, credit_limit:, available_limit:, layout:, split:, tight: false)
+    cardholder:, credit_limit:, available_limit:, layout:, split:, tight: false, international: [], iof: nil,
+    reprinted: [])
     @closing, @due = closing, due
+    @international, @iof, @reprinted = international, iof, reprinted
     @previous_total = previous_total
     @payments, @purchases, @fees, @future = payments, purchases, fees, future
     @later, @cardholder = later, cardholder
@@ -55,7 +64,11 @@ class FakeItauBill
 
   def fees_total = sum(@fees)
 
-  def total = purchases_total + fees_total
+  def international_total = sum(@international) + (@iof ? cents(@iof) : 0)
+
+  def current = purchases_total + international_total + fees_total
+
+  def total = current + sum(@reprinted)
 
   def to_pdf
     pages = [summary_page] + transaction_pages
@@ -92,7 +105,7 @@ class FakeItauBill
       ["Total da fatura anterior", money(cents(@previous_total))],
       ["Pagamento efetuado em #{@payments.first.date}/#{payment_year}", money(sum(@payments))],
       ["S Saldo financiado", "0,00"],
-      ["L Lançamentos atuais", money(total)]
+      ["L Lançamentos atuais", money(current)]
     ]
     address.each_with_index { |line, i| page.text(90, 80 + i * LINE, line) }
     summary.each_with_index do |(label, value), i|
@@ -127,7 +140,7 @@ class FakeItauBill
     blocks << [:total, "P Total dos pagamentos", money(sum(@payments))] << [:gap]
     blocks << [:heading, "Lançamentos: compras e saques"] << [:text, @cardholder] << [:header]
 
-    remaining = @purchases.dup
+    remaining = @reprinted + @purchases + @reprinted
     columns = @layout.flatten.size
     column_blocks = Array.new(columns) { [] }
     column_blocks[0] = blocks
@@ -143,10 +156,17 @@ class FakeItauBill
     last = column_blocks[@split.size - 1]
     remaining.each { last << [:row, _1] }
     last << [:total, "Lançamentos no cartão", money(purchases_total)] << [:gap]
+    if @international.any?
+      last << [:heading, "Lançamentos internacionais"] << [:text, @cardholder] << [:header, "ESTABELECIMENTO US$"]
+      @international.each { last << [:row, _1] }
+      last << [:total, "Total transações inter. em R$", money(sum(@international))]
+      last << [:total, "Repasse de IOF em R$", @iof] if @iof
+      last << [:total, "Total lançamentos inter. em R$", money(international_total)] << [:gap]
+    end
     last << [:heading, "Lançamentos: produtos e serviços"] << [:header, "PRODUTOS/SERVIÇOS"]
     @fees.each { last << [:row, _1] }
     last << [:total, "Lançamentos produtos e serviços", money(fees_total)]
-    last << [:total, "L Total dos lançamentos atuais", money(total)] << [:gap]
+    last << [:total, "L Total dos lançamentos atuais", money(current)] << [:gap]
 
     future = column_blocks[@split.size]
     future << [:heading, "Compras parceladas - próximas faturas"] << [:header]
