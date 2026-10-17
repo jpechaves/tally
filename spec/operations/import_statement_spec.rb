@@ -166,7 +166,7 @@ RSpec.describe Tally::Operations::ImportStatement, :db do
 
       expect(result).to be_failure
       expect(result.failure).to have_attributes(status: "rejected", source: "itau_card_pdf")
-      expect(result.failure.error).to match(/Lançamentos no cartão/)
+      expect(JSON.parse(result.failure.error)).to include("key" => "section_mismatch", "args" => include("section" => "purchases"))
       expect(db[:transactions].count).to eq(0)
       expect(db[:card_statements].count).to eq(0)
     end
@@ -300,7 +300,7 @@ RSpec.describe Tally::Operations::ImportStatement, :db do
       result = import(global)
 
       expect(result).to be_failure
-      expect(result.failure.error).to match(/amount in BRL, but Nubank Conta Global is in USD/)
+      expect(Hanami.app["repos.import_repo"].error(result.failure).to_s).to match(/amount in BRL, but Nubank Conta Global is in USD/)
       expect(db[:transactions].count).to eq(0)
     end
   end

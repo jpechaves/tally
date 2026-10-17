@@ -7,6 +7,7 @@ namespace :tally do
     abort "no files match #{args[:pattern].inspect}" if paths.empty?
 
     import_statement = Hanami.app["operations.import_statement"]
+    import_repo = Hanami.app["repos.import_repo"]
     paths.each do |path|
       result = import_statement.(file_name: File.basename(path), content: File.binread(path))
       import = result.value_or { result.failure }
@@ -15,9 +16,9 @@ namespace :tally do
         line += " (#{import.rows_inserted} new, #{import.rows_updated} updated, " \
           "#{import.rows_unchanged} unchanged, #{import.rows_missing} missing)"
       end
-      line += ": #{import.error}" if import.error
+      line += ": #{import_repo.error(import)}" if import.error
       puts line
-      JSON.parse(import.warnings).each { puts "  warning: #{_1}" }
+      import_repo.warnings(import).each { puts "  warning: #{_1}" }
     end
   end
 end

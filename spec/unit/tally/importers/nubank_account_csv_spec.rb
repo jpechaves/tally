@@ -90,7 +90,7 @@ RSpec.describe Tally::Importers::NubankAccountCSV do
       expect(row("Cobrança exemplo")).to have_attributes(
         kind: "purchase", description: "Cobrança exemplo, com vírgula", counterparty: nil
       )
-      expect(statement.warnings).to eq(["line 17: description not recognized, kept as is: Cobrança exemplo, com vírgula"])
+      expect(statement.warnings.map(&:to_s)).to eq(["line 17: description not recognized, kept as is: Cobrança exemplo, com vírgula"])
     end
 
     it "keeps the source row for audit" do
@@ -130,7 +130,7 @@ RSpec.describe Tally::Importers::NubankAccountCSV do
       statement = parse(csv(line), "extrato.csv")
 
       expect([statement.period_start, statement.period_end]).to eq([Date.new(2026, 7, 2)] * 2)
-      expect(statement.warnings.first).to match(/no period/)
+      expect(statement.warnings.first.to_s).to match(/no period/)
     end
 
     it "accepts a byte-order mark" do

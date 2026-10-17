@@ -134,6 +134,62 @@ en:
       trend: Income and spending by month
       what_to_cut: What can I cut?
 
+  importer:
+    amount_decimals: "line %{line}: more than 2 decimal places in %{text}; refusing to round"
+    amount_invalid: "line %{line}: not an amount: %{text}"
+    amount_not_text: "line %{line}: not an amount: %{text}"
+    bill_no_rows: the bill has no rows
+    closing_date_missing: closing date (Postagem) not found on page 1
+    columns: "line %{line}: expected %{columns} columns"
+    conta_global_columns: "not a Conta Global CSV: missing the columns %{columns}"
+    description_not_recognized: "line %{line}: description not recognized, kept as is: %{text}"
+    due_date_missing: due date (Vencimento) not found on page 1
+    entry_not_a_date: "not a date: %{date} (%{text})"
+    entry_zero_amount: "zero amount: %{text}"
+    exchange_currency: "line %{line}: an exchange from %{from} to %{to} doesn't involve %{currency}"
+    financed_missing: the financed balance (Saldo financiado) not found on page 1
+    future_installments: "the future installments list adds up to %{sum}, not the printed next bill (%{printed}); kept the printed figure"
+    invalid_due_date: the due date in the file name is not a valid date
+    invalid_period: the period in the file name is not a valid date range
+    line_currency: "line %{line}: the amount is in %{found}; this account is in %{currency}"
+    no_period_in_name: the file name has no period (like 01JUN2026_30JUN2026); using the first and last row dates
+    no_rows: the file has no rows
+    no_rows_no_period: the file has no rows and no period in its name
+    no_transferwise_id: "line %{line}: no TransferWise ID"
+    not_a_date: "line %{line}: not a date: %{text}"
+    not_a_date_time: "line %{line}: not a date and time: %{text}"
+    not_a_rate: "line %{line}: not an exchange rate: %{text}"
+    not_a_uuid: "line %{line}: Identificador is not a UUID: %{text}"
+    not_utf8: the file is not valid UTF-8
+    nubank_account_header: "not a Nubank account CSV: expected the header %{header}"
+    nubank_card_file_name: "can't tell which bill this is: name the file after its due date, like Nubank_2026-09-09.csv"
+    nubank_card_header: "not a Nubank card CSV: expected the header %{header}"
+    opening_balance: "the file starts with a balance of %{balance}: rows before it are not in this file"
+    pdf_no_text: the PDF has no text pages
+    pdftotext_failed: "pdftotext could not read the PDF: %{details}"
+    pdftotext_missing: "pdftotext is not installed (Debian/Raspberry Pi OS: apt install poppler-utils)"
+    repeated_identificador: "Identificador %{id} appears more than once with the same sign; refusing to merge rows"
+    repeated_row: "%{id} appears more than once; refusing to merge rows"
+    reprinted: "%{rows} rows adding up to %{amount} are printed twice on the bill and left out of its purchases total; imported once, as the bill's total counts them"
+    rows_outside_period: "%{rows} rows fall outside the period in the file name"
+    running_balance: "line %{line}: the running balance is %{printed}, but the rows before it add up to %{sum}; is a row missing?"
+    section_mismatch: "%{section}: the rows add up to %{sum}, but the bill prints %{printed}"
+    section_total_missing: "the printed total for %{section} was not found, so the rows can't be checked"
+    sections:
+      current: this bill's charges (Lançamentos atuais)
+      fees: fees (Lançamentos produtos e serviços)
+      international: international purchases (Total lançamentos inter.)
+      payments: payments (Total dos pagamentos)
+      purchases: purchases (Lançamentos no cartão)
+      total: "this bill's total (Total desta fatura), counting the %{rows} rows printed twice once"
+    total_missing: this bill's total (Total desta fatura) not found
+    type_not_recognized: "line %{line}: transaction type %{type} not recognized, kept as is: %{text}"
+    unknown_format: "unknown file format: expected a Nubank account CSV, a Nubank card CSV, a Conta Global CSV or an Itaú bill PDF"
+    wrong_currency: "%{text}: amount in %{found}, but %{account} is in %{currency}"
+    zero_amount: "line %{line}: zero amount"
+    zero_amount_skipped: "line %{line}: zero amount, skipped: %{text}"
+    zero_rate: "line %{line}: zero exchange rate"
+
   imports:
     account: Account
     file: File

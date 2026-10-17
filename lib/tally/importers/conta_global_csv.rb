@@ -43,16 +43,16 @@ module Tally
       def call(_file_name, content)
         table = CSV.parse(Text.utf8(content), headers: true, skip_blanks: true)
         missing = REQUIRED - table.headers
-        raise Error, "not a Conta Global CSV: missing the columns #{missing.join(", ")}" unless missing.empty?
+        raise Error.new(:conta_global_columns, columns: missing.join(", ")) unless missing.empty?
 
         currency = Importers::ACCOUNTS.fetch(ACCOUNT)[:currency]
         warnings = []
         records = table.each.with_index(2).map { |record, line| read(record, line, currency) }
-        raise Error, "the file has no rows" if records.empty?
+        raise Error.new(:no_rows) if records.empty?
 
         keys = records.map { _1[:key] }
         if (repeated = keys.tally.find { |_, count| count > 1 })
-          raise Error, "#{repeated.first} appears more than once; refusing to merge rows"
+          raise Error.new(:repeated_row, id: repeated.first)
         end
 
         records = records.sort_by { [_1[:time], -_1[:line]] }
@@ -70,17 +70,17 @@ module Tally
       def read(record, line, currency)
         fields = record.to_h.transform_values { _1.to_s.strip }
         unless fields["Currency"] == currency
-          raise Error, "line #{line}: the amount is in #{fields["Currency"].inspect}; this account is in #{currency}"
+          raise Error.new(:line_currency, line:, found: fields["Currency"].inspect, currency:)
         end
 
         id = fields["TransferWise ID"]
-        raise Error, "line #{line}: no TransferWise ID" if id.empty?
+        raise Error.new(:no_transferwise_id, line:) if id.empty?
 
         time = fields["Date Time"]
-        raise Error, "line #{line}: not a date and time: #{time.inspect}" unless time.match?(/\A\d{2}-\d{2}-\d{4} \d{2}:\d{2}:\d{2}(\.\d+)?\z/)
+        raise Error.new(:not_a_date_time, line:, text: time.inspect) unless time.match?(/\A\d{2}-\d{2}-\d{4} \d{2}:\d{2}:\d{2}(\.\d+)?\z/)
 
         amount = money(fields["Amount"], currency, line)
-        raise Error, "line #{line}: zero amount" if amount.zero?
+        raise Error.new(:zero_amount, line:) if amount.zero?
 
         {
           line:, fields:, key: "#{id}@#{time}", amount:,
@@ -96,15 +96,15 @@ module Tally
       def check_balances(records, currency, warnings)
         balance = records.first[:balance] - records.first[:amount]
         unless balance.zero?
-          warnings << "the file starts with a balance of #{balance}: rows before it are not in this file"
+          warnings << Notice[:opening_balance, balance_cents: balance.cents, currency:]
         end
 
         records.each do |record|
           balance += record[:amount]
           next if balance == record[:balance]
 
-          raise Error, "line #{record[:line]}: the running balance is #{record[:balance]}, " \
-            "but the rows before it add up to #{balance}; is a row missing?"
+          raise Error.new(:running_balance, line: record[:line], printed_cents: record[:balance].cents,
+            sum_cents: balance.cents, currency:)
         end
       end
 
@@ -138,7 +138,7 @@ module Tally
         in ["MONEY_ADDED", "CREDIT"]
           {kind: "transfer", description:, counter_account: TOP_UP_FROM}
         else
-          warnings << "line #{line}: transaction type #{type.join(" ")} not recognized, kept as is: #{description}"
+          warnings << Notice[:type_not_recognized, line:, type: type.join(" "), text: description]
           {kind: amount.negative? ? "purchase" : "income", description:}
         end
       end
@@ -160,7 +160,7 @@ module Tally
           # "BRL per USD" like the other rows'.
           {exchange_currency: from, exchange_rate: (1 / rate).round(6).to_s("F")}
         else
-          raise Error, "line #{line}: an exchange from #{from} to #{to} doesn't involve #{currency}"
+          raise Error.new(:exchange_currency, line:, from:, to:, currency:)
         end
       end
 
@@ -172,17 +172,13 @@ module Tally
         fee.zero? ? nil : fee
       end
 
-      def money(text, currency, line)
-        Money.parse(text, decimal: ".", currency:)
-      rescue Money::ParseError => e
-        raise Error, "line #{line}: #{e.message}"
-      end
+      def money(text, currency, line) = Text.amount(text, line, decimal: ".", currency:)
 
       def decimal(text, line)
-        raise Error, "line #{line}: not an exchange rate: #{text.inspect}" unless text.to_s.match?(/\A\d+(\.\d+)?\z/)
+        raise Error.new(:not_a_rate, line:, text: text.inspect) unless text.to_s.match?(/\A\d+(\.\d+)?\z/)
 
         value = BigDecimal(text)
-        raise Error, "line #{line}: zero exchange rate" if value.zero?
+        raise Error.new(:zero_rate, line:) if value.zero?
 
         value
       end

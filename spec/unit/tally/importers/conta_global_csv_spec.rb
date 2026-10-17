@@ -80,14 +80,14 @@ RSpec.describe Tally::Importers::ContaGlobalCSV do
     it "rejects a file whose running balance doesn't follow, as when a row is missing" do
       content = edited(4) { "" }
 
-      expect { parse(content) }.to raise_error(Tally::Importers::Error, /line 4: the running balance is US\$ 113,04, but the rows before it add up to US\$ 173,04/)
+      expect { parse(content) }.to raise_error(Tally::Importers::Error, /line 4: the running balance is US\$ 113\.04, but the rows before it add up to US\$ 173\.04/)
     end
 
     it "warns when the file starts with money already in the account" do
       content = edited(10) { _1.sub(",50.00,BRL,", ",80.00,BRL,") }
       content = content.lines.map.with_index { |l, i| i.between?(1, 9) ? bump(l, 3_000) : l }.join
 
-      expect(parse(content).warnings).to eq(["the file starts with a balance of US$ 30,00: rows before it are not in this file"])
+      expect(parse(content).warnings.map(&:to_s)).to eq(["the file starts with a balance of US$ 30.00: rows before it are not in this file"])
     end
 
     it "rejects rows in another currency" do
@@ -106,7 +106,7 @@ RSpec.describe Tally::Importers::ContaGlobalCSV do
       content = edited(1) { _1.sub("CREDIT,CARD", "CREDIT,DEPOSIT") }
 
       expect(parse(content).rows.first).to have_attributes(kind: "income")
-      expect(parse(content).warnings).to eq(["line 2: transaction type DEPOSIT CREDIT not recognized, kept as is: " \
+      expect(parse(content).warnings.map(&:to_s)).to eq(["line 2: transaction type DEPOSIT CREDIT not recognized, kept as is: " \
         "Transação por cartão de 4,25 USD emitida por Lavanderia Exemplo MIAMI"])
     end
   end

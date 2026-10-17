@@ -46,7 +46,7 @@ module Tally
         text = Text.utf8(content)
         table = CSV.parse(text, headers: true, skip_blanks: true)
         unless table.headers == HEADER.split(",")
-          raise Error, "not a Nubank account CSV: expected the header #{HEADER.inspect}"
+          raise Error.new(:nubank_account_header, header: HEADER.inspect)
         end
 
         records = table.each.with_index(2).map { |record, line| read(record, line) }
@@ -54,7 +54,7 @@ module Tally
 
         keys = rows.map(&:external_id)
         if (repeated = keys.tally.find { |_, count| count > 1 })
-          raise Error, "Identificador #{repeated.first} appears more than once with the same sign; refusing to merge rows"
+          raise Error.new(:repeated_identificador, id: repeated.first)
         end
 
         period_start, period_end = period(file_name, rows, warnings)
@@ -68,17 +68,13 @@ module Tally
 
       def read(record, line)
         date_text, value, id, description = record.fields
-        raise Error, "line #{line}: expected 4 columns" if description.nil? || record.fields.size != 4
+        raise Error.new(:columns, line:, columns: 4) if description.nil? || record.fields.size != 4
 
         id = id.strip
-        raise Error, "line #{line}: Identificador is not a UUID: #{id.inspect}" unless UUID.match?(id)
+        raise Error.new(:not_a_uuid, line:, text: id.inspect) unless UUID.match?(id)
 
-        amount = begin
-          Money.parse(value, decimal: ".")
-        rescue Money::ParseError => e
-          raise Error, "line #{line}: #{e.message}"
-        end
-        raise Error, "line #{line}: zero amount" if amount.zero?
+        amount = Text.amount(value, line, decimal: ".")
+        raise Error.new(:zero_amount, line:) if amount.zero?
 
         {line:, date: Text.date(date_text, "%d/%m/%Y", line), amount:, id:, description: description.strip}
       end
@@ -96,7 +92,7 @@ module Tally
             fields = fields.merge(kind: "transfer", counter_account: ACCOUNT)
           end
           if fields.delete(:unparsed)
-            warnings << "line #{record[:line]}: description not recognized, kept as is: #{record[:description]}"
+            warnings << Notice[:description_not_recognized, line: record[:line], text: record[:description]]
           end
 
           Row.new(
@@ -165,17 +161,17 @@ module Tally
           from = Date.new(match[3].to_i, MONTHS.index(match[2]) + 1, match[1].to_i)
           to = Date.new(match[6].to_i, MONTHS.index(match[5]) + 1, match[4].to_i)
           outside = rows.count { !(from..to).cover?(_1.occurred_on) }
-          raise Error, "#{outside} rows fall outside the period in the file name" if outside.positive?
+          raise Error.new(:rows_outside_period, rows: outside) if outside.positive?
 
           [from, to]
         elsif rows.any?
-          warnings << "the file name has no period (like 01JUN2026_30JUN2026); using the first and last row dates"
+          warnings << Notice[:no_period_in_name]
           rows.map(&:occurred_on).minmax
         else
-          raise Error, "the file has no rows and no period in its name"
+          raise Error.new(:no_rows_no_period)
         end
       rescue Date::Error
-        raise Error, "the period in the file name is not a valid date range"
+        raise Error.new(:invalid_period)
       end
     end
   end

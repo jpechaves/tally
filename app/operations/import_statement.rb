@@ -55,7 +55,7 @@ module Tally
         statement = begin
           Importers.parse(file[:file_name], content).tap { same_currency!(_1) }
         rescue Importers::Error => e
-          step Failure(import_repo.create(**file, status: "rejected", source: source_of(content), error: e.message))
+          step Failure(import_repo.create(**file, status: "rejected", source: source_of(content), error: e.notice))
         end
 
         import = transaction { apply(statement, file) }
@@ -109,7 +109,10 @@ module Tally
       def same_currency!(statement)
         currency = Importers::ACCOUNTS.fetch(statement.account_name).fetch(:currency, Money::DEFAULT_CURRENCY)
         wrong = statement.rows.find { _1.amount.currency != currency }
-        raise Importers::Error, "#{wrong.raw_description}: amount in #{wrong.amount.currency}, but #{statement.account_name} is in #{currency}" if wrong
+        if wrong
+          raise Importers::Error.new(:wrong_currency, text: wrong.raw_description, found: wrong.amount.currency,
+            account: statement.account_name, currency:)
+        end
       end
 
       def attributes(row, card_statement_id)

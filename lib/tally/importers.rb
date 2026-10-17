@@ -8,9 +8,47 @@ module Tally
   # Writing it (upsert, transfers, import history) is ImportStatement's job.
   # Formats and their quirks are in docs/statement-import.md.
   module Importers
+    # An importer's error or warning: a key under "importer" in config/i18n and the values
+    # it names, so a page words it in the reader's language. Stored as JSON (#to_h) in
+    # imports.error and imports.warnings; #to_s is the English text, for logs and the
+    # command line.
+    #
+    # A value whose name ends in _cents is an amount, in the "currency" value (reais if
+    # none), shown under its name without _cents; "section" names a part of a bill
+    # (importer.sections).
+    Notice = Data.define(:key, :args) do
+      def self.[](key, **args) = new(key: key.to_s, args: args.transform_keys(&:to_s))
+
+      # A stored notice, or the English text imports logged before notices had keys.
+      def self.load(value) = value.is_a?(Hash) ? new(key: value.fetch("key"), args: value.fetch("args", {})) : value
+
+      def to_h = {"key" => key, "args" => args}
+
+      def text(locale)
+        i18n = Hanami.app["i18n"]
+        values = args.to_h do |name, value|
+          next [name.to_sym, value] unless name.end_with?("_cents")
+
+          [name.delete_suffix("_cents").to_sym, Money.new(value, args.fetch("currency", Money::DEFAULT_CURRENCY)).format(locale)]
+        end
+        values[:section] = i18n.t("importer.sections.#{args["section"]}", locale:, **values) if args.key?("section")
+        i18n.t("importer.#{key}", locale:, **values)
+      end
+
+      def to_s = text("en")
+    end
+
     # The file can't be read as this format, or it fails a check (e.g. totals that don't
     # match the bill). Nothing from it is written.
-    class Error < StandardError; end
+    class Error < StandardError
+      attr_reader :notice
+
+      # @param key [Symbol] the notice's key (Notice)
+      def initialize(key, **args)
+        @notice = Notice[key, **args]
+        super(@notice.to_s)
+      end
+    end
 
     # What a parser returns.
     #
@@ -95,8 +133,7 @@ module Tally
       elsif head.start_with?(ContaGlobalCSV::HEADER_START.b)
         ContaGlobalCSV.new
       else
-        raise Error, "unknown file format: expected a Nubank account CSV, a Nubank card CSV, " \
-          "a Conta Global CSV or an Itaú bill PDF"
+        raise Error.new(:unknown_format)
       end
     end
 
@@ -142,7 +179,7 @@ module Tally
       # Reads the file as UTF-8 and drops a byte-order mark.
       def utf8(content)
         text = content.dup.force_encoding(Encoding::UTF_8)
-        raise Error, "the file is not valid UTF-8" unless text.valid_encoding?
+        raise Error.new(:not_utf8) unless text.valid_encoding?
 
         text.delete_prefix("﻿")
       end
@@ -150,7 +187,14 @@ module Tally
       def date(text, format, line)
         Date.strptime(text, format)
       rescue Date::Error, TypeError
-        raise Error, "line #{line}: not a date: #{text.inspect}"
+        raise Error.new(:not_a_date, line:, text: text.inspect)
+      end
+
+      # An amount in the file, or an error naming its line.
+      def amount(text, line, **options)
+        Money.parse(text, **options)
+      rescue Money::ParseError => e
+        raise Error.new(:"amount_#{e.reason}", line:, text: text.inspect)
       end
     end
   end

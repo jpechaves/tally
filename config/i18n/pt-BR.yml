@@ -146,6 +146,62 @@ pt-BR:
       trend: Receitas e gastos por mês
       what_to_cut: O que posso cortar?
 
+  importer:
+    amount_decimals: "linha %{line}: mais de 2 casas decimais em %{text}; não arredondamos"
+    amount_invalid: "linha %{line}: não é um valor: %{text}"
+    amount_not_text: "linha %{line}: não é um valor: %{text}"
+    bill_no_rows: a fatura não tem lançamentos
+    closing_date_missing: data de fechamento (Postagem) não encontrada na página 1
+    columns: "linha %{line}: esperava %{columns} colunas"
+    conta_global_columns: "não é um CSV da Conta Global: faltam as colunas %{columns}"
+    description_not_recognized: "linha %{line}: descrição não reconhecida, mantida como está: %{text}"
+    due_date_missing: data de vencimento (Vencimento) não encontrada na página 1
+    entry_not_a_date: "não é uma data: %{date} (%{text})"
+    entry_zero_amount: "valor zero: %{text}"
+    exchange_currency: "linha %{line}: um câmbio de %{from} para %{to} não envolve %{currency}"
+    financed_missing: o saldo financiado (Saldo financiado) não foi encontrado na página 1
+    future_installments: "a lista de parcelas futuras soma %{sum}, e não o valor impresso da próxima fatura (%{printed}); mantivemos o valor impresso"
+    invalid_due_date: a data de vencimento no nome do arquivo não é uma data válida
+    invalid_period: o período no nome do arquivo não é um intervalo de datas válido
+    line_currency: "linha %{line}: o valor está em %{found}; esta conta é em %{currency}"
+    no_period_in_name: o nome do arquivo não tem o período (como 01JUN2026_30JUN2026); usamos a primeira e a última data dos lançamentos
+    no_rows: o arquivo não tem lançamentos
+    no_rows_no_period: o arquivo não tem lançamentos nem período no nome
+    no_transferwise_id: "linha %{line}: sem TransferWise ID"
+    not_a_date: "linha %{line}: não é uma data: %{text}"
+    not_a_date_time: "linha %{line}: não é uma data e hora: %{text}"
+    not_a_rate: "linha %{line}: não é uma taxa de câmbio: %{text}"
+    not_a_uuid: "linha %{line}: o Identificador não é um UUID: %{text}"
+    not_utf8: o arquivo não está em UTF-8 válido
+    nubank_account_header: "não é um CSV da conta Nubank: esperava o cabeçalho %{header}"
+    nubank_card_file_name: "não dá para saber qual fatura é esta: dê ao arquivo o nome da data de vencimento, como Nubank_2026-09-09.csv"
+    nubank_card_header: "não é um CSV do cartão Nubank: esperava o cabeçalho %{header}"
+    opening_balance: "o arquivo começa com saldo de %{balance}: lançamentos anteriores não estão neste arquivo"
+    pdf_no_text: o PDF não tem páginas com texto
+    pdftotext_failed: "o pdftotext não conseguiu ler o PDF: %{details}"
+    pdftotext_missing: "o pdftotext não está instalado (Debian/Raspberry Pi OS: apt install poppler-utils)"
+    repeated_identificador: "o Identificador %{id} aparece mais de uma vez com o mesmo sinal; não juntamos lançamentos"
+    repeated_row: "%{id} aparece mais de uma vez; não juntamos lançamentos"
+    reprinted: "%{rows} lançamentos somando %{amount} aparecem duas vezes na fatura e ficam fora do total de compras; importados uma vez, como o total da fatura os conta"
+    rows_outside_period: "%{rows} lançamentos estão fora do período do nome do arquivo"
+    running_balance: "linha %{line}: o saldo é %{printed}, mas os lançamentos anteriores somam %{sum}; falta algum lançamento?"
+    section_mismatch: "%{section}: os lançamentos somam %{sum}, mas a fatura imprime %{printed}"
+    section_total_missing: "o total impresso de %{section} não foi encontrado, então não dá para conferir os lançamentos"
+    sections:
+      current: lançamentos desta fatura (Lançamentos atuais)
+      fees: tarifas (Lançamentos produtos e serviços)
+      international: compras internacionais (Total lançamentos inter.)
+      payments: pagamentos (Total dos pagamentos)
+      purchases: compras (Lançamentos no cartão)
+      total: "total desta fatura (Total desta fatura), contando uma vez os %{rows} lançamentos impressos duas vezes"
+    total_missing: o total desta fatura (Total desta fatura) não foi encontrado
+    type_not_recognized: "linha %{line}: tipo de transação %{type} não reconhecido, mantido como está: %{text}"
+    unknown_format: "formato de arquivo desconhecido: esperava um CSV da conta Nubank, um CSV do cartão Nubank, um CSV da Conta Global ou um PDF de fatura Itaú"
+    wrong_currency: "%{text}: valor em %{found}, mas %{account} é em %{currency}"
+    zero_amount: "linha %{line}: valor zero"
+    zero_amount_skipped: "linha %{line}: valor zero, ignorado: %{text}"
+    zero_rate: "linha %{line}: taxa de câmbio zero"
+
   imports:
     account: Conta
     file: Arquivo
