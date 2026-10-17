@@ -44,7 +44,7 @@
     <p><%= t("transactions.index.empty") %></p>
   <% else %>
     <% count = t("common.row_count", count: totals[:rows]) %>
-    <p><%= filter.spending? ? t("transactions.index.summary_spent", rows: count, spent: money(-totals[:total_cents])) : t("transactions.index.summary", rows: count, net: money(totals[:total_cents])) %></p>
+    <p><%= filter.spending? ? t("transactions.index.summary_spent", rows: count, spent: money_each(totals[:net].transform_values(&:-@))) : t("transactions.index.summary", rows: count, net: money_each(totals[:net])) %></p>
     <%= render "shared/pages", page: pagination, path: filter.pages %>
     <%= render "transactions/table", rows: rows %>
     <%= render "shared/pages", page: pagination, path: filter.pages %>

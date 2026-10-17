@@ -13,9 +13,11 @@
         <td class="details"><%= [
           row[:installment_total] && "#{row[:installment_number]}/#{row[:installment_total]}",
           row[:purchased_on] && t("transactions.table.bought", date: date(row[:purchased_on])),
-          row[:bank_category], row[:location], row[:counterparty_document]
+          row[:bank_category], row[:location], row[:counterparty_document],
+          row[:exchange_amount_cents] && money(row[:exchange_amount_cents].abs, row[:exchange_currency]),
+          row[:fee_cents] && t("transactions.table.fee", amount: money(row[:fee_cents], row[:currency]))
         ].compact.join(" · ") %></td>
-        <td class="num"><%= money(row[:amount_cents]) %></td>
+        <td class="num"><%= money(row[:amount_cents], row[:currency]) %></td>
       </tr>
     <% end %>
   </tbody>

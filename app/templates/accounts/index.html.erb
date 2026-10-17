@@ -9,7 +9,7 @@
           <td><a href="/transactions?account=<%= account.id %>"><%= account.name %></a></td>
           <td><%= status_label(:account, account.kind) %><%= account.mirror_transfers == 1 ? " #{t("accounts.index.from_transfers")}" : "" %></td>
           <td class="num"><%= entry[:rows] %></td>
-          <td class="num"><%= account.currency == "BRL" ? money(entry[:balance_cents]) : "—" %></td>
+          <td class="num"><%= money(entry[:balance_cents], account.currency) %></td>
           <td>
             <% if account.name == "Itaú conta" && entry[:balance_cents].abs > tolerance_cents %>
               <span class="warning"><%= t("accounts.index.pass_through", tolerance: money(tolerance_cents)) %></span>

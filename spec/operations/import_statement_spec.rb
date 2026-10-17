@@ -243,6 +243,68 @@ RSpec.describe Tally::Operations::ImportStatement, :db do
     end
   end
 
+  describe "a Conta Global statement" do
+    let(:global) { "conta-global-2026-08.csv" }
+    let(:nubank) { "NU_12345678_01JUL2026_31JUL2026.csv" }
+
+    def top_up(time) = rows("Nubank Conta Global").where(external_id: "TRANSFER-#{time}").first
+
+    def conversion = row("Nubank conta", "Conversão para Conta Global")
+
+    it "writes the dollar account's rows in dollars, with their exchange" do
+      expect(import(global).value!).to have_attributes(status: "applied", source: "conta_global_csv", rows_inserted: 10)
+
+      expect(db[:accounts].where(name: "Nubank Conta Global").get(:currency)).to eq("USD")
+      expect(balance("Nubank Conta Global")).to eq(11_304)
+      expect(rows("Nubank Conta Global").where(external_id: "CARD-8000000002@21-07-2026 18:45:10.500").first).to include(
+        kind: "purchase", amount_cents: -5_284, exchange_currency: "GBP", exchange_amount_cents: -4_120,
+        exchange_rate: "0.7825", fee_cents: 19
+      )
+    end
+
+    [%w[global nubank], %w[nubank global]].each do |order|
+      it "pairs a top-up with its conversion in Nubank conta (#{order.join(" first, then ")})" do
+        order.each { import(send(_1)) }
+
+        # R$ 1.000,00 with IOF bought US$ 178,74 at R$ 5,405405 per dollar
+        paired = top_up("9000000002@20-07-2026 09:15:30.120")
+        expect(paired).to include(kind: "transfer", counter_account_id: account_id("Nubank conta"))
+        expect(paired[:transfer_id]).to be_an(Integer).and eq(conversion[:transfer_id])
+        # The other top-up's BRL side isn't in any imported file.
+        expect(top_up("9000000001@18-07-2026 10:00:00.000")).to include(kind: "transfer", transfer_id: nil)
+      end
+    end
+
+    it "unpairs them when a re-import changes the conversion beyond what the rate allows" do
+      import(global)
+      import(nubank)
+      import(nubank, fixture(nubank).force_encoding("UTF-8").sub("-1000.00", "-1500.00"))
+
+      expect(conversion).to include(amount_cents: -150_000, transfer_id: nil)
+      expect(top_up("9000000002@20-07-2026 09:15:30.120")[:transfer_id]).to be_nil
+    end
+
+    it "updates rows on re-import instead of duplicating them" do
+      import(global)
+      result = import(global, fixture(global) + "\n").value!
+
+      expect(result).to have_attributes(rows_inserted: 0, rows_updated: 0, rows_unchanged: 10)
+      expect(rows("Nubank Conta Global").count).to eq(10)
+    end
+
+    it "rejects a statement whose amounts aren't in its account's currency" do
+      statement = Tally::Importers.parse(global, fixture(global))
+      brl = statement.rows.map { _1.with(amount: Tally::Money.new(_1.amount.cents)) }
+      allow(Tally::Importers).to receive(:parse).and_return(statement.with(rows: brl))
+
+      result = import(global)
+
+      expect(result).to be_failure
+      expect(result.failure.error).to match(/amount in BRL, but Nubank Conta Global is in USD/)
+      expect(db[:transactions].count).to eq(0)
+    end
+  end
+
   describe "a Pix to yourself" do
     let(:mark_self) { Hanami.app["operations.mark_self"] }
     let(:me) { db[:counterparties].where(name: "MARIA E SOUZA").first }

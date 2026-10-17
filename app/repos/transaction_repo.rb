@@ -35,6 +35,7 @@ module Tally
           .select_all(:transactions)
           .select_append(
             Sequel[:accounts][:name].as(:account_name),
+            Sequel[:accounts][:currency],
             Sequel[:counterparties][:name].as(:counterparty_name),
             Sequel[:counterparties][:document].as(:counterparty_document),
             Sequel[:counter_accounts][:name].as(:counter_account_name),
@@ -48,10 +49,15 @@ module Tally
           .limit(limit, offset).all
       end
 
-      # How many rows match the filter, and their net, across all pages.
+      # How many rows match the filter, and their net in each currency, across all pages.
+      # @return [Hash] rows:, net: {"BRL" => cents, "USD" => cents}, reais first
       def totals(filter = Tally::TransactionFilter.new)
         scope = filtered(transactions.dataset.unordered, filter)
-        {rows: scope.count, total_cents: scope.sum(Sequel[:transactions][:amount_cents]) || 0}
+        net = scope.join(:accounts, id: Sequel[:transactions][:account_id])
+          .group(Sequel[:accounts][:currency])
+          .select(Sequel[:accounts][:currency], Sequel.function(:sum, Sequel[:transactions][:amount_cents]).as(:cents))
+          .to_h { [_1[:currency], _1[:cents]] }
+        {rows: scope.count, net: net.sort_by { |currency, _| currency == Tally::Money::DEFAULT_CURRENCY ? "" : currency }.to_h}
       end
 
       # Months that have rows, newest first ("2026-09", ...).
@@ -123,6 +129,7 @@ module Tally
           .select_all(:transactions)
           .select_append(
             Sequel[:accounts][:name].as(:account_name),
+            Sequel[:accounts][:currency],
             Sequel[:counterparties][:name].as(:counterparty_name),
             Sequel[:counterparties][:document].as(:counterparty_document),
             Sequel[:categories][:name].as(:category_name)
@@ -207,6 +214,21 @@ module Tally
           .exclude(id: row[:id])
           .order(Sequel.function(:abs, Sequel.function(:julianday, :occurred_on) - Sequel.function(:julianday, row[:occurred_on])), :id)
           .first
+      end
+
+      # Candidates for the other leg of a transfer between accounts in different currencies:
+      # unpaired transfers in the other account, pointing back, with the opposite sign,
+      # closest date first. Tally::Exchange decides which one it is.
+      def exchange_partners(row, days: 3)
+        date = Date.iso8601(row[:occurred_on])
+        sign = row[:amount_cents].negative? ? Sequel.lit("amount_cents > 0") : Sequel.lit("amount_cents < 0")
+        transactions.dataset
+          .where(account_id: row[:counter_account_id], counter_account_id: row[:account_id], kind: "transfer", transfer_id: nil)
+          .where(sign)
+          .where(occurred_on: (date - days).iso8601..(date + days).iso8601)
+          .exclude(id: row[:id])
+          .order(Sequel.function(:abs, Sequel.function(:julianday, :occurred_on) - Sequel.function(:julianday, row[:occurred_on])), :id)
+          .all
       end
 
       def create_transfer(occurred_on:, leg_ids:)

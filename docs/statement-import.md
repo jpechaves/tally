@@ -11,6 +11,7 @@ How Tally reads bank statements, re-imports them safely and categorizes the rows
 | Nubank account (conta) | CSV export, named like `NU_<account>_01JUN2026_30JUN2026.csv` | a date range, usually a month |
 | Nubank credit card | CSV bill export, named like `Nubank_2026-07-09.csv` (the due date) | one bill |
 | Itaú credit card | PDF bill (fatura), a cover page with the summary and boleto, then transactions in columns | one bill |
+| Nubank Conta Global (dollars) | CSV export with Wise's columns (`"TransferWise ID",Date,...`), any file name | a date range, often the whole history |
 
 How the money moves: the salary arrives in the Nubank account; a Pix sends the Itaú bill amount to the Itaú account, which pays the Itaú card; the Nubank account also pays the Nubank card bill.
 
@@ -21,6 +22,7 @@ How the money moves: the salary arrives in the Nubank account; a Pix sends the I
 | Itaú conta | checking, only used to pay the Itaú card | no | the Pix in and the bill payment out, both transfers |
 | Nubank RDB | savings | no file needed | balance built from "Aplicação/Resgate RDB" rows |
 | Nubank cartão | credit card | yes, CSV bill export (§2b) | every purchase, installment, IOF, refund and discount |
+| Nubank Conta Global | checking in USD, with a debit card used abroad | yes, CSV (§2c) | every card purchase and refund, in dollars, and each top-up from Nubank conta |
 
 **The Itaú account is a pass-through.** The Pix sent to it matches the bill it pays within cents, give or take a small amount already sitting in the account. So the importer marks the Pix to the Itaú account as a transfer to "Itaú conta", and the card's "Pagamento via conta" as a transfer from it. The Itaú account's balance is just the running sum of the two, which stays close to zero. A difference above a threshold (a setting, default R$ 50) shows up as a warning on the import page rather than as spending.
 
@@ -89,6 +91,35 @@ Title patterns:
 | `… - NuPay` | purchase | merchants paid via NuPay |
 | anything else | purchase, or refund if negative | e.g. `Loja Exemplo - NuPay "- 17,99"` is a refund |
 
+## 2c. Nubank Conta Global CSV
+
+The dollar account. Its export has Wise's columns, newest row first:
+
+```
+"TransferWise ID",Date,"Date Time",Amount,Currency,Description,"Payment Reference","Running Balance","Exchange From","Exchange To","Exchange Rate","Payer Name","Payee Name","Payee Account Number",Merchant,"Card Last Four Digits","Card Holder Full Name",Attachment,Note,"Total fees","Exchange To Amount","Transaction Type","Transaction Details Type"
+CARD-8000000002,21-07-2026,"21-07-2026 18:45:10.500",-52.84,USD,"Transação por cartão de 41,20 GBP emitida por Loja Exemplo LONDON",,163.40,USD,GBP,0.78250,,,,"Loja Exemplo LONDON",0000,"Maria Exemplo",,,0.19,41.20,DEBIT,CARD
+TRANSFER-9000000002,20-07-2026,"20-07-2026 09:15:30.120",178.74,USD,"Dinheiro adicionado à conta",,228.74,BRL,USD,0.18500,,,,,,,,,0.00,178.74,CREDIT,MONEY_ADDED
+```
+
+- Dates are `DD-MM-YYYY`, amounts signed with a dot decimal, all in the account's currency (USD). A row in any other currency rejects the file: amounts are never converted or mixed.
+- **Every row carries the balance after it**, so the parser replays the file in time order and rejects it if any balance doesn't follow from the rows before it (a missing or changed row). A file that starts with money already in the account imports with a warning.
+- **The ID repeats.** One card purchase can be several rows with the same `CARD-…` ID: a transit fare charged in parts (US$ 1,46 then US$ 8,90, together the 14,30 CAD the description prints), or a purchase and its reversal weeks later. So the key is the ID plus the row's `Date Time`, which is unique; the same pair twice rejects the file.
+
+| Transaction Details Type / Type | Kind | Notes |
+|---|---|---|
+| `CARD` / `DEBIT` | purchase | the merchant from `Merchant`, or from the description after "emitida por" ("issued by" in English exports); it becomes the counterparty |
+| `CARD` / `CREDIT` | refund | the description may print the amount negative ("-20,00 USD") |
+| `MONEY_ADDED` / `CREDIT` | transfer from Nubank conta | a top-up converted from BRL; pairs with "Conversão para Conta Global" (§4) |
+| anything else | purchase, or income if positive | kept with a warning |
+
+**Exchange detail** goes in its own columns (`exchange_currency`, `exchange_amount_cents`, `exchange_rate`, `fee_cents`):
+
+- A purchase in another currency keeps that amount (`Exchange To Amount`, which is this row's part only, not the total the description prints), the rate (units of that currency per dollar) and the fee. The fee is already inside the dollar amount.
+- A top-up keeps BRL and the rate turned around to reais per dollar (`0.18500` USD per BRL becomes `5.405405`). The file doesn't print the reais, so they come from the Nubank conta row it pairs with.
+- Every column of the row, the card holder and card digits included, stays in `raw_json` for audit.
+
+The account's spending is in dollars, so it stays out of the report, cut suggestions, budgets and the category and counterparty totals, which are in reais. The transactions page lists it with its own currency (`US$ 52,84`, and `GBP 41,20 · tarifa US$ 0,19` under details), and a total over several currencies shows each one (`R$ 1.234,56 + US$ 45,10`). Its own report comes later (issue #22).
+
 ## 3. Itaú credit card PDF
 
 The bill has a cover page with the summary and a boleto, then pages of transactions laid out in **two or three columns per page**. A plain text dump interleaves the columns, so the parser works from word positions:
@@ -140,6 +171,7 @@ The import runs as one operation (`ImportStatement`), inside a single DB transac
 2. Parse into plain rows. A parser never touches the DB. Validate the rows (§3 totals for Itaú, and the format checks for both banks). On any failure, record status `rejected` with the reason, and write nothing else.
 3. Compute each row's `external_id`:
    - **Nubank account**: the `Identificador` UUID plus the amount's sign (see §2).
+   - **Conta Global**: the `TransferWise ID` plus the row's `Date Time` (see §2c).
    - **Itaú** has no IDs, so the key is derived: `sha256(card | due date | purchase date | raw description | installment n/m | amount | k)`. Here `k` numbers identical rows within the same bill. Repeat purchases (the same parking lot, same price, several times a month) show it can happen, and `k` keeps them as separate rows instead of merging them.
 4. For each row, look up `(account_id, external_id)`:
    - **Not found**: insert it, and run categorization (§6).
@@ -154,7 +186,8 @@ The import runs as one operation (`ImportStatement`), inside a single DB transac
 - When both accounts are imported (Nubank conta's "Pagamento de fatura" and the card's "Pagamento recebido"), the other leg is the row in that account with the opposite amount, pointing back, within 5 days. Both get the same `transfer_id`.
 - The two account rows of a "Pix no Crédito" (same UUID, +X and −X) are paired with each other.
 - When the other account has no statement (Itaú conta, Nubank RDB), a **mirror row** is written there (`external_id = mirror:<row id>`), so its balance is a plain `SUM`. A re-import that changes the amount updates the mirror.
-- Otherwise (the other side not imported yet, or the dollar Conta Global) the row stays a one-leg transfer: still never spending or income.
+- **Between currencies** (a Conta Global top-up and Nubank conta's "Conversão para Conta Global") the amounts differ: US$ 178,74 there, R$ 1.000,00 here. The dollar leg's rate says what the reais should be (178,74 × 5,405405 = R$ 966,16), and the BRL leg pairs when it is between 98% and 108% of that, within 3 days. The margin covers IOF (3,5% in 2026). A re-import that moves either amount out of that margin unpairs them.
+- Otherwise (the other side not imported yet) the row stays a one-leg transfer: still never spending or income.
 
 **Cross-source checks** are on the Accounts page: each Nubank card bill against the account's "Pagamento de fatura" (between 20 days before and 5 days after the due date), and each Itaú bill against the payment printed on the next bill. A difference is a warning, never a rejection. The Itaú account's balance is flagged when it drifts more than `PASS_THROUGH_TOLERANCE_CENTS` (default R$ 50) from zero.
 

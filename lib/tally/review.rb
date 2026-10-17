@@ -5,7 +5,7 @@ module Tally
   # the bank's suggestion, grouped by who was paid, biggest group first. One choice per
   # group covers all its rows, and "always" covers that payee's future rows too.
   module Review
-    Group = Data.define(:key, :label, :counterparty_id, :pattern, :rows, :total_cents, :suggested_category_id) do
+    Group = Data.define(:key, :label, :counterparty_id, :pattern, :rows, :total_cents, :totals, :suggested_category_id) do
       def ids = rows.map { _1[:id] }
 
       def suggested_category_name
@@ -30,6 +30,9 @@ module Tally
           pattern: first[:counterparty_id] ? nil : pattern(first[:description]),
           rows: members,
           total_cents: members.sum { _1[:amount_cents] },
+          # Per currency, for showing: a payee paid in reais and in dollars (Conta Global)
+          totals: members.group_by { _1.fetch(:currency, Money::DEFAULT_CURRENCY) }
+            .transform_values { |rows| rows.sum { _1[:amount_cents] } },
           suggested_category_id: suggestions.size == 1 ? suggestions.first : nil
         )
       end.sort_by { [-_1.total_cents.abs, _1.label] }
