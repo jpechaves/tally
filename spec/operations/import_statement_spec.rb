@@ -131,6 +131,29 @@ RSpec.describe Tally::Operations::ImportStatement, :db do
       expect(import("NU_12345678_01JUL2026_31JUL2026.csv").value!.status).to eq("duplicate_file")
     end
 
+    it "skips a card bill imported again whose period holds another bill's" do
+      # A bill's period starts at its oldest installment's purchase date, so one bill's
+      # period can hold another's: by period alone, the September bill imported after the
+      # October one looks like a newer version of October's.
+      import("itau_2026-10.pdf")
+      september = ItauBills.october(closing: "02/09/2026", due: "09/09/2026").to_pdf
+      import("fatura-setembro.pdf", september)
+      oct, sep = db[:imports].order(:id).select_map(%i[period_start period_end])
+      expect(sep.first >= oct.first && sep.last <= oct.last).to be(true)
+
+      expect(import("itau_2026-10.pdf").value!.status).to eq("duplicate_file")
+      expect(import("fatura-setembro.pdf", september).value!.status).to eq("duplicate_file")
+    end
+
+    it "applies a card bill's original again after an edited copy of the same bill" do
+      import("itau_2026-10.pdf")
+      edited = ItauBills.october.to_pdf.sub("(1.887,88)", "(1.887,89)")
+      expect(import("fatura-editada.pdf", edited).value!.status).to eq("applied")
+
+      expect(import("itau_2026-10.pdf").value!.status).to eq("applied")
+      expect(import("itau_2026-10.pdf").value!.status).to eq("duplicate_file")
+    end
+
     it "applies the original again after an edited copy under another name" do
       import("NU_12345678_01JUL2026_31JUL2026.csv")
       # Without the bank's name the period comes from the rows, so dropping the last
