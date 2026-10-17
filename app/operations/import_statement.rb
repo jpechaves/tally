@@ -47,7 +47,7 @@ module Tally
                 file_size: content.bytesize}
 
         previous = import_repo.applied_with_sha(file[:file_sha256])
-        if previous && import_repo.latest_applied_like(previous).file_sha256 == previous.file_sha256
+        if previous && import_repo.in_effect?(previous)
           return import_repo.create(**file, status: "duplicate_file", source: previous.source,
             account_id: previous.account_id, period_start: previous.period_start, period_end: previous.period_end)
         end

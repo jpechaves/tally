@@ -169,7 +169,7 @@ If a file is imported again, the existing rows are updated instead of duplicated
 
 The import runs as one operation (`ImportStatement`), inside a single DB transaction:
 
-1. Hash the file (SHA-256). If the same bytes were already imported and are still the version in effect, record an `imports` row with status `duplicate_file` and stop. When a later file for the same account replaced them (an edited copy whose period lies within this one, whatever its name), the file is applied again.
+1. Hash the file (SHA-256). If the same bytes were already imported and are still the version in effect, record an `imports` row with status `duplicate_file` and stop. When a later file for the same account replaced them (an edited copy whose period lies within this one, whatever its name), the file is applied again. A card bill is the version in effect when its bill (account and due date) was last written by the same bytes; bills don't go by period, since a bill's period starts at its oldest installment's purchase date and can hold another bill's.
 2. Parse into plain rows. A parser never touches the DB. Validate the rows (§3 totals for Itaú, and the format checks for both banks). On any failure, record status `rejected` with the reason, and write nothing else.
 3. Compute each row's `external_id`:
    - **Nubank account**: the `Identificador` UUID plus the amount's sign (see §2).
