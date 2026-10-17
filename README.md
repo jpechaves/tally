@@ -35,7 +35,7 @@ The home page shows the SQLite settings in effect (WAL, foreign keys, full sync)
 | `bundle exec rspec spec/local` | Checks the parsers against your real statements in `data/statements/` (skipped when it is empty). |
 | `bundle exec rake "tally:import[data/statements/*]"` | Imports statement files from disk (see [Importing statements](#importing-statements)). |
 | `bin/hanami db migrate` | Applies new migrations to the dev and test databases (`bin/setup` does it too). |
-| `bin/hanami db seed` | Adds the starting categories and generic rules that are missing, and loads `data/seeds.rb`. It never changes or brings back what you edited, archived or switched off. |
+| `bin/hanami db seed` | Adds the starting categories and generic rules that are missing, updates starting rules a new version rewrote, loads `data/seeds.rb`, and categorizes the rows again. It never changes or brings back what you edited, archived or switched off. |
 | `bin/hanami db version` | Prints the database's schema version. |
 | `bin/reset-db` | Wipes the database and starts it again, empty, with the starting categories. See below. |
 | `bin/check-private --all` | Scans every tracked file for the strings in `data/private-patterns.txt`. |

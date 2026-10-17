@@ -94,6 +94,11 @@ RSpec.describe Tally::Categorizer do
     expect(category.(description: "DROGASIL 1234")).to eq("Farmácia")
     expect(category.(description: "NETFLIX.COM")).to eq("Streaming e apps")
     expect(category.(description: "AMAZON PRIME CANAIS")).to eq("Streaming e apps")
+    expect(category.(description: "Apple.Com/Bill", amount_cents: -1_990)).to eq("Streaming e apps")
+    expect(category.(description: "Apple.Com/Us", amount_cents: -800_000)).to be_nil
+    expect(category.(description: "DISNEY PLUS")).to eq("Streaming e apps")
+    expect(category.(description: "DISNEY+")).to eq("Streaming e apps")
+    expect(category.(description: "DISNEY STORE EXEMPLO")).to be_nil
     expect(category.(description: "AMAZON MARKETPLACE")).to eq("Compras online")
     expect(category.(description: "MERCADOLIVRE*LOJA")).to eq("Compras online")
     expect(category.(description: "IOF de \"Streaming Exemplo\"")).to eq("IOF")

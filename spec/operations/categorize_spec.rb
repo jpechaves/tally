@@ -51,6 +51,42 @@ RSpec.describe "Categorization", :db do
       expect(db[:category_rules].where(id: rule).get(:disabled_at)).not_to be_nil
     end
 
+    it "moves a starting rule a later version rewrote, keeping its rows' manual categories" do
+      op("seed_categories").()
+      (field, operator, old), pattern = Tally::Categories::REVISED_RULES.first
+      rule = db[:category_rules].where(field:, operator:, pattern:).get(:id)
+      db[:category_rules].where(id: rule).update(pattern: old)
+      account = db[:accounts].insert(name: "Nubank cartão", kind: "credit_card")
+      store, bill, manual = [["Apple.Com/Us", -800_000], ["Apple.Com/Bill", -1_990], ["Apple.Com/Us", -300_000]]
+        .each_with_index.map do |(description, amount_cents), index|
+          db[:transactions].insert(account_id: account, occurred_on: "2026-09-0#{index + 1}", amount_cents:,
+            kind: "purchase", description:, raw_description: description, external_id: "x#{index}")
+        end
+      op("categorize").()
+      db[:transactions].where(id: manual).update(category_id: category_id("Eletrônicos"), category_source: "manual")
+      expect(db[:transactions].where(id: store).get(:category_rule_id)).to eq(rule)
+
+      op("seed_categories").()
+      op("categorize").()
+
+      expect(db[:category_rules].where(id: rule).get(:pattern)).to eq(pattern)
+      expect(db[:category_rules].where(field:, operator:, pattern:).count).to eq(1)
+      expect(db[:transactions].where(id: store).get(:category_id)).to be_nil
+      expect(db[:transactions].where(id: bill).get(:category_id)).to eq(category_id("Streaming e apps"))
+      expect(db[:transactions].where(id: manual).get(:category_id)).to eq(category_id("Eletrônicos"))
+    end
+
+    it "leaves a starting rule you edited as it is" do
+      op("seed_categories").()
+      (field, operator, _), pattern = Tally::Categories::REVISED_RULES.first
+      rule = db[:category_rules].where(field:, operator:, pattern:).get(:id)
+      db[:category_rules].where(id: rule).update(pattern: "apple\\.com\\b")
+
+      op("seed_categories").()
+
+      expect(db[:category_rules].where(id: rule).get(:pattern)).to eq("apple\\.com\\b")
+    end
+
     it "names them in English for an English install, and never adds them twice across languages" do
       expect(op("seed_categories").(locale: "en").value!).to eq(categories: 52, rules: Tally::Categories::RULES.size)
       expect(db[:categories].where(name: "Groceries").first).to include(nature: "essential", max_cut_pct: 15)

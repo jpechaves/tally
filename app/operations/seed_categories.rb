@@ -3,8 +3,9 @@
 module Tally
   module Operations
     # Adds the starting categories and generic rules (Tally::Categories) that are not
-    # there yet. Safe to run any time: it never changes or brings back anything you
-    # edited, archived or switched off. Runs from config/db/seeds.rb, and on the first
+    # there yet, and moves starting rules a later version rewrote to their new pattern
+    # (Categories::REVISED_RULES). Safe to run any time: it never changes or brings back
+    # anything you edited, archived or switched off. Runs from config/db/seeds.rb, and on the first
     # categorization of a database that has no categories.
     #
     # New categories are named in the default locale (the DEFAULT_LOCALE setting). A
@@ -27,6 +28,13 @@ module Tally
           Categories::INCOME.each do |parent, children|
             parent_id = ensure_category(added, locale, name: parent, kind: "income")
             children.each { ensure_category(added, locale, name: _1, kind: "income", parent_id:) }
+          end
+
+          Categories::REVISED_RULES.each do |(field, operator, old), pattern|
+            rule = category_rule_repo.find_by_match(field:, operator:, pattern: old)
+            next unless rule && rule[:origin] == "seed" && !category_rule_repo.find_by_match(field:, operator:, pattern:)
+
+            category_rule_repo.update(rule[:id], pattern:)
           end
 
           Categories::RULES.each do |field, operator, pattern, category, options = {}|

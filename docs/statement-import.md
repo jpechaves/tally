@@ -224,7 +224,7 @@ An income category only applies to money in (kind `income`) and an expense categ
 
 **Review list** (`/review`): uncategorized and bank-suggested rows, **grouped by counterparty** (card rows, which have none, by the words of their description, so `FARMACIA EXEMPLO 4021` and `FARMACIA EXEMPLO 1187` go together), biggest total first. Picking a category for a group with "always" checked sets the counterparty default, or for card rows creates a `learned` rule matching the description's words, and re-applies it to every past row that isn't `manual`. Without "always", only those rows change, by hand. On four months of real statements the ten biggest groups held over 80% of the uncategorized money.
 
-**Seed rules** shipped in the repository (`lib/tally/categories.rb`) are generic: well-known public merchants matched by name, so they work for any household. Seeding adds what is missing and never changes or brings back what you edited, archived or removed. Examples:
+**Seed rules** shipped in the repository (`lib/tally/categories.rb`) are generic: well-known public merchants matched by name, so they work for any household. Seeding adds what is missing and never changes or brings back what you edited, archived or removed. When a later version rewrites a starting rule (`Categories::REVISED_RULES`), seeding moves the rule to its new pattern if you never edited it, and the rows it categorized follow; manual categories stay. Examples:
 
 | Match | Category |
 |---|---|
@@ -235,7 +235,7 @@ An income category only applies to money in (kind `income`) and an expense categ
 | DROGASIL, DROGA RAIA, PAGUE MENOS | Saúde > Farmácia |
 | PETZ, PETLOVE, COBASI | Pets > Pet shop e veterinário |
 | LATAM, GOL, AZUL, AIRBNB | Lazer > Viagens |
-| NETFLIX, SPOTIFY, AMAZON PRIME, DL*GOOGLE | Assinaturas > Streaming e apps |
+| NETFLIX, SPOTIFY, AMAZON PRIME, DL*GOOGLE, APPLE.COM/BILL, DISNEY PLUS (subscriptions only: "Apple.Com/Us" or a Disney store is a purchase) | Assinaturas > Streaming e apps |
 | AMAZON, MERCADO LIVRE, SHOPEE | Compras > Compras online |
 | IOF … | Tarifas > IOF |
 | SECR. DA RECEITA FEDERAL (received) | Receitas > Restituição de IR |
