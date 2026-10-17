@@ -1,0 +1,75 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Wipes the local database and starts it again: the schema from the migrations, and the
+# starting categories and generic rules from the seeds. Use it to import everything again
+# after an importer change.
+#
+# Before deleting anything it copies the database next to itself
+# (db/tally.sqlite -> db/tally-backup-20261016-143000.sqlite) and prints where the copy went.
+# It refuses to run with HANAMI_ENV=production or on a Raspberry Pi, where the live database is.
+#
+# Usage:
+#   bin/reset-db            asks you to type "yes" first
+#   bin/reset-db --force    doesn't ask (development only, for scripts)
+#
+# Stop bin/dev first: a running server keeps the old database open.
+
+require "bundler/setup"
+require "fileutils"
+require "hanami"
+require "hanami/db/testing"
+require "sqlite3"
+require "uri"
+
+ROOT = File.expand_path("..", __dir__)
+PI_MODEL_FILE = "/proc/device-tree/model"
+
+def refuse(reason) = abort("bin/reset-db: #{reason}. Nothing was changed.")
+
+force = ARGV.delete("--force")
+abort "Usage: bin/reset-db [--force]" unless ARGV.empty?
+
+env = Hanami.env
+refuse "HANAMI_ENV is production" if env == :production
+refuse "this is a Raspberry Pi, where the live database is" if File.exist?(PI_MODEL_FILE) && File.read(PI_MODEL_FILE).include?("Raspberry Pi")
+refuse "--force is only for HANAMI_ENV=development" if force && env != :development
+
+Dir.chdir(ROOT)
+Hanami::Env.load(env)
+url = ENV["DATABASE_URL"] or refuse "DATABASE_URL is not set (see .env)"
+url = Hanami::DB::Testing.database_url(url) if env == :test
+uri = URI(url)
+refuse "it only resets SQLite databases, and DATABASE_URL is #{uri.scheme}://" unless uri.scheme == "sqlite"
+# sqlite://db/tally.sqlite is relative to the app (Ruby's URI reads "db" as the host);
+# sqlite:///srv/tally.sqlite is absolute.
+path = File.expand_path("#{uri.host}#{uri.path}", ROOT)
+shown = path.delete_prefix("#{ROOT}/")
+
+if File.exist?(path)
+  unless force
+    db = SQLite3::Database.new(path, readonly: true)
+    rows = db.get_first_value("SELECT count(*) FROM sqlite_master WHERE name = 'transactions'").zero? ? 0 : db.get_first_value("SELECT count(*) FROM transactions")
+    db.close
+    puts "This deletes everything in #{shown} (#{env}): #{rows} transactions, your categories, rules, plans and budgets."
+    puts "A copy is kept next to it first. Stop bin/dev before going on."
+    print 'Type "yes" to reset it: '
+    answer = $stdin.gets.to_s.strip
+    refuse "you typed #{answer.inspect}, not \"yes\"" unless answer == "yes"
+  end
+
+  backup = File.join(File.dirname(path), "#{File.basename(path, ".*")}-backup-#{Time.now.strftime("%Y%m%d-%H%M%S")}#{File.extname(path)}")
+  # VACUUM INTO writes a consistent copy, including what is still in the WAL file.
+  SQLite3::Database.new(path) { _1.execute("VACUUM INTO ?", [backup]) }
+  puts "Backed up to #{backup.delete_prefix("#{ROOT}/")}"
+
+  ["", "-wal", "-shm"].each { FileUtils.rm_f("#{path}#{_1}") }
+  puts "Deleted #{shown}"
+end
+
+hanami = [{"HANAMI_ENV" => env.to_s}, File.join(ROOT, "bin", "hanami"), "db"]
+system(*hanami, "create", "--skip-test-db", exception: true)
+system(*hanami, "migrate", "--no-dump", "--skip-test-db", exception: true)
+# The seed logs every SQL statement in development.
+system(*hanami, "seed", "--skip-test-db", out: File::NULL, exception: true)
+puts "#{shown} is empty again, with the starting categories. Import your statements to fill it."
