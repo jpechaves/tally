@@ -67,6 +67,24 @@ RSpec.describe Tally::Importers::NubankAccountCSV do
       expect(row("NuPay")).to have_attributes(kind: "purchase", description: "iFood", counterparty: {name: "iFood"})
     end
 
+    it "recognizes card debit purchases, phone top-ups and Pix refunds" do
+      parsed = described_class.new.call(name, csv(
+        "11/07/2026,-25.00,6a1f0c3e-2b4d-4e5f-8a9b-0c1d2e3f4a50,Compra no débito - PADARIA EXEMPLO",
+        "25/07/2026,-40.00,6a1f0c3e-2b4d-4e5f-8a9b-0c1d2e3f4a51,Recarga de celular",
+        "28/07/2026,59.90,6a1f0c3e-2b4d-4e5f-8a9b-0c1d2e3f4a52,Reembolso recebido pelo Pix - LOJA EXEMPLO LTDA - " \
+        "00.000.000/0001-00 - BANCO EXEMPLO S.A. (0000) Agência: 1 Conta: 12345-6"
+      ))
+      debit, top_up, refund = parsed.rows
+
+      expect(parsed.warnings).to be_empty
+      expect(debit).to have_attributes(kind: "purchase", description: "PADARIA EXEMPLO", counterparty: {name: "PADARIA EXEMPLO"})
+      expect(top_up).to have_attributes(kind: "purchase", description: "Recarga de celular", counterparty: {name: "Recarga de celular"})
+      expect(refund).to have_attributes(kind: "refund", description: "LOJA EXEMPLO LTDA")
+      expect(refund.counterparty).to include(
+        name: "LOJA EXEMPLO LTDA", document: "00.000.000/0001-00", document_kind: "cnpj", bank_code: "0000", branch: "1"
+      )
+    end
+
     it "marks moves between your own accounts as transfers to the right account" do
       expect(row("Aplicação RDB")).to have_attributes(kind: "transfer", counter_account: "Nubank RDB")
       expect(row("Resgate RDB")).to have_attributes(kind: "transfer", counter_account: "Nubank RDB")

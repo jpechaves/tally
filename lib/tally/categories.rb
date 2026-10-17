@@ -60,6 +60,7 @@ module Tally
       ["description", "regex", "\\b(sabesp|copasa|sanepar|cedae)\\b", "Água"],
       ["description", "regex", "\\b(enel|cemig|copel|light s\\.?a|neoenergia|cpfl|equatorial)\\b", "Energia"],
       ["description", "regex", "\\b(vivo|claro|tim s\\.?a|oi s\\.?a|net servicos)\\b", "Internet e telefone"],
+      ["description", "regex", "^recarga de celular\\b", "Internet e telefone"],
       ["description", "regex", "\\b(sefaz|detran|ipva|darf|das simples|prefeitura)\\b", "Impostos e taxas"],
       ["description", "regex", "^iof\\b", "IOF", {priority: 50}],
       ["description", "regex", "\\b(mensalidade|anuidade)\\b", "Tarifas bancárias", {priority: 60}],

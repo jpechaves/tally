@@ -32,6 +32,9 @@ module Tally
       TRANSFER_IN = "Transferência Recebida - "
       BOLETO = "Pagamento de boleto efetuado - "
       NUPAY = "Compra no débito via NuPay - "
+      DEBIT = "Compra no débito - "
+      PIX_REFUND = "Reembolso recebido pelo Pix - "
+      PHONE_TOP_UP = "Recarga de celular"
       CARD_TOP_UP = "Valor adicionado na conta por cartão de crédito"
 
       # Fixed descriptions that move money between your own accounts.
@@ -121,14 +124,17 @@ module Tally
           {kind: "transfer", description:, counter_account: account}
         elsif description.start_with?(CARD_TOP_UP)
           {kind: "transfer", description: "Pix no Crédito (valor adicionado pelo cartão)", counter_account: ACCOUNT}
-        elsif (rest = strip_prefix(description, PIX_OUT, PIX_IN, TRANSFER_IN))
+        elsif (rest = strip_prefix(description, PIX_OUT, PIX_IN, TRANSFER_IN, PIX_REFUND))
           # Some transfers name the sender with no document or bank ("NAME S.A.").
           party = party(rest) || {name: rest}
-          {kind: by_sign, description: party[:name], counterparty: party}
+          kind = description.start_with?(PIX_REFUND) ? "refund" : by_sign
+          {kind:, description: party[:name], counterparty: party}
         elsif (name = strip_prefix(description, BOLETO))
           {kind: "bill_payment", description: name, counterparty: {name:}}
-        elsif (name = strip_prefix(description, NUPAY))
+        elsif (name = strip_prefix(description, NUPAY, DEBIT))
           {kind: by_sign, description: name, counterparty: {name:}}
+        elsif description == PHONE_TOP_UP
+          {kind: by_sign, description:, counterparty: {name: description}}
         else
           {kind: by_sign, description:, unparsed: true}
         end

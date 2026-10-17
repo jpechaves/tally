@@ -100,6 +100,8 @@ RSpec.describe Tally::Categorizer do
     expect(category.(kind: "fee", description: "Mensalidade - Plano do")).to eq("Tarifas bancárias")
     expect(category.(kind: "fee", description: "Juros do rotativo")).to eq("Tarifas bancárias")
     expect(category.(description: "Pix no Crédito - JOAO EXEMPLO")).to eq("Transferências (Pix)")
+    expect(category.(description: "Recarga de celular")).to eq("Internet e telefone")
+    expect(category.(description: "IOF de compra internacional")).to eq("IOF")
     expect(category.(kind: "income", amount_cents: 120_000, description: "SECR. DA RECEITA FEDERAL")).to eq("Restituição de IR")
   end
 end
