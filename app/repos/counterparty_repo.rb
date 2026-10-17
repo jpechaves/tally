@@ -11,10 +11,12 @@ module Tally
       # are kept up to date with the latest statement that has them.
       #
       # A name without a document is a card merchant: its variants are one counterparty
-      # (Tally::Merchants), named by their stable part.
+      # (Tally::Merchants), named by their stable part. When a company with a CNPJ has
+      # that same name (paid by Pix or boleto too), the merchant is that company.
       def upsert(name:, document: nil, document_kind: nil, **bank)
         match_key = self.class.match_key(name, document)
-        existing = counterparties.where(match_key:).one || (cut_short(match_key) if document.nil?)
+        existing = counterparties.where(match_key:).one ||
+          (company(match_key) || cut_short(match_key) if document.nil?)
         bank = bank.slice(*BANK_FIELDS).compact
 
         if existing.nil?
@@ -55,6 +57,28 @@ module Tally
           .to_a
       end
 
+      # Card merchants (no document) that are the same as a company with a CNPJ, by name
+      # (Tally::Merchants.key), become that company: their rows move to it, and so does
+      # their default category when the company has none. You and your own accounts are
+      # left alone.
+      #
+      # @return [Array<Integer>] the ids of the rows that moved
+      def link_merchants
+        moved = []
+        counterparties.dataset.where(document: nil, is_self: 0).order(:id).all.each do |merchant|
+          target = company(merchant[:match_key]) or next
+
+          ids = transactions.dataset.where(counterparty_id: merchant[:id]).select_map(:id)
+          transactions.dataset.where(id: ids).update(counterparty_id: target.id, updated_at: Repos.now)
+          if target.default_category_id.nil? && merchant[:default_category_id]
+            set_default_category(target.id, merchant[:default_category_id])
+          end
+          counterparties.dataset.where(id: merchant[:id]).delete
+          moved.concat(ids)
+        end
+        moved
+      end
+
       # How many counterparties the search finds.
       def count(search: nil) = named(search).count
 
@@ -75,6 +99,15 @@ module Tally
 
         pattern = "%#{scope.escape_like(folded)}%"
         scope.where(Sequel.like(Sequel.function(Tally::Search::FUNCTION, Sequel[:counterparties][:name]), pattern))
+      end
+
+      # The company with a CNPJ, not you, whose name has this merchant key ("|KEY"); the
+      # oldest if several do.
+      def company(match_key)
+        key = match_key.delete_prefix("|")
+        counterparties.dataset.where(document_kind: "cnpj", is_self: 0)
+          .where(Sequel.function(Tally::Merchants::KEY_FUNCTION, :name) => key)
+          .order(:id).first&.then { find(_1[:id]) }
       end
 
       # A merchant whose name another bank cut shorter, or longer: one key starts with the
