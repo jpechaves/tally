@@ -37,6 +37,21 @@ RSpec.describe "Importing statements", :db, type: :request do
     expect(db[:imports].select_map(:status)).to eq(%w[applied applied])
   end
 
+  it "shows when a file was imported in the local time zone" do
+    upload("itau_2026-10.pdf")
+    import = db[:imports].get(:id)
+    db[:imports].where(id: import).update(created_at: "2026-10-17T22:08:30.123Z")
+
+    get "/imports"
+    expect(last_response.body).to include("Oct 17, 2026 19:08")
+    get "/imports/#{import}"
+    expect(last_response.body).to include("Oct 17, 2026 19:08")
+
+    allow(Hanami.app["settings"]).to receive(:time_zone).and_return(TZInfo::Timezone.get("Europe/Lisbon"))
+    get "/imports"
+    expect(last_response.body).to include("Oct 17, 2026 23:08")
+  end
+
   it "shows why a file was rejected" do
     post "/imports", "files" => [Rack::Test::UploadedFile.new(StringIO.new("Date,Amount\n"), "text/csv", original_filename: "x.csv")]
     follow_redirect!

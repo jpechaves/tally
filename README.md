@@ -57,6 +57,7 @@ Settings come from environment variables, loaded from `.env` files in developmen
 | `HANAMI_MAX_THREADS` | `2` | Puma threads; 2 suits the Pi Zero 2 W. |
 | `IMPORT_STORAGE_DIR` | `storage/imports` | Where each imported file is kept, named by its SHA-256. Gitignored. |
 | `PASS_THROUGH_TOLERANCE_CENTS` | `5000` | How far the Itaú account's balance may drift from zero before the Accounts page warns. |
+| `TIME_ZONE` | `America/Sao_Paulo` | The time zone import and plan times are shown in, by its IANA name. The database keeps times in UTC. |
 | `DEFAULT_LOCALE` | `pt-BR` | The language pages open in (`pt-BR` or `en`), and the one new databases get their starting categories in. Each browser can switch from the menu; starting category names follow it, names you type stay as typed. |
 
 ## Importing statements

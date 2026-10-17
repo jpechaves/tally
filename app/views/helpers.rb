@@ -62,10 +62,13 @@ module Tally
         l(Date.new(month[0, 4].to_i, month[5, 2].to_i, 1), format: :month)
       end
 
-      # "2026-09-02T10:11:12.123Z" -> "02/09/2026 10:11"
+      # A time the database keeps in UTC, in the TIME_ZONE setting:
+      # "2026-09-02T22:08:12.123Z" -> "02/09/2026 19:08" in America/Sao_Paulo.
       def timestamp(text)
-        text = text.to_s
-        "#{date(text)} #{text[11, 5]}".strip
+        return "" if text.to_s.empty?
+
+        local = Hanami.app["settings"].time_zone.to_local(Time.iso8601(text.to_s))
+        "#{l(local.to_date, format: :day)} #{local.strftime("%H:%M")}"
       end
 
       # The categories for a <select>, as [[parent label, [[id, name], ...]], ...]: each
