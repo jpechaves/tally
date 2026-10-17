@@ -106,6 +106,41 @@ RSpec.describe Tally::Importers::ItauCardPdf do
     end
   end
 
+  describe "a bill with an international purchase and a block of rows printed twice" do
+    let(:statement) { parse_fixture("itau_2026-12_international.pdf") }
+
+    it "adds the international purchase and its IOF to this bill's charges" do
+      expect(statement.card_statement).to include(
+        total_cents: 54_437, purchases_cents: 43_245 + 5_760, fees_cents: 5_250 + 202
+      )
+      expect(row(statement, "APP EXEMPLO UPGRADE")).to have_attributes(
+        kind: "purchase", amount: Tally::Money.new(-5_760), occurred_on: Date.new(2026, 11, 20)
+      )
+      expect(row(statement, "Repasse de IOF")).to have_attributes(
+        kind: "fee", amount: Tally::Money.new(-202), occurred_on: Date.new(2026, 12, 2), counterparty: nil
+      )
+    end
+
+    it "imports the rows printed twice once, as the bill's total counts them, and says so" do
+      credits = statement.rows.select { _1.occurred_on == Date.new(2026, 11, 15) }
+
+      expect(credits.map { [_1.raw_description, _1.amount.cents] }).to eq(
+        [["LOJA EXEMPLO", 5], ["MERCADO EXEMPLO", 12], ["LOJA EXEMPLO", 1], ["FARMACIA EXEMPLO", 2]]
+      )
+      expect(credits.map(&:kind).uniq).to eq(["refund"])
+      expect(statement.rows.reject { _1.kind == "transfer" }.sum { _1.amount.cents }).to eq(-54_437)
+      expect(statement.warnings).to contain_exactly(/4 rows adding up to -R\$ 0,20 are printed twice/)
+    end
+
+    it "rejects the bill when its total doesn't count the repeated rows once" do
+      pdf = ItauBills.december.to_pdf.sub("(544,37)", "(544,57)")
+
+      expect { described_class.new.call("fatura.pdf", pdf) }.to raise_error(
+        Tally::Importers::Error, /Total desta fatura\), counting the 4 rows printed twice once/
+      )
+    end
+  end
+
   describe "checks" do
     def parse(content) = described_class.new.call("fatura.pdf", content)
 

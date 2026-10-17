@@ -83,8 +83,45 @@ module ItauBills
     )
   end
 
+  # Closing 2026-12-02. An international purchase with its IOF, and a block of small
+  # credits printed twice (at the top of the purchases and again before their total) that
+  # only the bill's total counts, once.
+  def december(**overrides)
+    FakeItauBill.new(
+      closing: "02/12/2026", due: "09/12/2026",
+      previous_total: "1.200,00",
+      payments: [row("02/11", "Pagamento via conta", "-1.200,00")],
+      reprinted: [
+        row("15/11", "LOJA EXEMPLO", "-0,05"),
+        row("15/11", "MERCADO EXEMPLO", "-0,12"),
+        row("15/11", "LOJA EXEMPLO", "-0,01"),
+        row("15/11", "FARMACIA EXEMPLO", "-0,02")
+      ],
+      purchases: [
+        row("23/11", "LOJA EXEMPLO 01/03", "99,90", "outros SAO PAULO"),
+        row("24/11", "MERCADO EXEMPLO", "310,45", "supermercado SAO PAULO"),
+        row("26/11", "FARMACIA EXEMPLO", "42,10", "saúde SAO PAULO"),
+        row("28/11", "CANCELAMENTO DE COMPRA", "-20,00", "outros SAO PAULO")
+      ],
+      international: [row("20/11", "APP EXEMPLO UPGRADE", "57,60", "10,00 USD 10,00")],
+      iof: "2,02",
+      fees: [
+        row("02/11", "Mensalidade - Plano do", "105,00", "Anuidade Diferenciada"),
+        row("14/11", "Redução Mensalidade - P", "-52,50", "Anuidade Diferenciada")
+      ],
+      future: [row("23/11", "LOJA EXEMPLO 02/03", "99,90")],
+      later: "99,90",
+      cardholder: "MARIA E SOUZA",
+      credit_limit: "10.000,00", available_limit: "9.400,00",
+      layout: [[50, 310], [50, 310]],
+      split: [6, 6],
+      **overrides
+    )
+  end
+
   FIXTURES = {
     "itau_2026-10.pdf" => :october,
+    "itau_2026-12_international.pdf" => :december,
     "itau_2027-01_tight.pdf" => :january_tight
   }.freeze
 end

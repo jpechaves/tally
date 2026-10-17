@@ -44,6 +44,7 @@ module Tally
         "Pagamentosefetuados" => :payments,
         "Lançamentos:comprasesaques" => :purchases,
         "Lançamentos:produtoseserviços" => :fees,
+        "Lançamentosinternacionais" => :international,
         "Comprasparceladas" => :future,
         "Limitesdecrédito" => :other,
         "Encargoscobradosnestafatura" => :other,
@@ -61,13 +62,20 @@ module Tally
         "Totaldospagamentos" => :payments,
         "Lançamentosnocartão" => :purchases,
         "Lançamentosprodutoseserviços" => :fees,
+        "Totallançamentosinter.emR$" => :international,
+        "Saldofinanciado" => :financed,
         "Próximafatura" => :next_statement,
         "Demaisfaturas" => :later_statements,
         "Limitetotaldecrédito" => :credit_limit,
         "Limitedisponível" => :available_limit
       }.freeze
       # Labels whose value can appear several times on a bill, once per card, and add up.
-      SUMMED = %i[purchases].freeze
+      SUMMED = %i[purchases international].freeze
+      # The IOF tax on international purchases, printed under them without a date.
+      IOF = "RepassedeIOF"
+      # A run of at least this many rows printed again further down is a reprint
+      # (see #reprinted!).
+      REPRINT_MIN = 3
 
       def initialize(pdftotext: "pdftotext")
         @pdftotext = pdftotext
@@ -206,7 +214,7 @@ module Tally
         heading = SECTIONS.find { |label, _| tokens.join.start_with?(label) || compact.start_with?(label) }
         if heading
           state[:section] = heading.last
-          state[:expect_cardholder] = heading.last == :purchases
+          state[:expect_cardholder] = %i[purchases international].include?(heading.last)
           state[:last] = nil
           return
         end
@@ -217,6 +225,13 @@ module Tally
         end
 
         collect_figures(tokens, figures)
+
+        if state[:section] == :international && tokens.join.start_with?(IOF) && AMOUNT.match?(tokens.last)
+          entries << {section: :iof, date: nil, description: "Repasse de IOF", amount: tokens.last,
+                      cardholder: state[:cardholder]}
+          state[:last] = nil
+          return
+        end
 
         if tokens.size >= 3 && DAY_MONTH.match?(tokens.first) && AMOUNT.match?(tokens.last)
           state[:expect_cardholder] = false
@@ -265,20 +280,34 @@ module Tally
         due_on = dates[:due_on] or raise Error, "due date (Vencimento) not found on page 1"
         closing_on = dates[:closing_on] or raise Error, "closing date (Postagem) not found on page 1"
 
-        current = entries.select { %i[payments purchases fees].include?(_1[:section]) }
+        current = entries.select { %i[payments purchases international iof fees].include?(_1[:section]) }
         future = entries.select { _1[:section] == :future }
+        reprinted = reprinted!(current)
         cents = ->(section) { current.select { _1[:section] == section }.sum { Money.parse(_1[:amount]).cents } }
 
         purchases = cents.(:purchases)
+        international = cents.(:international)
+        iof = cents.(:iof)
         fees = cents.(:fees)
         payments = cents.(:payments)
         check!(figures, :purchases, purchases, "purchases (Lançamentos no cartão)")
+        check!(figures, :international, international + iof, "international purchases (Total lançamentos inter.)",
+          optional: true)
         check!(figures, :fees, fees, "fees (Lançamentos produtos e serviços)", optional: true)
-        check!(figures, :current, purchases + fees, "this bill's charges (Lançamentos atuais)")
+        check!(figures, :current, purchases + international + iof + fees, "this bill's charges (Lançamentos atuais)")
         check!(figures, :payments, payments, "payments (Total dos pagamentos)", optional: true)
         raise Error, "this bill's total (Total desta fatura) not found" unless figures[:total]
 
         warnings = []
+        unless reprinted.empty?
+          reprint = cents.(:reprinted)
+          raise Error, "the financed balance (Saldo financiado) not found on page 1" unless figures[:financed]
+
+          check!(figures, :total, figures[:financed] + figures[:current] + reprint,
+            "this bill's total (Total desta fatura), counting the #{reprinted.size} rows printed twice once")
+          warnings << "#{reprinted.size} rows adding up to #{Money.new(reprint)} are printed twice on the bill and left " \
+            "out of its purchases total; imported once, as the bill's total counts them"
+        end
         future_cents = future.sum { Money.parse(_1[:amount]).cents }
         if figures[:next_statement] && future_cents != figures[:next_statement]
           warnings << "the future installments list adds up to #{Money.new(future_cents)}, " \
@@ -298,8 +327,8 @@ module Tally
             total_cents: figures[:total],
             previous_total_cents: figures[:previous_total],
             payments_cents: -payments,
-            purchases_cents: purchases,
-            fees_cents: fees,
+            purchases_cents: purchases + international,
+            fees_cents: fees + iof,
             next_statement_cents: figures[:next_statement],
             later_statements_cents: figures[:later_statements],
             credit_limit_cents: figures[:credit_limit],
@@ -320,16 +349,32 @@ module Tally
         raise Error, "#{name}: the rows add up to #{Money.new(parsed)}, but the bill prints #{Money.new(printed)}"
       end
 
-      def row(entry, due_on, closing_on, repeats)
-        day, month = DAY_MONTH.match(entry[:date]).captures.map(&:to_i)
-        # No year on the rows: a month after the closing month belongs to the year before.
-        year = month > closing_on.month ? closing_on.year - 1 : closing_on.year
-        date = begin
-          Date.new(year, month, day)
-        rescue Date::Error
-          raise Error, "not a date: #{entry[:date]} (#{entry[:description]})"
-        end
+      # Some bills print a block of rows twice, word for word: once at the top of the
+      # purchases and again just before their total. Neither copy counts in "Lançamentos no
+      # cartão" or "Lançamentos atuais", but "Total desta fatura" counts the block once. Drops
+      # the second copy from `entries`, moves the first to its own section and returns it.
+      def reprinted!(entries)
+        purchases = entries.select { _1[:section] == :purchases }
+        key = ->(index) { purchases[index].values_at(:date, :description, :amount) }
 
+        purchases.each_index do |first|
+          (first + 1...purchases.size).each do |second|
+            length = 0
+            length += 1 while first + length < second && second + length < purchases.size &&
+              key.(first + length) == key.(second + length)
+            next if length < REPRINT_MIN
+
+            copy = purchases[second, length]
+            entries.reject! { |entry| copy.any? { _1.equal?(entry) } }
+            return purchases[first, length].each { _1[:section] = :reprinted }
+          end
+        end
+        []
+      end
+
+      def row(entry, due_on, closing_on, repeats)
+        # The IOF line has no date; it is charged on this bill.
+        date = entry[:date] ? row_date(entry, closing_on) : closing_on
         printed = Money.parse(entry[:amount])
         raise Error, "zero amount: #{entry[:description]}" if printed.zero?
 
@@ -353,14 +398,15 @@ module Tally
         end
 
         bank_category, location = nil
-        if entry[:section] == :purchases && entry[:detail]
+        if %i[purchases reprinted].include?(entry[:section]) && entry[:detail]
           bank_category, location = entry[:detail].split(" ", 2)
           bank_category = bank_category.downcase
         end
         name = strip_city(name, location)
 
-        # The card fee and its discount ("Redução Mensalidade", negative) are both fees.
-        kind = if entry[:section] == :fees then "fee"
+        # The card fee and its discount ("Redução Mensalidade", negative) are both fees, and
+        # so is the IOF on international purchases.
+        kind = if %i[fees iof].include?(entry[:section]) then "fee"
         elsif amount.positive? then "refund"
         else "purchase"
         end
@@ -379,6 +425,15 @@ module Tally
           counterparty: (kind == "fee") ? nil : {name:},
           raw:
         )
+      end
+
+      def row_date(entry, closing_on)
+        day, month = DAY_MONTH.match(entry[:date]).captures.map(&:to_i)
+        # No year on the rows: a month after the closing month belongs to the year before.
+        year = month > closing_on.month ? closing_on.year - 1 : closing_on.year
+        Date.new(year, month, day)
+      rescue Date::Error
+        raise Error, "not a date: #{entry[:date]} (#{entry[:description]})"
       end
 
       # Merchant names are cut at about 23 characters with the city glued on
