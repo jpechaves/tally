@@ -10,7 +10,7 @@
       <div><%= t("report.show.saved") %><strong class="<%= report.saved_cents.negative? ? "up" : "down" %>"><%= money(report.saved_cents) %></strong><span class="note"><%= t("report.show.average_of", amount: money(report.average_saved_cents)) %></span></div>
     </div>
 
-    <%= render "charts/trend", title: t("home.show.trend"), trend: trend, month: month %>
+    <%= render "charts/trend", currency: Tally::Money::DEFAULT_CURRENCY, title: t("home.show.trend"), trend: trend, month: month %>
 
     <section class="panel">
       <h2><%= t("home.show.top_categories", month: month_label(month)) %></h2>

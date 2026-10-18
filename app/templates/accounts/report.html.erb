@@ -1,0 +1,88 @@
+<main>
+  <% currency = account.currency %><% symbol = Tally::Money::SYMBOLS.fetch(currency, currency) %>
+  <h1><%= t("accounts.report.title", account: account.name) %></h1>
+  <% if report.nil? %>
+    <p><%= t("accounts.report.empty") %></p>
+  <% else %>
+    <%= render "report/month_picker", path: "/accounts/#{account.id}/report", months: months, month: month %>
+    <% averaged = report.averaged_months %>
+    <div class="cards">
+      <div><%= t("report.show.spending") %><strong><%= money(report.spending_cents, currency) %></strong><span class="note"><%= t("report.show.average_of", amount: money(report.average_spending_cents, currency)) %></span></div>
+      <% unless report.income_cents.zero? && report.average_income_cents.zero? %>
+        <div><%= t("report.show.income") %><strong><%= money(report.income_cents, currency) %></strong><span class="note"><%= t("report.show.average_of", amount: money(report.average_income_cents, currency)) %></span></div>
+      <% end %>
+      <% unless month_top_ups.empty? %>
+        <div><%= t("accounts.report.topped_up") %><strong><%= money(month_top_ups.sum { _1[:amount_cents] }, currency) %></strong>
+          <% paid = month_top_ups.filter_map { Tally::TopUps.cost_of(_1) } %>
+          <% unless paid.empty? %><span class="note"><%= t("accounts.report.paid", amount: money(paid.sum(&:paid_cents))) %></span><% end %></div>
+      <% end %>
+    </div>
+    <p class="note"><% if averaged.empty? %><%= t("report.show.no_average") %><% else %><%= t("report.show.averages_over", months: averaged.map { month_label(_1) }.join(", ")) %><% end %>
+      <%= t("accounts.report.counting", currency: symbol) %>
+      <% if average_cost && !report.spending_cents.zero? %>
+        <%= t("accounts.report.in_reais", rate: rate(average_cost.rate), currency: symbol, amount: money(average_cost.convert(report.spending_cents))) %>
+      <% end %></p>
+
+    <h2><%= t("accounts.report.by_category") %></h2>
+    <div class="scroll"><table class="rows">
+      <%= render "report/head", first: t("report.show.category") %>
+      <tbody>
+        <% report.categories.each do |line| %>
+          <%= render "report/line", currency: currency, line: line, label: category_name(line.name) || t("report.show.uncategorized"), css: "",
+            href: transactions_path(account: account.id, month: month, kind: "spending", category: line.id || Tally::TransactionFilter::NONE) %>
+          <% line.children.each do |child| %>
+            <%= render "report/line", currency: currency, line: child, label: category_name(child.name), css: "child",
+              href: transactions_path(account: account.id, month: month, kind: "spending", category: child.id) %>
+          <% end %>
+        <% end %>
+      </tbody>
+    </table></div>
+
+    <%= render "charts/trend", currency: currency, title: t("accounts.report.trend"), trend: by_month, month: month %>
+    <div class="scroll"><table class="rows">
+      <thead><tr><th><%= t("accounts.report.month") %></th><th class="num"><%= t("report.show.spent") %></th><th class="num"><%= t("report.show.income") %></th></tr></thead>
+      <tbody>
+        <% by_month.reverse_each do |item| %>
+          <tr class="<%= "current" if item[:month] == month %>">
+            <td><a href="/accounts/<%= account.id %>/report?month=<%= item[:month] %>"><%= month_label(item[:month]) %></a></td>
+            <td class="num"><a href="<%= transactions_path(account: account.id, month: item[:month], kind: "spending") %>"><%= money(item[:spending_cents], currency) %></a></td>
+            <td class="num"><%= money(item[:income_cents], currency) %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table></div>
+
+    <h2><%= t("report.show.top_payees") %></h2>
+    <div class="scroll"><table class="rows">
+      <%= render "report/head", first: t("report.show.payee") %>
+      <tbody>
+        <% report.payees.each do |line| %><%= render "report/line", currency: currency, line: line, label: line.name, css: "",
+          href: transactions_path(account: account.id, month: month, kind: "spending", payee: line.id) %><% end %>
+      </tbody>
+    </table></div>
+
+    <% unless top_ups.empty? %>
+      <h2><%= t("accounts.report.top_ups") %></h2>
+      <% if month_top_ups.empty? %>
+        <p><%= t("accounts.report.no_top_ups") %></p>
+      <% else %>
+        <div class="scroll"><table class="rows">
+          <thead><tr><th><%= t("transactions.table.date") %></th><th><%= t("accounts.report.from") %></th><th class="num"><%= t("transactions.table.amount") %></th><th class="num"><%= t("accounts.report.paid_column") %></th><th class="num"><%= t("accounts.report.rate", currency: symbol) %></th></tr></thead>
+          <tbody>
+            <% month_top_ups.each do |top_up| %>
+              <% cost = Tally::TopUps.cost_of(top_up) %>
+              <tr>
+                <td><a href="/transactions/<%= top_up[:id] %>"><%= date(top_up[:occurred_on]) %></a></td>
+                <td><%= top_up[:other_account_name] || t("accounts.report.not_paired") %></td>
+                <td class="num"><%= money(top_up[:amount_cents], currency) %></td>
+                <td class="num"><%= cost ? money(cost.paid_cents) : "" %></td>
+                <td class="num"><%= cost ? rate(cost.rate) : "" %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table></div>
+      <% end %>
+      <% if average_cost %><p class="note"><%= t("accounts.report.average_cost", rate: rate(average_cost.rate), currency: symbol) %></p><% end %>
+    <% end %>
+  <% end %>
+</main>

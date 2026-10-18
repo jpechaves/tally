@@ -12,6 +12,7 @@ module Tally
     get "/imports/:id", to: "imports.show", as: :import
 
     get "/accounts", to: "accounts.index", as: :accounts
+    get "/accounts/:id/report", to: "accounts.report", as: :account_report
     get "/transactions", to: "transactions.index", as: :transactions
     get "/transactions/:id", to: "transactions.show", as: :transaction
     post "/transactions/:id", to: "transactions.update"

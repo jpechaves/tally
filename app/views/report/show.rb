@@ -4,7 +4,7 @@ module Tally
   module Views
     module Report
       class Show < Tally::View
-        include Deps["repos.insight_repo", "repos.transaction_repo"]
+        include Deps["repos.account_repo", "repos.insight_repo", "repos.transaction_repo"]
 
         expose :months do
           transaction_repo.months
@@ -24,6 +24,11 @@ module Tally
           months = Tally::Insights.previous_months(month, TREND_MONTHS - 1) + [month]
           totals = Tally::Insights.monthly(insight_repo.rows(from: months.first, to: month), months)
           totals.drop_while { _1[:income_cents].zero? && _1[:spending_cents].zero? }
+        end
+
+        # Accounts in another currency, left out of this report: each has its own.
+        expose :foreign_accounts, decorate: false do
+          account_repo.all.reject { _1.currency == Tally::Money::DEFAULT_CURRENCY }
         end
 
         expose :report do |month|

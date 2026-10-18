@@ -23,19 +23,26 @@ module Tally
         amounts.map { |currency, cents| money(cents, currency) }.join(" + ")
       end
 
-      # A short amount for chart axes: "R$ 1,5 mil" ("R$ 1.5K" in English), "R$ 300".
-      def money_compact(cents)
+      # A short amount for chart axes: "R$ 1,5 mil" ("R$ 1.5K" in English), "R$ 300"; another
+      # currency with its own symbol or code: "US$ 300".
+      def money_compact(cents, currency = Tally::Money::DEFAULT_CURRENCY)
         reais = cents.abs / 100.0
         text = if reais >= 1_000_000 then t("charts.millions", n: number(compact_round(reais / 1_000_000)))
         elsif reais >= 1_000 then t("charts.thousands", n: number(compact_round(reais / 1_000)))
         else number(reais.round)
         end
-        "#{"-" if cents.negative?}R$ #{text}"
+        "#{"-" if cents.negative?}#{Tally::Money::SYMBOLS.fetch(currency, currency)} #{text}"
       end
 
       # Columns over months or other labels (Tally::Charts.columns), amounts in cents.
-      def columns_chart(**options)
-        Tally::Charts.columns(format: method(:money), compact: method(:money_compact), **options).html_safe
+      def columns_chart(currency: Tally::Money::DEFAULT_CURRENCY, **options)
+        Tally::Charts.columns(format: ->(cents) { money(cents, currency) }, compact: ->(cents) { money_compact(cents, currency) },
+          **options).html_safe
+      end
+
+      # 5.5949… reais per dollar -> "5,5949" ("5.5949" in English), for an exchange rate.
+      def rate(value)
+        number(BigDecimal(value, 12).round(4).to_s("F"))
       end
 
       # A horizontal bar's width, as a percentage of the largest one.
