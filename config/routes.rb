@@ -15,6 +15,8 @@ module Tally
     get "/transactions", to: "transactions.index", as: :transactions
     get "/transactions/:id", to: "transactions.show", as: :transaction
     post "/transactions/:id", to: "transactions.update"
+    post "/transactions/:id/adjustment", to: "transactions.adjust", as: :adjust_transaction
+    post "/transactions/:id/adjustment/remove", to: "transactions.unadjust", as: :unadjust_transaction
 
     get "/counterparties", to: "counterparties.index", as: :counterparties
     post "/counterparties/:id/self", to: "counterparties.mark_self", as: :mark_self

@@ -24,7 +24,8 @@ module Tally
 
       def rows(ids) = transactions.dataset.where(id: ids).order(:id).all
 
-      # A page of transactions, newest first, with account and counterparty names.
+      # A page of transactions, newest first, with account and counterparty names, and what
+      # each counts as after your adjustment (Tally::Adjustments.columns).
       # @param filter [Tally::TransactionFilter]
       def list(filter = Tally::TransactionFilter.new, import_id: nil, missing: false, id: nil, limit: 500, offset: 0)
         scope = transactions.dataset
@@ -32,6 +33,7 @@ module Tally
           .left_join(:counterparties, id: Sequel[:transactions][:counterparty_id])
           .left_join(Sequel[:accounts].as(:counter_accounts), id: Sequel[:transactions][:counter_account_id])
           .left_join(:categories, id: Sequel[:transactions][:category_id])
+          .then { Tally::Adjustments.join(_1) }
           .select_all(:transactions)
           .select_append(
             Sequel[:accounts][:name].as(:account_name),
@@ -39,7 +41,8 @@ module Tally
             Sequel[:counterparties][:name].as(:counterparty_name),
             Sequel[:counterparties][:document].as(:counterparty_document),
             Sequel[:counter_accounts][:name].as(:counter_account_name),
-            Sequel[:categories][:name].as(:category_name)
+            Sequel[:categories][:name].as(:category_name),
+            *Tally::Adjustments.columns
           )
         scope = scope.where(Sequel[:transactions][:id] => id) if id
         scope = filtered(scope, filter)
@@ -49,13 +52,14 @@ module Tally
           .limit(limit, offset).all
       end
 
-      # How many rows match the filter, and their net in each currency, across all pages.
+      # How many rows match the filter, and their net in each currency, across all pages, as
+      # the rows count after your adjustments.
       # @return [Hash] rows:, net: {"BRL" => cents, "USD" => cents}, reais first
       def totals(filter = Tally::TransactionFilter.new)
         scope = filtered(transactions.dataset.unordered, filter)
-        net = scope.join(:accounts, id: Sequel[:transactions][:account_id])
+        net = Tally::Adjustments.join(scope.join(:accounts, id: Sequel[:transactions][:account_id]))
           .group(Sequel[:accounts][:currency])
-          .select(Sequel[:accounts][:currency], Sequel.function(:sum, Sequel[:transactions][:amount_cents]).as(:cents))
+          .select(Sequel[:accounts][:currency], Sequel.function(:sum, Tally::Adjustments.counted_amount).as(:cents))
           .to_h { [_1[:currency], _1[:cents]] }
         {rows: scope.count, net: net.sort_by { |currency, _| currency == Tally::Money::DEFAULT_CURRENCY ? "" : currency }.to_h}
       end
@@ -118,10 +122,11 @@ module Tally
 
       # What the review list shows: rows that count as spending or income and have no
       # category yet, or only the bank's suggestion. Rows a re-import flagged as missing
-      # are left out.
+      # are left out, and so are rows your adjustment says count as nothing.
       def to_review
         transactions.dataset
           .exclude(Sequel[:transactions][:kind] => "transfer")
+          .exclude(Sequel[:transactions][:id] => Tally::Adjustments.uncounted_ids(transactions.dataset))
           .where(Sequel[:transactions][:category_source] => %w[none bank], missing_since_import_id: nil)
           .join(:accounts, id: :account_id)
           .left_join(:counterparties, id: Sequel[:transactions][:counterparty_id])
@@ -194,6 +199,48 @@ module Tally
           .order(Sequel[:accounts][:name]).all
       end
 
+      # --- Adjustments (Tally::Adjustments) --------------------------------------------
+
+      def adjustment(transaction_id) = transaction_adjustments.dataset.where(transaction_id:).first
+
+      # The adjustment whose reimbursement this row paid, if any.
+      def refund_link(refund_transaction_id) = transaction_adjustments.dataset.where(refund_transaction_id:).first
+
+      # One adjustment per row: a new one replaces the old.
+      def save_adjustment(transaction_id, kind:, amount_cents: nil, refund_transaction_id: nil, note: nil)
+        attributes = {kind:, amount_cents:, refund_transaction_id:, note:}
+        transaction_adjustments.dataset.insert_conflict(
+          target: :transaction_id, update: attributes.to_h { [_1, Sequel[:excluded][_1]] }.merge(updated_at: Repos.now)
+        ).insert(transaction_id:, **attributes)
+      end
+
+      def remove_adjustment(transaction_id) = transaction_adjustments.dataset.where(transaction_id:).delete
+
+      # Rows that could have paid a purchase back: money coming in that is spending or
+      # income (not a transfer), up to the purchase's amount, near its date, not already
+      # counted inside another purchase nor adjusted itself, in the same currency. Closest
+      # date first.
+      # @param row [Hash] a row from #list
+      def refund_candidates(row, limit: 20)
+        column = ->(name) { Sequel[:transactions][name] }
+        date = Date.iso8601(row[:occurred_on])
+        window = Tally::Adjustments::REFUND_WINDOW
+        adjustments = transaction_adjustments.dataset
+        linked = adjustments.exclude(refund_transaction_id: nil).exclude(transaction_id: row[:id]).select(:refund_transaction_id)
+        transactions.dataset
+          .join(:accounts, id: :account_id)
+          .where(Sequel[:accounts][:currency] => row[:currency], column.(:missing_since_import_id) => nil,
+            column.(:kind) => Tally::Insights::SPENDING_KINDS + Tally::Insights::INCOME_KINDS,
+            column.(:occurred_on) => (date + window.begin).iso8601..(date + window.end).iso8601)
+          .where { (column.(:amount_cents) > 0) & (column.(:amount_cents) <= row[:amount_cents].abs) }
+          .exclude(column.(:id) => linked)
+          .exclude(column.(:id) => adjustments.select(:transaction_id))
+          .select_all(:transactions).select_append(Sequel[:accounts][:name].as(:account_name))
+          .order(Sequel.function(:abs, Sequel.function(:julianday, column.(:occurred_on)) - Sequel.function(:julianday, row[:occurred_on])), column.(:id))
+          .limit(limit)
+          .all
+      end
+
       # --- Transfers ------------------------------------------------------------------
 
       def unpaired_transfers
@@ -263,10 +310,12 @@ module Tally
         scope = scope.where(payee_key => filter.payee) if filter.payee
         scope = scope.where(column.(:id) => installment_series(filter.purchase).map { _1[:id] }) if filter.purchase
         # Spending and income as the report counts them, which leaves out rows a
-        # re-import flagged as missing and rows dated after today (InsightRepo).
+        # re-import flagged as missing, rows dated after today and rows your adjustment
+        # says count as nothing (InsightRepo).
         if COUNTED.include?(filter.kind)
           scope = scope.where(column.(:missing_since_import_id) => nil)
             .where { column.(:occurred_on) <= Date.today.iso8601 }
+            .exclude(column.(:id) => Tally::Adjustments.uncounted_ids(transactions.dataset))
         end
         scope
       end

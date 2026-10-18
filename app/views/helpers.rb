@@ -146,6 +146,16 @@ module Tally
         facts[:purchases] = t("cuts.purchases", count: suggestion.facts[:count]) if suggestion.facts.key?(:count)
         t("cuts.signals.#{suggestion.signal}.#{part}", **facts)
       end
+
+      # What a row's adjustment says, for its badge (Tally::Adjustments): "canceled",
+      # "reimbursed R$ 30,00", "amount changed", "paid back a purchase"; nil for none.
+      def adjustment_label(row)
+        if row[:refunds_transaction_id] then t("transactions.adjustment.badge.refund")
+        elsif row[:adjustment_kind] == "reimbursed"
+          t("transactions.adjustment.badge.reimbursed", amount: money(row[:adjustment_cents], row[:currency]))
+        elsif row[:adjustment_kind] then t("transactions.adjustment.badge.#{row[:adjustment_kind]}")
+        end
+      end
     end
   end
 end

@@ -223,6 +223,19 @@ CREATE UNIQUE INDEX `budgets_category_id_month_index` ON `budgets`(
   `category_id`,
   `month`
 );
+CREATE TABLE `transaction_adjustments`(
+  `id` integer NOT NULL PRIMARY KEY AUTOINCREMENT,
+  `transaction_id` integer NOT NULL UNIQUE REFERENCES `transactions` ON DELETE CASCADE,
+  `kind` text NOT NULL,
+  `amount_cents` integer,
+  `refund_transaction_id` integer UNIQUE REFERENCES `transactions` ON DELETE SET NULL,
+  `note` text,
+  `created_at` text DEFAULT((strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))) NOT NULL,
+  `updated_at` text DEFAULT((strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))) NOT NULL,
+  CONSTRAINT `transaction_adjustments_kind` CHECK(kind IN('canceled', 'reimbursed', 'amount_changed')),
+  CONSTRAINT `transaction_adjustments_amount` CHECK((kind = 'canceled' AND amount_cents IS NULL) OR(kind = 'reimbursed' AND amount_cents > 0) OR(kind = 'amount_changed' AND amount_cents <> 0)),
+  CONSTRAINT `transaction_adjustments_refund` CHECK(refund_transaction_id IS NULL OR kind = 'reimbursed')
+) STRICT;
 INSERT INTO schema_migrations (filename) VALUES
 ('20261015000000_create_accounts.rb'),
 ('20261015100000_create_import_tables.rb'),
@@ -230,4 +243,5 @@ INSERT INTO schema_migrations (filename) VALUES
 ('20261017000000_create_dismissed_suggestions.rb'),
 ('20261018000000_create_savings_plans_and_budgets.rb'),
 ('20261019000000_add_removed_to_budgets.rb'),
-('20261020000000_add_exchange_to_transactions.rb');
+('20261020000000_add_exchange_to_transactions.rb'),
+('20261022000000_create_transaction_adjustments.rb');

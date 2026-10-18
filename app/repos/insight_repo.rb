@@ -7,6 +7,10 @@ module Tally
     # rows a re-import flagged as missing are left out, and so are accounts in another
     # currency (Conta Global, in USD): every figure here is in reais.
     #
+    # A row's amount_cents is what it counts as after your adjustment (Tally::Adjustments):
+    # canceled rows, fully reimbursed ones and refunds counted inside a purchase are left
+    # out, and the statement's own amount is kept as original_cents.
+    #
     # Rows dated after today (installments on a future bill that is already exported) are
     # committed, not spent yet, so #rows leaves them out unless asked for them.
     class InsightRepo < Tally::DB::Repo
@@ -38,16 +42,16 @@ module Tally
       private
 
       def scope
-        transactions.dataset
+        Tally::Adjustments.join(transactions.dataset)
           .exclude(Sequel[:transactions][:kind] => "transfer")
           .where(Sequel[:transactions][:missing_since_import_id] => nil)
-          .join(:accounts, id: :account_id)
+          .join(:accounts, id: Sequel[:transactions][:account_id])
           .where(Sequel[:accounts][:currency] => Tally::Money::DEFAULT_CURRENCY)
           .left_join(:counterparties, id: Sequel[:transactions][:counterparty_id])
           .left_join(:categories, id: Sequel[:transactions][:category_id])
           .left_join(Sequel[:categories].as(:parents), id: Sequel[:categories][:parent_id])
           .select(
-            *%i[id account_id occurred_on amount_cents kind description counterparty_id category_id
+            *%i[id account_id occurred_on kind description counterparty_id category_id
               installment_number installment_total purchase_key].map { Sequel[:transactions][_1] },
             Sequel[:accounts][:name].as(:account_name),
             Sequel[:counterparties][:name].as(:counterparty_name),
@@ -57,6 +61,11 @@ module Tally
             Sequel[:categories][:nature],
             Sequel[:categories][:max_cut_pct]
           )
+          .select_append(
+            Tally::Adjustments.counted_amount.as(:amount_cents),
+            Sequel[:transactions][:amount_cents].as(:original_cents)
+          )
+          .exclude(Tally::Adjustments.counted_amount => 0)
           .order(Sequel[:transactions][:occurred_on], Sequel[:transactions][:id])
       end
     end

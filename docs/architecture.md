@@ -269,6 +269,13 @@ budgets                         -- monthly limit per category; written when a pl
   savings_plan_id  INTEGER NULL REFERENCES savings_plans(id)   -- the plan that wrote it; NULL once set by hand
   removed          INTEGER NOT NULL DEFAULT 0   -- 1: the category has no budget from this month on
   UNIQUE(category_id, month)
+
+transaction_adjustments         -- what you know about a row that its statement doesn't say (issue #14)
+  transaction_id         INTEGER NOT NULL UNIQUE REFERENCES transactions(id)
+  kind                   TEXT NOT NULL   -- canceled | reimbursed | amount_changed
+  amount_cents           INTEGER NULL    -- reimbursed: what came back (> 0); amount_changed: the real amount, signed like the row
+  refund_transaction_id  INTEGER NULL UNIQUE REFERENCES transactions(id)   -- reimbursed by an imported row (a Pix back, a card refund)
+  note                   TEXT NULL
 ```
 
 The monthly savings target lives in `savings_plans`. Named goals with a deadline ("R$ 30 mil for a car by 2027-12") are left for later; they would only add tables. The Nubank RDB is an `investment` account whose balance comes from the "Aplicação/Resgate RDB" transfers.
@@ -276,6 +283,7 @@ The monthly savings target lives in `savings_plans`. Named goals with a deadline
 Design choices:
 
 - **Nothing you imported is hard-deleted.** Accounts and categories are archived. A re-import flags rows that disappeared instead of deleting them. Plans and budgets are yours to delete: deleting a plan can take its budgets with it (back to the limits from before), and removing a budget from a month on writes a `removed` row, so the months before keep their limit and score.
+- **Your corrections live beside the imported row, never in it.** A row canceled, reimbursed or charged another amount keeps its statement amount; its `transaction_adjustments` row says what it counts as (`Tally::Adjustments.counted_amount`). Re-imports update the row by `(account, external_id)` and never touch the adjustment. The report, cuts, budgets, planner, installment calendar and the spending and income filters on the transactions page count rows that way: a canceled or fully reimbursed row counts as nothing, and a refund row linked to a purchase counts inside it, not on its own. The transactions list shows a badge, the statement's amount struck through, and what the row counts as. Category and counterparty totals still show the statement amounts.
 - **Balances and monthly totals are `SUM` queries**, not stored values, so nothing can drift. At household scale (a few thousand rows a year) these take milliseconds even on the Pi.
 - **Transfers are recognized even with one side.** The Itaú account and the RDB have no statements, so their transfers have one imported leg (the Pix to your Itaú account and the card's "Pagamento via conta"; the RDB moves). It is still marked `transfer` and never counted as spending or income. The RDB legs are mirrored into the RDB account so its balance is right.
 
@@ -538,6 +546,7 @@ Only after version 1 is correct and in daily use. Each one only **suggests**; no
 - **Milestone 6 (localization)**: done. Brazilian Portuguese and English for every page, form error and cut suggestion (`config/i18n`, with a spec that keeps both files in step), a language switch in the menu remembered per browser, locale-aware amounts, dates and months, form amounts read with the language's decimal mark, and starting categories named in the default language (`DEFAULT_LOCALE`). Cut suggestions and bill checks now carry facts instead of English sentences, so the page words them.
 - **Milestone 7 (design and charts)**: done. The stylesheet in `public/assets/app.css` (served by `Actions::Assets::Show`, like the planner's script), a sidebar layout that folds into a top bar on phones, the home dashboard, and `Tally::Charts` for the column charts. Every chart sits next to a table with the same numbers, and each mark shows its value on hover.
 - **Conta Global import** (issue #22, first part): done. The dollar account's CSV (`Importers::ContaGlobalCSV`), checked row by row against its running balance; card purchases and refunds in dollars with the foreign amount, rate and fee in their own columns; top-ups paired with Nubank conta's conversion through the rate (`Tally::Exchange`); dollar rows kept out of every BRL total and shown in US$. Still to do: the account's own report.
+- **Adjusting a transaction** (issue #14): done. From a row's page, mark it canceled, reimbursed (an amount you type, or an imported row that paid it back) or with another amount, with a note; or remove the adjustment. Kept in `transaction_adjustments`, so re-imports keep it (§6).
 - **Next, milestone 8 (Pi deployment)**, postponed while the app is tried by hand.
 
 ## 17. Public repository: keeping personal data out
