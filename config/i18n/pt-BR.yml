@@ -240,6 +240,7 @@ pt-BR:
       bill_total: Total da fatura
       check:
         ok: paga integralmente
+        open: "em aberto, %{paid} pago até agora"
         unknown: pagamento ainda não importado
         warning: "diferença de %{difference}"
       checks: Conferência das faturas
