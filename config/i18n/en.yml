@@ -585,7 +585,8 @@ en:
       a_month: a month
       add: Add a budget
       ahead_flag: ahead of pace
-      before_plan: "Your plan to save %{amount} a month starts in %{month}, so %{this_month} has no target: these budgets were set by hand."
+      before_plan: "Your plan to save %{amount} a month starts in %{month}, so %{this_month} has no target."
+      before_plan_by_hand: "Your plan to save %{amount} a month starts in %{month}, so %{this_month} has no target: these budgets were set by hand."
       category: Category
       clear: "Remove all budgets from %{month} on"
       confirm_clear: "Remove every budget from %{month} on? The months before keep theirs."

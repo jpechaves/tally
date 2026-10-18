@@ -597,7 +597,8 @@ pt-BR:
       a_month: por mês
       add: Adicionar um orçamento
       ahead_flag: acima do ritmo
-      before_plan: "Seu plano de guardar %{amount} por mês começa em %{month}, então %{this_month} não tem meta: estes orçamentos foram criados à mão."
+      before_plan: "Seu plano de guardar %{amount} por mês começa em %{month}, então %{this_month} não tem meta."
+      before_plan_by_hand: "Seu plano de guardar %{amount} por mês começa em %{month}, então %{this_month} não tem meta: estes orçamentos foram criados à mão."
       category: Categoria
       clear: "Remover todos os orçamentos a partir de %{month}"
       confirm_clear: "Remover todos os orçamentos a partir de %{month}? Os meses anteriores continuam com os deles."
