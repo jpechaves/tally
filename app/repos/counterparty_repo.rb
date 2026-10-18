@@ -38,7 +38,8 @@ module Tally
       # a dollar account count, but their amounts don't add to the total): you first, then
       # biggest first (ties by id, so pages never shuffle).
       #
-      # @param search [String, nil] part of the name, any accents or case (Tally::Search)
+      # @param search [String, nil] part of the bank's name or of your display name, any
+      #   accents or case (Tally::Search)
       def with_totals(search: nil, limit: nil, offset: nil)
         total = Sequel.function(:coalesce, Sequel.function(:sum, Tally::DB::Repo.in_reais(Sequel[:transactions][:amount_cents])), 0)
         named(search)
@@ -86,6 +87,14 @@ module Tally
         counterparties.dataset.where(id:).update(default_category_id: category_id, updated_at: Repos.now)
       end
 
+      # Your own name and note for a counterparty; blank clears them (the bank's name shows
+      # again). Imports never touch these (#upsert).
+      def set_label(id, display_name:, note:)
+        blank_to_nil = ->(text) { text.to_s.strip.then { _1.empty? ? nil : _1 } }
+        counterparties.dataset.where(id:)
+          .update(display_name: blank_to_nil.(display_name), note: blank_to_nil.(note), updated_at: Repos.now)
+      end
+
       def set_self(id, value)
         counterparties.dataset.where(id:).update(is_self: value ? 1 : 0, updated_at: Repos.now)
       end
@@ -98,7 +107,8 @@ module Tally
         return scope if folded.empty?
 
         pattern = "%#{scope.escape_like(folded)}%"
-        scope.where(Sequel.like(Sequel.function(Tally::Search::FUNCTION, Sequel[:counterparties][:name]), pattern))
+        matches = ->(column) { Sequel.like(Sequel.function(Tally::Search::FUNCTION, Sequel[:counterparties][column]), pattern) }
+        scope.where(Sequel.|(matches.(:name), matches.(:display_name)))
       end
 
       # The company with a CNPJ, not you, whose name has this merchant key ("|KEY"); the

@@ -1,0 +1,7 @@
+<main>
+  <h1><%= party[:display_name] || party[:name] %></h1>
+  <p class="note"><%= t("counterparties.show.bank_name", name: party[:name]) %><% if party[:document] %> · <%= party[:document] %><% end %></p>
+  <%= render "counterparties/label_form", party: party, back: back %>
+  <p><a href="<%= transactions_path(payee: "counterparty:#{party[:id]}") %>"><%= t("counterparties.show.transactions") %></a>
+    <% if back %> · <a href="<%= back %>"><%= t("counterparties.show.back") %></a><% end %></p>
+</main>

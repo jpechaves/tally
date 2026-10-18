@@ -1,0 +1,9 @@
+<form action="/counterparties/<%= party[:id] %>" method="post" class="label-form">
+  <% if back %><input type="hidden" name="back" value="<%= back %>"><% end %>
+  <p><label><%= t("counterparties.label.display_name") %><br>
+    <input type="text" name="display_name" value="<%= party[:display_name] %>" maxlength="200" placeholder="<%= party[:name] %>"></label></p>
+  <p><label><%= t("counterparties.label.note") %><br>
+    <input type="text" name="note" value="<%= party[:note] %>" maxlength="500" size="50"></label></p>
+  <p class="note"><%= t("counterparties.label.hint", name: party[:name]) %></p>
+  <button type="submit" class="primary"><%= t("common.save") %></button>
+</form>

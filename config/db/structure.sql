@@ -28,6 +28,8 @@ CREATE TABLE `counterparties`(
   `created_at` text DEFAULT((strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))) NOT NULL,
   `updated_at` text DEFAULT((strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))) NOT NULL,
   `default_category_id` integer REFERENCES `categories`,
+  display_name text,
+  note text,
   CONSTRAINT `counterparties_document_kind` CHECK(document_kind IN('cnpj', 'cpf_masked')),
   CONSTRAINT `counterparties_is_self` CHECK(is_self IN(0, 1))
 ) STRICT;
@@ -230,4 +232,5 @@ INSERT INTO schema_migrations (filename) VALUES
 ('20261017000000_create_dismissed_suggestions.rb'),
 ('20261018000000_create_savings_plans_and_budgets.rb'),
 ('20261019000000_add_removed_to_budgets.rb'),
-('20261020000000_add_exchange_to_transactions.rb');
+('20261020000000_add_exchange_to_transactions.rb'),
+('20261021000000_add_display_name_and_note_to_counterparties.rb');

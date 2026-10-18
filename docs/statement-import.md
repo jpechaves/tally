@@ -218,11 +218,13 @@ Each row goes through these steps in order (`Tally::Categorizer`). The first one
 
 1. **Transfers are never spending.** RDB moves, Itaú `Pagamento via conta`, and Pix to a counterparty marked `is_self` are marked as transfers and get no category. `Pagamento de fatura` (account) and `Pagamento recebido` (card) are the two legs of one transfer. You mark your own name and masked CPF with "This is me" on the Counterparties page, which sets `is_self` in your local database and turns your past Pix to yourself into transfers too. A Pix to yourself at Itaú becomes a transfer to "Itaú conta".
 2. **Counterparty default**: if the counterparty has a `default_category_id`, use it.
-3. **Rules** from `category_rules`, lowest `priority` first, matching on CNPJ/CPF, counterparty name, description (cleaned or as printed), bank category or kind, with an optional amount range. Text is compared without accents and ignoring case.
+3. **Rules** from `category_rules`, lowest `priority` first, matching on CNPJ/CPF, counterparty name (as the bank wrote it, never your display name), description (cleaned or as printed), bank category or kind, with an optional amount range. Text is compared without accents and ignoring case.
 4. **Bank hint**: map Itaú's `bank_category` to an app category (`supermercado` → Supermercado, `restaurante` → Restaurantes, `viagem` → Viagens, `saúde` → Consultas e exames, `vestuário` → Vestuário e beleza, …). These rows are marked `category_source = 'bank'`, so they show as "suggested".
 5. **Nothing matched**: the row stays uncategorized and goes to the review list.
 
 An income category only applies to money in (kind `income`) and an expense category to everything else, so a payee that pays you and also sells to you can't mix the two. Rows you categorize by hand are `manual`: imports and rules never change them. Every import, "This is me", and change to a rule, a counterparty default or an archived category categorizes the affected rows again.
+
+**Your names for counterparties.** A counterparty can get a display name and a note of your own (Counterparties page, or the link on a transaction or a review group). They are shown wherever Tally names the payee, and no import changes them. Matching and rules keep the bank's name, so renaming changes nothing about how rows are matched or categorized.
 
 **Review list** (`/review`): uncategorized and bank-suggested rows, **grouped by counterparty** (card rows, which have none, by the words of their description, so `FARMACIA EXEMPLO 4021` and `FARMACIA EXEMPLO 1187` go together), biggest total first. Picking a category for a group with "always" checked sets the counterparty default, or for card rows creates a `learned` rule matching the description's words, and re-applies it to every past row that isn't `manual`. Without "always", only those rows change, by hand. On four months of real statements the ten biggest groups held over 80% of the uncategorized money.
 

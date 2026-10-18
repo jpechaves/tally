@@ -50,7 +50,7 @@ module Tally
             *%i[id account_id occurred_on amount_cents kind description counterparty_id category_id
               installment_number installment_total purchase_key].map { Sequel[:transactions][_1] },
             Sequel[:accounts][:name].as(:account_name),
-            Sequel[:counterparties][:name].as(:counterparty_name),
+            Tally::DB::Repo.counterparty_label.as(:counterparty_name),
             Sequel[:categories][:name].as(:category_name),
             Sequel[:categories][:parent_id],
             Sequel[:parents][:name].as(:parent_name),

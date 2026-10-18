@@ -17,10 +17,16 @@
       <tbody>
         <% counterparties.each do |party| %>
           <tr>
-            <td><%= party[:name] %><%= party[:is_self] == 1 ? " #{t("counterparties.index.you")}" : "" %></td>
+            <td><span class="name"><%= party[:display_name] || party[:name] %></span><%= party[:is_self] == 1 ? " #{t("counterparties.index.you")}" : "" %>
+              <% if party[:display_name] %><br><span class="note" title="<%= t("counterparties.index.bank_name") %>"><%= party[:name] %></span><% end %>
+              <% if party[:note] %><br><span class="note"><%= party[:note] %></span><% end %>
+              <details>
+                <summary class="note"><%= t("counterparties.index.edit") %></summary>
+                <%= render "counterparties/label_form", party: party, back: page_path.(pagination.number) %>
+              </details></td>
             <td><%= party[:document] %></td>
             <td><%= party[:bank_name] %></td>
-            <td class="num"><%= party[:rows] %></td>
+            <td class="num"><% if party[:rows].positive? %><a href="<%= transactions_path(payee: "counterparty:#{party[:id]}") %>"><%= party[:rows] %></a><% else %>0<% end %></td>
             <td class="num"><%= money(party[:total_cents]) %></td>
             <td>
               <% if party[:document_kind] == "cpf_masked" || party[:is_self] == 1 %>
