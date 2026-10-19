@@ -54,6 +54,10 @@ module Tally
 
     def total_cents = months.values.sum
 
+    # The first month with something committed, which can be after `from` when this
+    # month's bill already holds its installments; `from` when nothing is.
+    def first_month = months.keys.first || @from
+
     class << self
       # The installment rows, split into purchases: one array per purchase, in bill order.
       def series(rows)

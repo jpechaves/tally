@@ -37,6 +37,12 @@ RSpec.describe Tally::InstallmentCalendar do
     expect(calendar.months).to eq("2026-10" => 19_000, "2026-11" => 4_000)
   end
 
+  it "names the first month with something committed, after `from` when that month has none" do
+    expect(described_class.new(rows, from: "2026-09").first_month).to eq("2026-10")
+    expect(described_class.new(rows, from: "2026-11").first_month).to eq("2026-11")
+    expect(described_class.new(rows, from: "2027-06").first_month).to eq("2027-06")
+  end
+
   it "counts only the months from `from` on" do
     calendar = described_class.new(rows, from: "2026-11")
 

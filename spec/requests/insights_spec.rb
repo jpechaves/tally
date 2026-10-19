@@ -67,12 +67,12 @@ RSpec.describe "Report, cuts and installments", :db, type: :request do
     expect(last_response.body).to include(%(value="#{key}"))
   end
 
-  it "lists installments committed from this month on, next to what the bank printed" do
+  it "lists installments committed from their first month on, next to what the bank printed" do
     allow(Date).to receive(:today).and_return(Date.new(2027, 1, 15))
     get "/installments"
 
     body = last_response.body
-    expect(body).to include("R$ 840.00 already committed to card bills from Jan 2027 on, from 1 purchase.")
+    expect(body).to include("R$ 840.00 already committed to card bills from Feb 2027 on, from 1 purchase.")
     expect(body).to include(%(aria-label="Installments committed per month"), "<title>Feb 2027 · Committed: R$ 120.00</title>")
     expect(body).to match(%r{<td>Feb 2027</td>\s*<td class="num">R\$ 120\.00</td>})
     expect(body).to match(%r{<td>Itaú cartão</td>\s*<td>Jan 9, 2027</td>\s*<td class="num">R\$ 120\.00</td>\s*<td class="num">R\$ 840\.00</td>})

@@ -3,7 +3,7 @@
   <% if calendar.purchases.empty? %>
     <p><%= t("installments.index.empty") %></p>
   <% else %>
-    <p><%= t("installments.index.intro", amount: money(calendar.total_cents), month: month_label(calendar.from), purchases: t("installments.index.purchases", count: calendar.purchases.size)) %></p>
+    <p><%= t("installments.index.intro", amount: money(calendar.total_cents), month: month_label(calendar.first_month), purchases: t("installments.index.purchases", count: calendar.purchases.size)) %></p>
     <section class="chart">
       <h2><%= t("installments.index.chart") %></h2>
       <%= columns_chart(
