@@ -36,7 +36,7 @@ module Tally
           .select_append(
             Sequel[:accounts][:name].as(:account_name),
             Sequel[:accounts][:currency],
-            Sequel[:counterparties][:name].as(:counterparty_name),
+            *Tally::DB::Repo.counterparty_columns,
             Sequel[:counterparties][:document].as(:counterparty_document),
             Sequel[:counter_accounts][:name].as(:counter_account_name),
             Sequel[:categories][:name].as(:category_name)
@@ -96,7 +96,8 @@ module Tally
         id kind amount_cents description raw_description bank_category category_id category_source category_rule_id
       ].freeze
 
-      # Rows the categorizer may change (every one but manual), with what it looks at.
+      # Rows the categorizer may change (every one but manual), with what it looks at. Rules
+      # match the counterparty's name as the bank wrote it, never your display name.
       # @param ids [Array<Integer>, nil] nil for every row
       def for_categorizing(ids: nil)
         scope = transactions.dataset.exclude(Sequel[:transactions][:category_source] => "manual")
@@ -130,7 +131,7 @@ module Tally
           .select_append(
             Sequel[:accounts][:name].as(:account_name),
             Sequel[:accounts][:currency],
-            Sequel[:counterparties][:name].as(:counterparty_name),
+            *Tally::DB::Repo.counterparty_columns,
             Sequel[:counterparties][:document].as(:counterparty_document),
             Sequel[:categories][:name].as(:category_name)
           )

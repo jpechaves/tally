@@ -135,6 +135,8 @@ tr.total td { font-weight: 600; }
 .group h2 { margin: 0 0 10px; font-size: 14px; font-weight: 500; }
 .group details { margin-top: 10px; }
 .group summary { cursor: pointer; color: var(--ink-subtle); }
+td details summary { cursor: pointer; }
+.label-form p { margin: 6px 0; }
 
 /* --- Status ----------------------------------------------------------------------------- */
 

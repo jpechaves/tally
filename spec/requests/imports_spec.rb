@@ -141,7 +141,7 @@ RSpec.describe "Importing statements", :db, type: :request do
     expect(db[:transactions].where(counterparty_id: me).get(:kind)).to eq("transfer")
 
     follow_redirect!
-    expect(last_response.body).to include("MARIA E SOUZA (you)", "Not me")
+    expect(last_response.body).to include("MARIA E SOUZA</span> (you)", "Not me")
   end
 
   it "strikes through rows that are no longer in the file" do
