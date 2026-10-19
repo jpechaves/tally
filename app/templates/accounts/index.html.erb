@@ -6,7 +6,7 @@
       <% accounts.each do |entry| %>
         <% account = entry[:account] %>
         <tr>
-          <td><a href="/transactions?account=<%= account.id %>"><%= account.name %></a></td>
+          <td><a href="/transactions?account=<%= account.id %>"><%= account.name %></a> · <a class="note" href="/accounts/<%= account.id %>/report"><%= t("accounts.index.report") %></a></td>
           <td><%= status_label(:account, account.kind) %><%= account.mirror_transfers == 1 ? " #{t("accounts.index.from_transfers")}" : "" %></td>
           <td class="num"><%= entry[:rows] %></td>
           <td class="num"><%= money(entry[:balance_cents], account.currency) %></td>

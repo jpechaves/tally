@@ -58,6 +58,8 @@ en:
     could_not_save: "Could not save: %{reason}"
     empty_name: A category needs a name.
     empty_pattern: A rule needs something to match.
+    invalid_adjusted_amount: Enter the real amount, like 45.90.
+    invalid_adjustment: Pick canceled, reimbursed or amount changed.
     invalid_amount: "Amounts look like -50.00 (spending is negative)."
     invalid_field: Pick what to match and how.
     invalid_kind: Pick expense or income.
@@ -66,6 +68,8 @@ en:
     invalid_nature: Pick fixed, essential or discretionary.
     invalid_parent: "Categories go one level deep: pick a top-level parent."
     invalid_pattern: That is not a valid regular expression.
+    invalid_refund: That row cannot pay this purchase back.
+    invalid_reimbursed_amount: Enter what came back, more than zero and up to the purchase, like 30.00.
     invalid_target: Enter how much to save each month, like 1500.00.
     missing_key: Missing suggestion key.
     month_and_category: Pick a month and a spending category.
@@ -73,7 +77,9 @@ en:
     no_data: There are no rows in the last three complete months to plan from. Import your statements first.
     no_rows: Pick at least one row.
     not_a_draft: This plan was already accepted.
+    not_adjustable: This row cannot be adjusted.
     not_found: That is no longer there.
+    not_reimbursable: Only money that left can be reimbursed.
 
   kinds:
     bill_payment: bill payment
@@ -244,8 +250,26 @@ en:
       paid: Paid
       paid_by: Paid by
       pass_through: The Pix sent to this account and the bills it paid differ by more than %{tolerance}.
+      report: report
       result: Result
       title: Accounts
+    report:
+      average_cost: "Your top-ups so far cost R$ %{rate} per %{currency} on average, IOF and spread included."
+      by_category: Spending by category
+      counting: "Amounts in %{currency}, this account's own currency; nothing here is added to the reais of the main report."
+      empty: This account has no rows yet.
+      from: From
+      in_reais: "At what your top-ups cost (R$ %{rate} per %{currency}), this month's spending was about %{amount}."
+      month: Month
+      no_top_ups: No top-ups this month.
+      not_paired: not paired yet
+      paid: "paid %{amount}"
+      paid_column: Paid
+      rate: "R$ per %{currency}"
+      title: "%{account}: where the money went"
+      top_ups: Top-ups this month
+      topped_up: Topped up
+      trend: Income and spending by month
 
   counterparties:
     index:
@@ -278,6 +302,33 @@ en:
       transactions: See its transactions
 
   transactions:
+    adjustment:
+      amount: Amount
+      amount_hint: "Reimbursed: what came back. Amount changed: the real amount, without a sign."
+      badge:
+        amount_changed: amount changed
+        canceled: canceled
+        refund: counted in a purchase
+        reimbursed: "reimbursed %{amount}"
+      counts_as: "Counts as %{amount} (the statement says %{original})."
+      intro: >-
+        If this was canceled, paid back or charged a different amount, say so here. The row
+        stays as imported, a re-import keeps what you say, and the report, budgets and cuts
+        count it your way.
+      kinds:
+        amount_changed: Amount changed
+        canceled: Canceled
+        reimbursed: Reimbursed
+      no_refund: None, I'll type the amount
+      note: Note
+      original: As the statement says
+      refund: Paid back by an imported row
+      refund_of: "This row paid back a purchase, so it counts there, not on its own:"
+      remove: Remove the adjustment
+      the_purchase: see the purchase
+      the_refund: (see the row that paid it back)
+      title: Canceled, reimbursed or another amount
+      transfer: A transfer between your accounts never counts as spending, so there is nothing to adjust.
     table:
       account: Account
       amount: Amount
@@ -406,6 +457,7 @@ en:
         Card purchases count in the month they were made; installments in the month of their
         bill. Transfers between your accounts are left out.
       ends: Ends
+      foreign_accounts: "Accounts in another currency have their own report:"
       income: Income
       installment: Installment
       installments: Card installments this month

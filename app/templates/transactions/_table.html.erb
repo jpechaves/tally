@@ -19,7 +19,7 @@
           row[:fee_cents] && t("transactions.table.fee", amount: money(row[:fee_cents], row[:currency])),
           (t("transactions.table.upcoming") if upcoming?(row))
         ].compact.join(" · ") %></td>
-        <td class="num"><%= money(row[:amount_cents], row[:currency]) %></td>
+        <td class="num"><% if (label = adjustment_label(row)) %><span class="badge"><%= label %></span> <s class="note" title="<%= t("transactions.adjustment.original") %>"><%= money(row[:amount_cents], row[:currency]) %></s> <%= money(row[:counted_cents], row[:currency]) %><% else %><%= money(row[:amount_cents], row[:currency]) %><% end %></td>
       </tr>
     <% end %>
   </tbody>

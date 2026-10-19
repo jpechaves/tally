@@ -12,9 +12,12 @@ module Tally
     get "/imports/:id", to: "imports.show", as: :import
 
     get "/accounts", to: "accounts.index", as: :accounts
+    get "/accounts/:id/report", to: "accounts.report", as: :account_report
     get "/transactions", to: "transactions.index", as: :transactions
     get "/transactions/:id", to: "transactions.show", as: :transaction
     post "/transactions/:id", to: "transactions.update"
+    post "/transactions/:id/adjustment", to: "transactions.adjust", as: :adjust_transaction
+    post "/transactions/:id/adjustment/remove", to: "transactions.unadjust", as: :unadjust_transaction
 
     get "/counterparties", to: "counterparties.index", as: :counterparties
     get "/counterparties/:id", to: "counterparties.show", as: :counterparty

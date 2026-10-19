@@ -23,4 +23,41 @@
     <p><label><%= t("transactions.show.memo") %><br><textarea name="memo" rows="2" cols="60"><%= row[:memo] %></textarea></label></p>
     <button type="submit" class="primary"><%= t("common.save") %></button>
   </form>
+
+  <h2><%= t("transactions.adjustment.title") %></h2>
+  <% if error_code %><p class="error"><%= t("errors.#{error_code}", default: error_code.to_s) %></p><% end %>
+  <% if row[:refunds_transaction_id] %>
+    <p class="note"><%= t("transactions.adjustment.refund_of") %> <a href="/transactions/<%= row[:refunds_transaction_id] %>"><%= t("transactions.adjustment.the_purchase") %></a></p>
+  <% elsif row[:kind] == "transfer" %>
+    <p class="note"><%= t("transactions.adjustment.transfer") %></p>
+  <% else %>
+    <% if row[:adjustment_kind] %>
+      <p><%= t("transactions.adjustment.counts_as", amount: money(row[:counted_cents], row[:currency]), original: money(row[:amount_cents], row[:currency])) %>
+        <% if row[:refund_transaction_id] %><a href="/transactions/<%= row[:refund_transaction_id] %>"><%= t("transactions.adjustment.the_refund") %></a><% end %></p>
+      <% if row[:adjustment_note] %><p class="note"><%= row[:adjustment_note] %></p><% end %>
+      <form action="/transactions/<%= row[:id] %>/adjustment/remove" method="post"><button type="submit"><%= t("transactions.adjustment.remove") %></button></form>
+    <% else %>
+      <p class="note"><%= t("transactions.adjustment.intro") %></p>
+    <% end %>
+    <form action="/transactions/<%= row[:id] %>/adjustment" method="post">
+      <p>
+        <% kinds = row[:amount_cents].negative? ? Tally::Adjustments::KINDS : Tally::Adjustments::KINDS - %w[reimbursed] %>
+        <% kinds.each do |kind| %>
+          <label><input type="radio" name="kind" value="<%= kind %>"<%= " checked" if row[:adjustment_kind] == kind %>> <%= t("transactions.adjustment.kinds.#{kind}") %></label>
+        <% end %>
+      </p>
+      <p><label><%= t("transactions.adjustment.amount") %><br><input name="amount" inputmode="decimal" size="12" value="<%= amount_field(row[:adjustment_cents].abs) if row[:adjustment_cents] && !row[:refund_transaction_id] %>"></label>
+        <span class="note"><%= t("transactions.adjustment.amount_hint") %></span></p>
+      <% unless refund_candidates.empty? %>
+        <p><label><%= t("transactions.adjustment.refund") %><br><select name="refund_id">
+          <option value=""><%= t("transactions.adjustment.no_refund") %></option>
+          <% refund_candidates.each do |refund| %>
+            <option value="<%= refund[:id] %>"<%= " selected" if row[:refund_transaction_id] == refund[:id] %>><%= date(refund[:occurred_on]) %> · <%= refund[:account_name] %> · <%= refund[:description] %> · <%= money(refund[:amount_cents], row[:currency]) %></option>
+          <% end %>
+        </select></label></p>
+      <% end %>
+      <p><label><%= t("transactions.adjustment.note") %><br><input name="note" size="60" value="<%= row[:adjustment_note] %>"></label></p>
+      <button type="submit" class="primary"><%= t("common.save") %></button>
+    </form>
+  <% end %>
 </main>
