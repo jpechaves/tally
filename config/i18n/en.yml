@@ -11,6 +11,7 @@ en:
     add: Add
     dismiss: Dismiss
     net: Net
+    no_match: No matches
     none: None.
     nothing_imported_html: Nothing imported yet. Start by <a href="/imports">importing your statements</a>.
     pages:
