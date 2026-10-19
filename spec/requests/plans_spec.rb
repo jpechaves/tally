@@ -92,8 +92,12 @@ RSpec.describe "Savings plan and budgets", :db, type: :request do
     allow(Date).to receive(:today).and_return(Date.new(2026, 8, 15))
     get "/budgets", month: "2026-08"
     body = last_response.body
-    expect(body).to include("Your plan to save R$ 1,000.00 a month starts in Sep 2026, so Aug 2026 has no target")
+    expect(body).to include("Your plan to save R$ 1,000.00 a month starts in Sep 2026, so Aug 2026 has no target: these budgets were set by hand.")
     expect(body).to include("no savings target this month")
+
+    get "/budgets", month: "2026-07"
+    expect(last_response.body).to include("starts in Sep 2026, so Jul 2026 has no target.", "No budgets for Jul 2026 yet.")
+    expect(last_response.body).not_to include("set by hand")
     expect(body).not_to include("These limits come from your plan", "on track", "Target<strong>")
 
     get "/budgets", month: "2026-09"
