@@ -5,6 +5,7 @@
     <li><span class="swatch s-spending" aria-hidden="true"></span><%= t("charts.spending") %></li>
   </ul>
   <%= columns_chart(
+    currency: currency,
     title: title,
     labels: trend.map { month_label(_1[:month]) },
     highlight: trend.index { _1[:month] == month },

@@ -64,9 +64,10 @@ module Tally
         {rows: scope.count, net: net.sort_by { |currency, _| currency == Tally::Money::DEFAULT_CURRENCY ? "" : currency }.to_h}
       end
 
-      # Months that have rows, newest first ("2026-09", ...).
-      def months
-        transactions.dataset.unordered
+      # Months that have rows, newest first ("2026-09", ...), in one account if given.
+      def months(account_id: nil)
+        scope = account_id ? transactions.dataset.where(account_id:) : transactions.dataset
+        scope.unordered
           .select(Sequel.function(:substr, :occurred_on, 1, 7).as(:month)).distinct
           .order(Sequel.desc(:month)).map(:month)
       end
@@ -242,6 +243,29 @@ module Tally
       end
 
       # --- Transfers ------------------------------------------------------------------
+
+      # Money moved into an account from your other accounts, oldest first, with what the
+      # other leg paid in its own account's currency when the two are paired: a Conta Global
+      # top-up is US$ 178,74 here and R$ 1.000,00 (other_cents, other_currency) in Nubank conta.
+      #
+      # @param through [String] the last day included, "YYYY-MM-DD"
+      def top_ups(account_id, through:)
+        legs = Sequel[:transactions].as(:other_legs)
+        transactions.dataset
+          .where(Sequel[:transactions][:account_id] => account_id, Sequel[:transactions][:kind] => "transfer")
+          .where { (Sequel[:transactions][:amount_cents] > 0) & (Sequel[:transactions][:occurred_on] <= through) }
+          .left_join(legs, Sequel.&({Sequel[:other_legs][:transfer_id] => Sequel[:transactions][:transfer_id]},
+            Sequel.~(Sequel[:other_legs][:id] => Sequel[:transactions][:id])))
+          .left_join(Sequel[:accounts].as(:other_accounts), id: Sequel[:other_legs][:account_id])
+          .select_all(:transactions)
+          .select_append(
+            Sequel[:other_legs][:amount_cents].as(:other_cents),
+            Sequel[:other_accounts][:currency].as(:other_currency),
+            Sequel[:other_accounts][:name].as(:other_account_name)
+          )
+          .order(Sequel[:transactions][:occurred_on], Sequel[:transactions][:id])
+          .all
+      end
 
       def unpaired_transfers
         transactions.dataset.where(kind: "transfer", transfer_id: nil).exclude(counter_account_id: nil)

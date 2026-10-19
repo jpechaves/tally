@@ -249,8 +249,26 @@ en:
       paid: Paid
       paid_by: Paid by
       pass_through: The Pix sent to this account and the bills it paid differ by more than %{tolerance}.
+      report: report
       result: Result
       title: Accounts
+    report:
+      average_cost: "Your top-ups so far cost R$ %{rate} per %{currency} on average, IOF and spread included."
+      by_category: Spending by category
+      counting: "Amounts in %{currency}, this account's own currency; nothing here is added to the reais of the main report."
+      empty: This account has no rows yet.
+      from: From
+      in_reais: "At what your top-ups cost (R$ %{rate} per %{currency}), this month's spending was about %{amount}."
+      month: Month
+      no_top_ups: No top-ups this month.
+      not_paired: not paired yet
+      paid: "paid %{amount}"
+      paid_column: Paid
+      rate: "R$ per %{currency}"
+      title: "%{account}: where the money went"
+      top_ups: Top-ups this month
+      topped_up: Topped up
+      trend: Income and spending by month
 
   counterparties:
     index:
@@ -427,6 +445,7 @@ en:
         Card purchases count in the month they were made; installments in the month of their
         bill. Transfers between your accounts are left out.
       ends: Ends
+      foreign_accounts: "Accounts in another currency have their own report:"
       income: Income
       installment: Installment
       installments: Card installments this month

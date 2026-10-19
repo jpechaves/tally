@@ -17,9 +17,11 @@ module Tally
       # @param from [String] "YYYY-MM", first month included
       # @param to [String] "YYYY-MM", last month included
       # @param through [Date, nil] the last day included; nil includes rows dated later too
-      def rows(from:, to:, through: Date.today)
+      # @param account_id [Integer, nil] one account's rows instead, in its own currency (the
+      #   account's report)
+      def rows(from:, to:, through: Date.today, account_id: nil)
         last = [("#{to}-31"), through&.iso8601].compact.min
-        scope.where(Sequel[:transactions][:occurred_on] => "#{from}-01"..last).all
+        scope(account_id).where(Sequel[:transactions][:occurred_on] => "#{from}-01"..last).all
       end
 
       def installment_rows
@@ -41,12 +43,12 @@ module Tally
 
       private
 
-      def scope
+      def scope(account_id = nil)
         Tally::Adjustments.join(transactions.dataset)
           .exclude(Sequel[:transactions][:kind] => "transfer")
           .where(Sequel[:transactions][:missing_since_import_id] => nil)
           .join(:accounts, id: Sequel[:transactions][:account_id])
-          .where(Sequel[:accounts][:currency] => Tally::Money::DEFAULT_CURRENCY)
+          .where(account_id ? {Sequel[:transactions][:account_id] => account_id} : {Sequel[:accounts][:currency] => Tally::Money::DEFAULT_CURRENCY})
           .left_join(:counterparties, id: Sequel[:transactions][:counterparty_id])
           .left_join(:categories, id: Sequel[:transactions][:category_id])
           .left_join(Sequel[:categories].as(:parents), id: Sequel[:categories][:parent_id])

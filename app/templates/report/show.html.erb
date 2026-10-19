@@ -11,19 +11,21 @@
       <div><%= t("report.show.saved") %><strong class="<%= report.saved_cents.negative? ? "up" : "down" %>"><%= money(report.saved_cents) %></strong><span class="note"><%= t("report.show.average_of", amount: money(report.average_saved_cents)) %></span></div>
     </div>
     <p class="note"><% if averaged.empty? %><%= t("report.show.no_average") %><% else %><%= t("report.show.averages_over", months: averaged.map { month_label(_1) }.join(", ")) %><% end %>
-      <%= t("report.show.counting") %></p>
+      <%= t("report.show.counting") %>
+      <% unless foreign_accounts.empty? %><%= t("report.show.foreign_accounts") %>
+        <% foreign_accounts.each_with_index do |account, index| %><%= ", " if index.positive? %><a href="/accounts/<%= account.id %>/report"><%= account.name %></a><% end %>.<% end %></p>
 
-    <%= render "charts/trend", title: t("report.show.trend"), trend: trend, month: month %>
+    <%= render "charts/trend", currency: Tally::Money::DEFAULT_CURRENCY, title: t("report.show.trend"), trend: trend, month: month %>
 
     <h2><%= t("report.show.by_category") %></h2>
     <div class="scroll"><table class="rows">
       <%= render "report/head", first: t("report.show.category") %>
       <tbody>
         <% report.categories.each do |line| %>
-          <%= render "report/line", line: line, label: category_name(line.name) || t("report.show.uncategorized"), css: "",
+          <%= render "report/line", currency: Tally::Money::DEFAULT_CURRENCY, line: line, label: category_name(line.name) || t("report.show.uncategorized"), css: "",
             href: transactions_path(month: month, kind: "spending", category: line.id || Tally::TransactionFilter::NONE) %>
           <% line.children.each do |child| %>
-            <%= render "report/line", line: child, label: category_name(child.name), css: "child",
+            <%= render "report/line", currency: Tally::Money::DEFAULT_CURRENCY, line: child, label: category_name(child.name), css: "child",
               href: transactions_path(month: month, kind: "spending", category: child.id) %>
           <% end %>
         <% end %>
@@ -35,7 +37,7 @@
     <div class="scroll"><table class="rows">
       <%= render "report/head", first: t("report.show.nature") %>
       <tbody>
-        <% report.natures.each do |line| %><%= render "report/line", line: line, label: nature_label(line.name == Tally::TransactionFilter::UNSET ? nil : line.name), css: "",
+        <% report.natures.each do |line| %><%= render "report/line", currency: Tally::Money::DEFAULT_CURRENCY, line: line, label: nature_label(line.name == Tally::TransactionFilter::UNSET ? nil : line.name), css: "",
           href: transactions_path(month: month, kind: "spending", nature: line.name) %><% end %>
       </tbody>
     </table></div>
@@ -44,7 +46,7 @@
     <div class="scroll"><table class="rows">
       <%= render "report/head", first: t("report.show.payee") %>
       <tbody>
-        <% report.payees.each do |line| %><%= render "report/line", line: line, label: line.name, css: "",
+        <% report.payees.each do |line| %><%= render "report/line", currency: Tally::Money::DEFAULT_CURRENCY, line: line, label: line.name, css: "",
           href: transactions_path(month: month, kind: "spending", payee: line.id) %><% end %>
       </tbody>
     </table></div>

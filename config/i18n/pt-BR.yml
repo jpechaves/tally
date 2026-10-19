@@ -260,8 +260,26 @@ pt-BR:
       paid: Pago
       paid_by: Pago por
       pass_through: Os Pix enviados para esta conta e as faturas que ela pagou diferem em mais de %{tolerance}.
+      report: relatório
       result: Resultado
       title: Contas
+    report:
+      average_cost: "Suas recargas até aqui custaram em média R$ %{rate} por %{currency}, com IOF e spread."
+      by_category: Gastos por categoria
+      counting: "Valores em %{currency}, a moeda desta conta; nada aqui entra nos reais do relatório principal."
+      empty: Esta conta ainda não tem lançamentos.
+      from: De
+      in_reais: "Pelo custo das suas recargas (R$ %{rate} por %{currency}), os gastos deste mês foram cerca de %{amount}."
+      month: Mês
+      no_top_ups: Nenhuma recarga neste mês.
+      not_paired: ainda sem par
+      paid: "pago %{amount}"
+      paid_column: Pago
+      rate: "R$ por %{currency}"
+      title: "%{account}: para onde foi o dinheiro"
+      top_ups: Recargas deste mês
+      topped_up: Recarregado
+      trend: Receitas e gastos por mês
 
   counterparties:
     index:
@@ -439,6 +457,7 @@ pt-BR:
         Compras no cartão contam no mês em que foram feitas; parcelas, no mês da fatura.
         Transferências entre suas contas ficam de fora.
       ends: Termina
+      foreign_accounts: "Contas em outra moeda têm seu próprio relatório:"
       income: Receitas
       installment: Parcela
       installments: Parcelas do cartão neste mês
