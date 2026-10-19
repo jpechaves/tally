@@ -48,7 +48,7 @@ CREATE TABLE `imports`(
   `rows_unchanged` integer DEFAULT(0) NOT NULL,
   `rows_missing` integer DEFAULT(0) NOT NULL,
   `warnings` text DEFAULT('[]') NOT NULL,
-  `error` text,
+`error` text,
   `created_at` text DEFAULT((strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))) NOT NULL,
   `updated_at` text DEFAULT((strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))) NOT NULL,
   CONSTRAINT `imports_status` CHECK(status IN('applied', 'duplicate_file', 'rejected'))
@@ -110,10 +110,10 @@ CREATE TABLE `transactions`(
   `category_source` text DEFAULT('none') NOT NULL,
   `category_rule_id` integer REFERENCES `category_rules`,
   exchange_currency text CHECK(exchange_currency IS NULL OR exchange_currency GLOB '[A-Z][A-Z][A-Z]'),
-  exchange_amount_cents integer,
-  exchange_rate text,
-  fee_cents integer CHECK(fee_cents IS NULL OR fee_cents > 0),
-  CONSTRAINT `transactions_amount` CHECK(amount_cents <> 0),
+exchange_amount_cents integer,
+exchange_rate text,
+fee_cents integer CHECK(fee_cents IS NULL OR fee_cents > 0),
+CONSTRAINT `transactions_amount` CHECK(amount_cents <> 0),
   CONSTRAINT `transactions_kind` CHECK(kind IN('purchase', 'refund', 'fee', 'income', 'transfer', 'bill_payment')),
   CONSTRAINT `transactions_installment` CHECK((installment_number IS NULL) =(installment_total IS NULL)),
   UNIQUE(`account_id`, `external_id`)
@@ -146,10 +146,14 @@ CREATE TABLE `categories`(
 CREATE UNIQUE INDEX `categories_parent_name` ON `categories`(
   `parent_id`,
   `name`
-) WHERE(`parent_id` IS NOT NULL);
+) WHERE(
+  `parent_id` IS NOT NULL
+);
 CREATE UNIQUE INDEX `categories_top_name` ON `categories`(
   `name`
-) WHERE(`parent_id` IS NULL);
+) WHERE(
+  `parent_id` IS NULL
+);
 CREATE TABLE `category_rules`(
   `id` integer NOT NULL PRIMARY KEY AUTOINCREMENT,
   `priority` integer DEFAULT(100) NOT NULL,

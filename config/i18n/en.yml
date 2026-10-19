@@ -257,6 +257,7 @@ en:
       average_cost: "Your top-ups so far cost R$ %{rate} per %{currency} on average, IOF and spread included."
       by_category: Spending by category
       counting: "Amounts in %{currency}, this account's own currency; nothing here is added to the reais of the main report."
+      counting_main: "Amounts in %{currency}; these rows are part of the main report too."
       empty: This account has no rows yet.
       from: From
       in_reais: "At what your top-ups cost (R$ %{rate} per %{currency}), this month's spending was about %{amount}."
