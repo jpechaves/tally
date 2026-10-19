@@ -142,6 +142,7 @@ td details summary { cursor: pointer; }
 
 .up, .error, .status-rejected, .check-warning, .warning { color: var(--bad-ink); }
 .down, .status-applied, .check-ok { color: var(--good-ink); }
+.check-open { color: var(--ink-muted); }
 .suggested { color: var(--hint-ink); }
 p.error, p.warning, p.notice { padding: 10px 14px; border-radius: var(--radius-md); border: 1px solid var(--hairline); background: var(--surface-1); }
 p.error, p.warning { border-color: rgba(208, 59, 59, 0.45); }

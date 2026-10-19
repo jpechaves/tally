@@ -229,6 +229,7 @@ en:
       bill_total: Bill total
       check:
         ok: paid in full
+        open: "open, %{paid} paid so far"
         unknown: payment not imported yet
         warning: "differs by %{difference}"
       checks: Bill checks
