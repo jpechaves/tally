@@ -2,6 +2,11 @@
   <h1><%= row[:description] %></h1>
   <%= render "transactions/table", rows: [row] %>
   <p class="note"><%= t("transactions.show.as_printed", text: row[:raw_description]) %></p>
+  <% if row[:counterparty_id] %>
+    <p><%= t("transactions.show.counterparty", name: row[:counterparty_name]) %><% if display_name(row) %> <span class="note">(<%= row[:counterparty_bank_name] %>)</span><% end %>
+      <% if row[:counterparty_note] %> · <span class="note"><%= row[:counterparty_note] %></span><% end %>
+      · <a href="/counterparties/<%= row[:counterparty_id] %>?back=/transactions/<%= row[:id] %>"><%= t("counterparties.index.edit") %></a></p>
+  <% end %>
 
   <h2><%= t("transactions.show.category_and_memo") %></h2>
   <% if row[:kind] == "transfer" %>

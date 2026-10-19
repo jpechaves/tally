@@ -104,6 +104,11 @@ module Tally
         row[:category_source] == "bank" ? "#{name}?" : name
       end
 
+      # Your display name for a row's counterparty, when you gave it one (issue #37).
+      def display_name(row)
+        row[:counterparty_name] if row[:counterparty_bank_name] && row[:counterparty_name] != row[:counterparty_bank_name]
+      end
+
       # A link to the transactions behind a number (Tally::TransactionFilter).
       def transactions_path(**filters) = Tally::TransactionFilter.new(**filters).path
 

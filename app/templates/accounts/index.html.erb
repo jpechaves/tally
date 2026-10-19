@@ -35,7 +35,7 @@
             <td class="num"><%= money(check[:total_cents]) %></td>
             <td><%= check[:paid_by] || t("accounts.index.next_bill") %></td>
             <td class="num"><%= money(check[:paid_cents]) %></td>
-            <td class="check-<%= check[:status] %>"><%= t("accounts.index.check.#{check[:status]}", difference: money(check[:difference_cents])) %></td>
+            <td class="check-<%= check[:status] %>"><%= t("accounts.index.check.#{check[:status]}", difference: money(check[:difference_cents]), paid: money(check[:paid_cents].to_i)) %></td>
           </tr>
         <% end %>
       </tbody>

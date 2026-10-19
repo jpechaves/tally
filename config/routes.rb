@@ -20,6 +20,8 @@ module Tally
     post "/transactions/:id/adjustment/remove", to: "transactions.unadjust", as: :unadjust_transaction
 
     get "/counterparties", to: "counterparties.index", as: :counterparties
+    get "/counterparties/:id", to: "counterparties.show", as: :counterparty
+    post "/counterparties/:id", to: "counterparties.update"
     post "/counterparties/:id/self", to: "counterparties.mark_self", as: :mark_self
 
     get "/report", to: "report.show", as: :report

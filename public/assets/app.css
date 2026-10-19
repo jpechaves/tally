@@ -135,11 +135,14 @@ tr.total td { font-weight: 600; }
 .group h2 { margin: 0 0 10px; font-size: 14px; font-weight: 500; }
 .group details { margin-top: 10px; }
 .group summary { cursor: pointer; color: var(--ink-subtle); }
+td details summary { cursor: pointer; }
+.label-form p { margin: 6px 0; }
 
 /* --- Status ----------------------------------------------------------------------------- */
 
 .up, .error, .status-rejected, .check-warning, .warning { color: var(--bad-ink); }
 .down, .status-applied, .check-ok { color: var(--good-ink); }
+.check-open { color: var(--ink-muted); }
 .suggested { color: var(--hint-ink); }
 p.error, p.warning, p.notice { padding: 10px 14px; border-radius: var(--radius-md); border: 1px solid var(--hairline); background: var(--surface-1); }
 p.error, p.warning { border-color: rgba(208, 59, 59, 0.45); }

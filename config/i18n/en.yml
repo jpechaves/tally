@@ -235,6 +235,7 @@ en:
       bill_total: Bill total
       check:
         ok: paid in full
+        open: "open, %{paid} paid so far"
         unknown: payment not imported yet
         warning: "differs by %{difference}"
       checks: Bill checks
@@ -273,11 +274,13 @@ en:
   counterparties:
     index:
       bank: Bank
+      bank_name: The bank's name
       clear: Clear
       count:
         one: 1 counterparty
         other: "%{count} counterparties"
       document: Document
+      edit: Name and note
       empty: No counterparties yet.
       intro: >-
         Mark yourself (your name at other banks) with "This is me": a Pix between your own
@@ -289,6 +292,14 @@ en:
       this_is_me: This is me
       title: Counterparties
       you: (you)
+    label:
+      display_name: Your name for it
+      hint: "Leave it blank to show “%{name}” again. Imports and rules keep using the bank's name."
+      note: Note
+    show:
+      back: Back
+      bank_name: "At the bank: %{name}"
+      transactions: See its transactions
 
   transactions:
     adjustment:
@@ -357,6 +368,7 @@ en:
       as_printed: "As printed: %{text}"
       automatic: Automatic (rules and suggestions)
       category_and_memo: Category and memo
+      counterparty: "Counterparty: %{name}"
       memo: Memo
       source:
         bank: "The bank suggests %{category}."
@@ -402,7 +414,7 @@ en:
     fields:
       bank_category: bank's category
       counterparty_document: CNPJ / CPF
-      counterparty_name: counterparty name
+      counterparty_name: counterparty name (the bank's)
       description: description
       kind: kind
     operators:
@@ -637,7 +649,8 @@ en:
       a_month: a month
       add: Add a budget
       ahead_flag: ahead of pace
-      before_plan: "Your plan to save %{amount} a month starts in %{month}, so %{this_month} has no target: these budgets were set by hand."
+      before_plan: "Your plan to save %{amount} a month starts in %{month}, so %{this_month} has no target."
+      before_plan_by_hand: "Your plan to save %{amount} a month starts in %{month}, so %{this_month} has no target: these budgets were set by hand."
       category: Category
       clear: "Remove all budgets from %{month} on"
       confirm_clear: "Remove every budget from %{month} on? The months before keep theirs."

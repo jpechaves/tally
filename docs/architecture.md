@@ -181,6 +181,8 @@ counterparties                  -- who the money went to / came from
   is_self         INTEGER NOT NULL DEFAULT 0     -- you, at another bank → transfer
   match_key       TEXT NOT NULL UNIQUE           -- "document|NAME": UNIQUE(document, name) would let NULL documents repeat
   default_category_id INTEGER NULL REFERENCES categories(id)
+  display_name    TEXT NULL     -- your name for it, shown instead of `name` (COALESCE in the repos); imports never write it
+  note            TEXT NULL     -- your line about it, shown on the counterparty and its rows
   UNIQUE(document, name)
 
 transactions
@@ -548,6 +550,7 @@ Only after version 1 is correct and in daily use. Each one only **suggests**; no
 - **Conta Global import** (issue #22, first part): done. The dollar account's CSV (`Importers::ContaGlobalCSV`), checked row by row against its running balance; card purchases and refunds in dollars with the foreign amount, rate and fee in their own columns; top-ups paired with Nubank conta's conversion through the rate (`Tally::Exchange`); dollar rows kept out of every BRL total and shown in US$.
 - **Account report** (issue #22, second part): done. `/accounts/:id/report` is one account's report in its own currency (`InsightRepo#rows(account_id:)` through `Tally::Report`): spending by category, by month (with a chart) and by payee, each linked to its rows. A foreign-currency account also lists the month's top-ups with the reais their paired leg paid and the rate, and converts the month's spending to reais at the average cost of every top-up so far (`Tally::TopUps`, exact rationals, IOF and spread included). Nothing is added to the main report, which links to these pages; the accounts page links to every account's report.
 - **Adjusting a transaction** (issue #14): done. From a row's page, mark it canceled, reimbursed (an amount you type, or an imported row that paid it back) or with another amount, with a note; or remove the adjustment. Kept in `transaction_adjustments`, so re-imports keep it (§6).
+- **Counterparty names** (issue #37): done. Each counterparty can have your own display name and a note (`/counterparties/:id`, also linked from a transaction and a review group). Every list shows the display name (`Tally::DB::Repo.counterparty_label`), with the bank's name kept underneath and in tooltips; the counterparties search matches either. Imports, matching (`match_key`), merchant grouping and rules keep using the bank's name.
 - **Next, milestone 8 (Pi deployment)**, postponed while the app is tried by hand.
 
 ## 17. Public repository: keeping personal data out

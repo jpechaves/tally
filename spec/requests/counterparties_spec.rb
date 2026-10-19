@@ -4,7 +4,7 @@ RSpec.describe "Counterparties", :db, type: :request do
   let(:db) { Hanami.app["db.gateway"].connection }
   let(:repo) { Hanami.app["repos.counterparty_repo"] }
 
-  def names(body) = body.scan(%r{<tr>\s*<td>([^<]+)</td>}).flatten.map(&:strip)
+  def names(body) = body.scan(%r{<span class="name">([^<]+)</span>}).flatten
 
   before do
     stub_const("Tally::Views::Counterparties::Index::PER_PAGE", 2)
@@ -45,6 +45,6 @@ RSpec.describe "Counterparties", :db, type: :request do
     post "/counterparties/#{me}/self", is_self: "1", q: "joão", page: "1"
     expect(last_response.headers["Location"]).to end_with("/counterparties?q=jo%C3%A3o&page=1")
     follow_redirect!
-    expect(last_response.body).to include("JOÃO  DA-SILVA EXEMPLO (you)")
+    expect(last_response.body).to include("JOÃO  DA-SILVA EXEMPLO</span> (you)")
   end
 end

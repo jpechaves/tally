@@ -246,6 +246,7 @@ pt-BR:
       bill_total: Total da fatura
       check:
         ok: paga integralmente
+        open: "em aberto, %{paid} pago até agora"
         unknown: pagamento ainda não importado
         warning: "diferença de %{difference}"
       checks: Conferência das faturas
@@ -284,11 +285,13 @@ pt-BR:
   counterparties:
     index:
       bank: Banco
+      bank_name: Nome no banco
       clear: Limpar
       count:
         one: 1 contraparte
         other: "%{count} contrapartes"
       document: Documento
+      edit: Nome e nota
       empty: Nenhuma contraparte ainda.
       intro: >-
         Marque você mesmo (seu nome em outros bancos) com "Sou eu": aí um Pix entre suas
@@ -300,6 +303,14 @@ pt-BR:
       this_is_me: Sou eu
       title: Contrapartes
       you: (você)
+    label:
+      display_name: Seu nome para ela
+      hint: "Em branco, volta a aparecer “%{name}”. Importações e regras continuam usando o nome do banco."
+      note: Nota
+    show:
+      back: Voltar
+      bank_name: "No banco: %{name}"
+      transactions: Ver os lançamentos
 
   transactions:
     adjustment:
@@ -368,6 +379,7 @@ pt-BR:
       as_printed: "Como veio no extrato: %{text}"
       automatic: Automática (regras e sugestões)
       category_and_memo: Categoria e observação
+      counterparty: "Contraparte: %{name}"
       memo: Observação
       source:
         bank: "O banco sugere %{category}."
@@ -414,7 +426,7 @@ pt-BR:
     fields:
       bank_category: categoria do banco
       counterparty_document: CNPJ / CPF
-      counterparty_name: nome da contraparte
+      counterparty_name: nome da contraparte (no banco)
       description: descrição
       kind: tipo
     operators:
@@ -649,7 +661,8 @@ pt-BR:
       a_month: por mês
       add: Adicionar um orçamento
       ahead_flag: acima do ritmo
-      before_plan: "Seu plano de guardar %{amount} por mês começa em %{month}, então %{this_month} não tem meta: estes orçamentos foram criados à mão."
+      before_plan: "Seu plano de guardar %{amount} por mês começa em %{month}, então %{this_month} não tem meta."
+      before_plan_by_hand: "Seu plano de guardar %{amount} por mês começa em %{month}, então %{this_month} não tem meta: estes orçamentos foram criados à mão."
       category: Categoria
       clear: "Remover todos os orçamentos a partir de %{month}"
       confirm_clear: "Remover todos os orçamentos a partir de %{month}? Os meses anteriores continuam com os deles."

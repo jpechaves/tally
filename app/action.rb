@@ -19,6 +19,10 @@ module Tally
       i18n.locale = Tally::Locales.pick(request.cookies[Tally::Locales::COOKIE], default: Hanami.app["settings"].default_locale)
     end
 
+    # A page of this app to go back to, from a param ("/review?page=2"), or nil. Only a
+    # local path, so a link can't send you to another site.
+    def back_param(value) = value.to_s[%r{\A/(?![/\\])[^\s]{0,500}\z}]
+
     # A "YYYY-MM" month from a param, or nil.
     def month_param(value) = value.to_s[Tally::Insights::MONTH]
 
