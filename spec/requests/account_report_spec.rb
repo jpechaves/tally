@@ -26,6 +26,7 @@ RSpec.describe "An account's own report", :db, type: :request do
     expect(body).to include(%(href="/transactions?account=#{account_id}&amp;month=2026-07&amp;kind=spending">US$ 119.95</a>))
     expect(body).to include(%(<a href="/accounts/#{account_id}/report?month=2026-07">Jul 2026</a>))
     expect(body).to include("Loja Exemplo LONDON")
+    expect(body).to include("No rows in the three months before, so there is no average yet.")
   end
 
   it "lists the month's top-ups with what they cost in reais" do
