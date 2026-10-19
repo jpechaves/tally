@@ -18,7 +18,7 @@
       <% end %>
     </div>
     <p class="note"><% if averaged.empty? %><%= t("report.show.no_average") %><% else %><%= t("report.show.averages_over", months: averaged.map { month_label(_1) }.join(", ")) %><% end %>
-      <%= t("accounts.report.counting", currency: symbol) %>
+      <%= t(currency == Tally::Money::DEFAULT_CURRENCY ? "accounts.report.counting_main" : "accounts.report.counting", currency: symbol) %>
       <% if average_cost && !report.spending_cents.zero? %>
         <%= t("accounts.report.in_reais", rate: rate(average_cost.rate), currency: symbol, amount: money(average_cost.convert(report.spending_cents))) %>
       <% end %></p>

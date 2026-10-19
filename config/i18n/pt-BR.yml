@@ -282,6 +282,7 @@ pt-BR:
       average_cost: "Suas recargas até aqui custaram em média R$ %{rate} por %{currency}, com IOF e spread."
       by_category: Gastos por categoria
       counting: "Valores em %{currency}, a moeda desta conta; nada aqui entra nos reais do relatório principal."
+      counting_main: "Valores em %{currency}; estes lançamentos também entram no relatório principal."
       empty: Esta conta ainda não tem lançamentos.
       from: De
       in_reais: "Pelo custo das suas recargas (R$ %{rate} por %{currency}), os gastos deste mês foram cerca de %{amount}."

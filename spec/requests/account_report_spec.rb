@@ -21,7 +21,7 @@ RSpec.describe "An account's own report", :db, type: :request do
 
     body = last_response.body
     expect(last_response).to be_ok
-    expect(body).to include("Nubank Conta Global: where the money went", "US$ 119.95", "Amounts in US$")
+    expect(body).to include("Nubank Conta Global: where the money went", "US$ 119.95", "Amounts in US$", "nothing here is added to the reais")
     expect(body).not_to match(/R\$ 119[.,]95/)
     expect(body).to include(%(href="/transactions?account=#{account_id}&amp;month=2026-07&amp;kind=spending">US$ 119.95</a>))
     expect(body).to include(%(<a href="/accounts/#{account_id}/report?month=2026-07">Jul 2026</a>))
@@ -60,6 +60,8 @@ RSpec.describe "An account's own report", :db, type: :request do
 
     expect(last_response).to be_ok
     expect(last_response.body).not_to include("Top-ups")
+    expect(last_response.body).to include("Amounts in R$; these rows are part of the main report too.")
+    expect(last_response.body).not_to include("nothing here is added to the reais")
   end
 
   it "is a 404 for an account that doesn't exist" do
