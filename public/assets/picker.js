@@ -121,6 +121,15 @@
       if (entry) pick(entry);
     });
 
+    // A required picker with nothing picked: the browser can't point at the hidden
+    // <select>, so the box takes the focus instead.
+    select.addEventListener("invalid", (event) => {
+      event.preventDefault();
+      input.focus();
+    });
+    const placeholder = [...select.options].find((option) => option.disabled);
+    if (placeholder) input.placeholder = placeholder.text;
+
     select.classList.add("picker-native");
     select.tabIndex = -1;
     select.setAttribute("aria-hidden", "true");
