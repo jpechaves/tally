@@ -72,7 +72,8 @@ RSpec.describe "Report, cuts and installments", :db, type: :request do
     get "/installments"
 
     body = last_response.body
-    expect(body).to include("R$ 840.00 already committed to card bills from Feb 2027 on, from 1 purchase.")
+    expect(body).to include("R$ 840.00 already committed to card bills from Feb 2027 on, from 1 purchase.", "Left from Feb 2027")
+    expect(body).not_to include("Left from Jan 2027")
     expect(body).to include(%(aria-label="Installments committed per month"), "<title>Feb 2027 · Committed: R$ 120.00</title>")
     expect(body).to match(%r{<td>Feb 2027</td>\s*<td class="num">R\$ 120\.00</td>})
     expect(body).to match(%r{<td>Itaú cartão</td>\s*<td>Jan 9, 2027</td>\s*<td class="num">R\$ 120\.00</td>\s*<td class="num">R\$ 840\.00</td>})
