@@ -40,6 +40,11 @@ RSpec.describe Tally::Categorizer do
     expect(decide(description: "IFOOD *RESTAURANTE")).to include(category_id: delivery)
   end
 
+  it "folds text to lower case without accents or extra spaces" do
+    expect(Tally::Categories.fold("  ÁGUA   Mineral ")).to eq("agua mineral")
+    expect(Tally::Categories.fold(nil)).to eq("")
+  end
+
   it "matches description rules on the raw description too" do
     expect(decide(description: "Restaurante", raw_description: "Compra no débito via NuPay - iFood"))
       .to include(category_id: delivery)

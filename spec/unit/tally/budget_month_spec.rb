@@ -117,6 +117,19 @@ RSpec.describe Tally::BudgetMonth do
     expect(september.unbudgeted_left_cents).to eq(0)
   end
 
+  it "projects from the income so far when it's more than expected, and from none expected by default" do
+    more = month(Date.new(2026, 9, 15), income: 5_000_00)
+    unplanned = described_class.new(rows, month: "2026-09", budgets: {}, categories:, today: Date.new(2026, 9, 3))
+
+    expect(more).to have_attributes(month: "2026-09", projected_saved_cents: 1_000_000 - 110_000 - 150_000)
+    # On the 3rd nothing is in yet: no income expected, and the month's R$ 1.100 committed.
+    expect(unplanned.projected_saved_cents).to eq(-110_000)
+  end
+
+  it "counts a month that saved exactly its target as a hit" do
+    expect(month(Date.new(2026, 10, 2), target: 8_900_00).score).to include(hit: true, difference_cents: 0)
+  end
+
   it "names a budget whose category it doesn't know by its id" do
     september = described_class.new(rows, month: "2026-09", budgets: {99 => 100_00}, categories:, today: Date.new(2026, 9, 15))
 

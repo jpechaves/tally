@@ -76,6 +76,17 @@ RSpec.describe Tally::InstallmentCalendar do
     expect(calendar.purchases.map { [_1.number, _1.ends] }).to eq([[2, "2026-11"]])
   end
 
+  it "follows a purchase across the new year" do
+    rows = [
+      insight_row("2026-11-02", -50.00, "BICICLETA EXEMPLO", installment_number: 1, installment_total: 4, bill_due_on: "2026-11-09"),
+      insight_row("2026-12-02", -50.00, "BICICLETA EXEMPLO", installment_number: 2, installment_total: 4, bill_due_on: "2026-12-09"),
+      insight_row("2027-01-02", -50.00, "BICICLETA EXEMPLO", installment_number: 3, installment_total: 4, bill_due_on: "2027-01-09")
+    ]
+
+    expect(described_class.new(rows, from: "2027-02").purchases.map { [_1.number, _1.ends] }).to eq([[3, "2027-02"]])
+    expect(described_class.series_of(rows, rows.first[:id])).to eq(rows)
+  end
+
   it "keeps a purchase seen only mid-way apart from an older one it can't follow" do
     rows = [
       insight_row("2026-01-02", -60.00, "SOFA EXEMPLO", installment_number: 1, installment_total: 3, bill_due_on: "2026-01-09"),

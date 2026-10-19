@@ -7,8 +7,8 @@ RSpec.describe Tally::Charts do
   end
 
   it "picks a clean axis top whose thirds are round" do
-    expect([0, 7, 25_000, 892_000, 999_999, 1_234_567].map { described_class.nice_max(_1) })
-      .to eq([300, 9, 30_000, 900_000, 1_200_000, 1_500_000])
+    expect([0, 7, 25_000, 500, 892_000, 999_999, 1_234_567].map { described_class.nice_max(_1) })
+      .to eq([300, 9, 30_000, 600, 900_000, 1_200_000, 1_500_000])
   end
 
   it "draws a column per value, with its value on hover and the labels escaped" do

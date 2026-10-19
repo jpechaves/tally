@@ -17,6 +17,12 @@ RSpec.describe Tally::Importers do
     expect(described_class.self_account_for(bank_code: "0260", bank_name: "NU PAGAMENTOS - IP")).to be_nil
   end
 
+  it "keeps row keys the same from one version to the next, or a re-import would duplicate rows" do
+    expect(described_class.digest("nubank_card_csv", Date.new(2026, 7, 9), "Loja", 1_000, 0))
+      .to eq(Digest::SHA256.hexdigest("nubank_card_csv|2026-07-09|Loja|1000|0")[0, 32])
+    expect(described_class.digest("a", 1)).to eq("df4504ce92500fe8a20fb37090e36afa")
+  end
+
   it "refuses a file that isn't UTF-8" do
     expect { described_class::Text.utf8("Data,Valor\n\xFF\n".b) }
       .to raise_error(Tally::Importers::Error, "the file is not valid UTF-8")

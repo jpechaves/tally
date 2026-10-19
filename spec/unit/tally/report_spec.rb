@@ -47,9 +47,15 @@ RSpec.describe Tally::Report do
       .to eq([["essential", 80_000], ["discretionary", 35_000], ["fixed", 30_000], ["unset", 24_999]])
   end
 
-  it "lists top payees" do
-    expect(report.payees(limit: 2).map { [_1.name, _1.cents, _1.rows] })
-      .to eq([["MERCADO EXEMPLO", 80_000, 1], ["IFOOD", 35_000, 2]])
+  it "lists top payees, with their own averages" do
+    expect(report.payees(limit: 2).map { [_1.name, _1.cents, _1.rows, _1.average_cents] })
+      .to eq([["MERCADO EXEMPLO", 80_000, 1, 80_000], ["IFOOD", 35_000, 2, 20_000]])
+  end
+
+  it "names a payee after its first row" do
+    rows = [insight_row("2026-09-02", -10.00, "FARMACIA EXEMPLO 4021"), insight_row("2026-09-03", -20.00, "FARMACIA EXEMPLO 1187")]
+
+    expect(described_class.new(rows, month: "2026-09").payees.map { [_1.name, _1.cents] }).to eq([["FARMACIA EXEMPLO 4021", 3_000]])
   end
 
   it "shows the month's installments and when each ends" do

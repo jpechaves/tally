@@ -17,6 +17,12 @@ RSpec.describe Tally::Exchange do
     expect(legs?(reais, dollars, "BRL", "USD")).to be(true)
   end
 
+  it "converts a priced leg that takes money out, too" do
+    withdrawal = dollars.merge(amount_cents: -17_874)
+
+    expect(legs?(withdrawal, {amount_cents: 100_000})).to be(true)
+  end
+
   it "needs the legs to go opposite ways" do
     expect(legs?(dollars, reais.merge(amount_cents: 100_000))).to be(false)
   end
