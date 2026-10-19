@@ -463,7 +463,7 @@ en:
       installments: Card installments this month
       installments_summary: "%{amount} of this month's spending, %{count} installments."
       nature: Nature
-      no_average: No earlier months imported, so there is no average yet.
+      no_average: No rows in the three months before, so there is no average yet.
       payee: Payee
       purchase: Purchase
       saved: Saved

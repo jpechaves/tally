@@ -475,7 +475,7 @@ pt-BR:
       installments: Parcelas do cartão neste mês
       installments_summary: "%{amount} dos gastos deste mês, %{count} parcelas."
       nature: Natureza
-      no_average: Nenhum mês anterior importado, então ainda não há média.
+      no_average: Sem lançamentos nos três meses anteriores, então ainda não há média.
       payee: Favorecido
       purchase: Compra
       saved: Sobrou

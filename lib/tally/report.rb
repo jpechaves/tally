@@ -23,7 +23,8 @@ module Tally
       @baseline = @baseline_months.select { by_month.key?(_1) }.to_h { [_1, by_month[_1]] }
     end
 
-    # The months before this one that have rows; the averages use only these.
+    # The months before this one that have rows; the averages use only these. Empty when
+    # none has, whether or not those months were imported.
     def averaged_months = @baseline.keys
 
     def income_cents = Insights.income_cents(@rows)
