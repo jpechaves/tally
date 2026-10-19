@@ -238,6 +238,20 @@ pt-BR:
       rows: Lançamentos vistos por último neste arquivo
       warnings: Avisos
 
+  gaps:
+    bill:
+      month: "falta a fatura com vencimento em %{month}"
+      months: "faltam as faturas com vencimento de %{from} a %{to}"
+    statement:
+      day: "falta o extrato do dia %{day}"
+      days: "falta o extrato de %{from} a %{to}"
+      month: "falta o extrato de %{month}"
+      months: "faltam os extratos de %{from} a %{to}"
+    title: Extratos faltando
+    note: >-
+      Importe estes arquivos para que os saldos e relatórios fiquem completos. Só aparecem
+      as lacunas entre arquivos já importados.
+
   accounts:
     index:
       account: Conta

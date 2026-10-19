@@ -40,6 +40,26 @@ module Tally
           .order(:id).last
       end
 
+      # Sources whose files cover the whole period in their name, days with no rows
+      # included. Conta Global files only span their first and last rows, so a quiet week
+      # between two of them is not a missing file.
+      PERIOD_SOURCES = [Tally::Importers::NubankAccountCSV::SOURCE].freeze
+
+      # The statements missing between the ones imported, by account (Tally::StatementGaps).
+      #
+      # @return [Hash{Integer => Array<StatementGaps::Gap>}] only accounts with a gap
+      def gaps
+        periods = imports.dataset.where(status: "applied", source: PERIOD_SOURCES).exclude(period_start: nil)
+          .select_map([:account_id, :period_start, :period_end])
+          .group_by(&:first).transform_values { |rows| rows.map { Date.iso8601(_1[1])..Date.iso8601(_1[2]) } }
+        dues = card_statements.dataset.select_map([:account_id, :due_on])
+          .group_by(&:first).transform_values { |rows| rows.map { Date.iso8601(_1[1]) } }
+
+        periods.transform_values { StatementGaps.statements(_1) }
+          .merge(dues.transform_values { StatementGaps.bills(_1) }) { |_, a, b| a + b }
+          .reject { _2.empty? }
+      end
+
       # @param warnings [Array<Importers::Notice>]
       # @param error [Importers::Notice, nil]
       def create(warnings: [], error: nil, **attributes)

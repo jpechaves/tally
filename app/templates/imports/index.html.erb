@@ -7,6 +7,18 @@
     <button type="submit" class="primary"><%= t("imports.index.import") %></button>
   </form>
 
+  <% if gaps.any? %>
+    <h2><%= t("gaps.title") %></h2>
+    <ul class="gaps">
+      <% gaps.each do |account_id, account_gaps| %>
+        <% account_gaps.each do |gap| %>
+          <li class="warning"><%= account_names[account_id] %>: <%= gap_label(gap) %></li>
+        <% end %>
+      <% end %>
+    </ul>
+    <p class="note"><%= t("gaps.note") %></p>
+  <% end %>
+
   <h2><%= t("imports.index.history") %></h2>
   <% if imports.empty? %>
     <p><%= t("imports.index.empty") %></p>
