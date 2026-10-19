@@ -85,6 +85,27 @@ RSpec.describe Tally::Importers::NubankCardCSV do
       )
     end
 
+    it "links nothing for a purchase paid at once" do
+      expect(row("Mercado Exemplo")).to have_attributes(installment_number: nil, installment_total: nil, purchase_key: nil)
+    end
+
+    it "trims the spaces around a title and a payee" do
+      rows = parse(<<~CSV).rows
+        date,title,amount
+        2026-06-10,  Hotel Exemplo - Parcela 1/6  ,"10,00"
+        2026-06-11,Loja Exemplo  - NuPay,"5,00"
+        2026-06-12,Estorno de  Loja Exemplo,"- 1,00"
+        2026-06-13,Desconto Antecipação  Doceria Exemplo,"- 2,00"
+      CSV
+
+      expect(rows.map { [_1.raw_description, _1.description, _1.counterparty] }).to eq([
+        ["Hotel Exemplo - Parcela 1/6", "Hotel Exemplo", {name: "Hotel Exemplo"}],
+        ["Loja Exemplo  - NuPay", "Loja Exemplo  - NuPay", {name: "Loja Exemplo"}],
+        ["Estorno de  Loja Exemplo", "Estorno de  Loja Exemplo", {name: "Loja Exemplo"}],
+        ["Desconto Antecipação  Doceria Exemplo", "Desconto Antecipação  Doceria Exemplo", {name: "Doceria Exemplo"}]
+      ])
+    end
+
     it "links installments of one purchase across bills" do
       august = parse_fixture("Nubank_2026-08-09.csv").rows
 
@@ -96,7 +117,9 @@ RSpec.describe Tally::Importers::NubankCardCSV do
       gym = rows.select { _1.raw_description == "Academia Exemplo" }
 
       expect(gym.size).to eq(2)
-      expect(gym.map(&:external_id).uniq.size).to eq(2)
+      # The bill prints charges as positive amounts, and the key keeps them that way.
+      key = ->(k) { Tally::Importers.digest("nubank_card_csv", Date.new(2026, 7, 9), Date.new(2026, 6, 15), "Academia Exemplo", 18_990, k) }
+      expect(gym.map(&:external_id)).to eq([key.(0), key.(1)])
     end
 
     it "derives the same keys every time" do

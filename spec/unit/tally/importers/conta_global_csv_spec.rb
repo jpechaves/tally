@@ -151,6 +151,15 @@ RSpec.describe Tally::Importers::ContaGlobalCSV do
       expect(row).to have_attributes(kind: "purchase", description: "Compra Exemplo", counterparty: {name: "Compra Exemplo"})
     end
 
+    it "trims the spaces around every field" do
+      padded = parse(alone(london, "TransferWise ID": " CARD-8000000002 ", Merchant: "  Pub Exemplo ", Currency: " USD ")).rows.first
+      plain = parse(alone(london, Merchant: "Pub Exemplo")).rows.first
+
+      expect(padded).to have_attributes(external_id: plain.external_id, description: "Pub Exemplo", counterparty: {name: "Pub Exemplo"})
+      cafe_row = parse(alone(cafe, Merchant: "", Description: "Transação por cartão de 3,10 USD emitida por  Café Exemplo")).rows.first
+      expect(cafe_row.counterparty).to eq(name: "Café Exemplo")
+    end
+
     it "keeps an unknown type that takes money out as a purchase" do
       expect(parse(alone(cafe, Transaction_Details_Type: "DEPOSIT")).rows.first.kind).to eq("purchase")
     end
@@ -159,6 +168,17 @@ RSpec.describe Tally::Importers::ContaGlobalCSV do
       expect(parse(alone(london, Total_fees: "")).rows.first.fee).to be_nil
       expect(parse(alone(london, Total_fees: "0.00")).rows.first.fee).to be_nil
       expect(parse(alone(london)).rows.first.fee).to eq(usd(19))
+    end
+
+    it "reads fees and the other amount by their size, whatever sign the file prints" do
+      row = parse(alone(london, Total_fees: "-0.19", Exchange_To_Amount: "-41.20")).rows.first
+
+      expect(row).to have_attributes(fee: usd(19), exchange_amount: Tally::Money.new(-4_120, "GBP"))
+    end
+
+    it "keeps no exchange when either currency of the pair is blank" do
+      expect(parse(alone(london, Exchange_From: "")).rows.first.exchange_currency).to be_nil
+      expect(parse(alone(london, Exchange_To: "")).rows.first.exchange_currency).to be_nil
     end
 
     it "keeps the rate without the other amount when the file leaves it out" do

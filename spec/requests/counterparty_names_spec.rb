@@ -31,6 +31,12 @@ RSpec.describe "Counterparty names", :db, type: :request do
     expect(db[:counterparties].where(id: energy).get(%i[display_name note])).to eq(["Conta de luz", "the flat's power bill"])
   end
 
+  it "keeps the first 200 characters of the name and 500 of the note" do
+    name_it("n" * 201, "x" * 501)
+
+    expect(db[:counterparties].where(id: energy).get(%i[display_name note])).to eq(["n" * 200, "x" * 500])
+  end
+
   it "never sends you to another site" do
     name_it(back: "//example.com/x")
     expect(last_response.headers["Location"]).to end_with("/counterparties/#{energy}")

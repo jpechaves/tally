@@ -31,6 +31,15 @@ RSpec.describe "Saving categories and rules", :db do
       expect(db[:categories].where(id:).first).to include(kind: "expense", parent_id: category_id("Alimentação"))
     end
 
+    it "changes one, keeping it in use unless it is archived, and lets a nature not be cut at all" do
+      id = save(kind: "expense", nature: "discretionary").value!
+
+      expect(op("save_category").(id:, name: " Feira  livre ", nature: "essential", max_cut_pct: 0).value!).to eq(id)
+      expect(db[:categories].where(id:).first).to include(name: "Feira livre", nature: "essential", max_cut_pct: 0,
+        archived_at: nil)
+      expect(save(kind: "expense", nature: "essential", max_cut_pct: -1).failure).to eq(:invalid_max_cut)
+    end
+
     it "refuses what it can't save" do
       expect(op("save_category").(name: "  ", kind: "expense").failure).to eq(:empty_name)
       expect(save(id: 999_999).failure).to eq(:not_found)
@@ -54,6 +63,12 @@ RSpec.describe "Saving categories and rules", :db do
 
       expect(db[:category_rules].where(id:).first).to include(origin: "manual", priority: 7, amount_max_cents: -1,
         pattern: "feira")
+    end
+
+    it "trims the pattern and runs after the starting rules unless given a priority" do
+      id = save(pattern: "  feira livre ").value!
+
+      expect(db[:category_rules].where(id:).first).to include(pattern: "feira livre", priority: 100)
     end
 
     it "refuses what it can't save" do

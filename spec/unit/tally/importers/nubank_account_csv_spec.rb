@@ -134,6 +134,17 @@ RSpec.describe Tally::Importers::NubankAccountCSV do
 
     def parse(content, file_name = name) = described_class.new.call(file_name, content)
 
+    it "trims the spaces around the Identificador, the description and the payee's parts" do
+      pix = "03/07/2026,-150.00, 7a2b9c4d-3e5f-4a6b-8c7d-9e0f1a2b3c44 ,Transferência enviada pelo Pix - JOSE DA SILVA EXEMPLO  - " \
+        "•••.123.456-•• -  NU PAGAMENTOS - IP  (0260) Agência: 1 Conta: 1234567-8  "
+      row = parse(csv(pix)).rows.first
+
+      expect(row).to have_attributes(external_id: "7a2b9c4d-3e5f-4a6b-8c7d-9e0f1a2b3c44:-",
+        raw_description: pix.split(",", 4).last.strip)
+      expect(row.counterparty).to include(name: "JOSE DA SILVA EXEMPLO", bank_name: "NU PAGAMENTOS - IP", bank_code: "0260",
+        account_number: "1234567-8")
+    end
+
     it "rejects another header" do
       expect { parse("Date,Amount\n1,2\n") }.to raise_error(Tally::Importers::Error, /header/)
     end
@@ -149,7 +160,7 @@ RSpec.describe Tally::Importers::NubankAccountCSV do
 
     it "rejects an Identificador that repeats with the same sign, instead of merging rows" do
       expect { parse(csv(line, line.sub("Aplicação", "Resgate"))) }
-        .to raise_error(Tally::Importers::Error, /appears more than once/)
+        .to raise_error(Tally::Importers::Error, /Identificador 0b6f3a52-1d2e-4c8f-9a7b-5e4d3c2b1a00:- appears more than once/)
     end
 
     it "rejects rows outside the period in the file name" do

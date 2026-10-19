@@ -13,6 +13,7 @@ RSpec.describe Tally::TopUps do
 
   it "has no price for a top-up whose reais leg isn't imported" do
     expect(described_class.cost_of(unpaired)).to be_nil
+    expect(described_class.cost_of(paired.merge(other_currency: "EUR"))).to be_nil
   end
 
   it "averages the paired top-ups by amount, not by count" do

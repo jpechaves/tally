@@ -42,7 +42,7 @@ RSpec.describe "Counterparties", :db, type: :request do
   it "comes back to the same search and page after \"This is me\"" do
     me = db[:counterparties].where(document: "***.123.456-**").get(:id)
 
-    post "/counterparties/#{me}/self", is_self: "1", q: "joão", page: "1"
+    post "/counterparties/#{me}/self", is_self: "1", q: " joão ", page: "1"
     expect(last_response.headers["Location"]).to end_with("/counterparties?q=jo%C3%A3o&page=1")
     follow_redirect!
     expect(last_response.body).to include("JOÃO  DA-SILVA EXEMPLO</span> (you)")

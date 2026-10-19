@@ -42,9 +42,15 @@ RSpec.describe Tally::Report do
     expect(report.categories.sum(&:cents)).to eq(report.spending_cents)
   end
 
-  it "splits spending by nature" do
-    expect(report.natures.map { [_1.name, _1.cents] })
-      .to eq([["essential", 80_000], ["discretionary", 35_000], ["fixed", 30_000], ["unset", 24_999]])
+  it "splits spending by nature, each with its own average" do
+    expect(report.natures.map { [_1.name, _1.cents, _1.average_cents] })
+      .to eq([["essential", 80_000, 80_000], ["discretionary", 35_000, 20_000], ["fixed", 30_000, 30_000], ["unset", 24_999, 0]])
+  end
+
+  it "measures the change against the size of the average, whatever its sign, to one decimal" do
+    line = described_class::Line.new(id: nil, name: "x", cents: 500, average_cents: -300, share: 0, rows: 1, children: [])
+
+    expect(line.change).to eq(266.7)
   end
 
   it "lists top payees, with their own averages" do

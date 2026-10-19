@@ -94,6 +94,13 @@ RSpec.describe Tally::Repos::BillCheckRepo, :db do
     expect(check("2026-11-09")).to include(status: "open", paid_cents: nil)
   end
 
+  it "warns about a bill due today that isn't paid in full" do
+    bill("2026-10-18", 1_000)
+    payment("2026-10-15", 500)
+
+    expect(check("2026-10-18")).to include(status: "warning", difference_cents: 50_000)
+  end
+
   it "still warns about a bill not due yet that was paid too much" do
     bill("2026-11-09", 1_000)
     payment("2026-10-20", 1_200)

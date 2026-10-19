@@ -60,6 +60,14 @@ RSpec.describe "Editing imported rows", :db do
         .to contain_exactly([row("iFood")[:id], -4_000], [row("ANA EXEMPLO")[:id], 25_000])
     end
 
+    it "keeps a note trimmed, and none when it is blank" do
+      adjust("iFood", kind: "canceled", note: "  pedido cancelado ")
+      adjust("ANA EXEMPLO", kind: "canceled", note: "   ")
+
+      expect(db[:transaction_adjustments].select_map([:transaction_id, :note]))
+        .to contain_exactly([row("iFood")[:id], "pedido cancelado"], [row("ANA EXEMPLO")[:id], nil])
+    end
+
     it "refuses what it can't adjust" do
       expect(op("adjust_transaction").(id: 999_999, kind: "canceled").failure).to eq(:not_found)
       expect(adjust("Aplicação RDB", kind: "canceled").failure).to eq(:not_adjustable)
@@ -81,6 +89,13 @@ RSpec.describe "Editing imported rows", :db do
 
       op("mark_self").(counterparty_id: ana, is_self: true)
       expect(row("ANA EXEMPLO")).to include(kind: "transfer", counter_account_id: nil)
+
+      op("mark_self").(counterparty_id: ana, is_self: false)
+      expect(row("ANA EXEMPLO")).to include(kind: "income", counter_account_id: nil)
+    end
+
+    it "leaves purchases and income alone when the counterparty isn't you" do
+      ana = party("ANA EXEMPLO")
 
       op("mark_self").(counterparty_id: ana, is_self: false)
       expect(row("ANA EXEMPLO")).to include(kind: "income", counter_account_id: nil)

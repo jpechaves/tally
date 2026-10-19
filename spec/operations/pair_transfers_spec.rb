@@ -33,6 +33,25 @@ RSpec.describe "Pairing transfers", :db do
     expect(db[:transfers].count).to eq(0)
   end
 
+  it "splits a pair when one leg is no longer a transfer, even if it still names the other account" do
+    paid = leg(checking, -50_000, to: card)
+    received = leg(card, 50_000, to: checking)
+    pair.()
+
+    db[:transactions].where(id: paid).update(kind: "purchase")
+    pair.(touched_ids: [paid])
+    expect([transfer_of(paid), transfer_of(received)]).to eq([nil, nil])
+  end
+
+  it "looks for the other leg nearest in date, not the earliest" do
+    paid = leg(checking, -50_000, to: card, on: "2026-09-10")
+    leg(card, 50_000, to: checking, on: "2026-09-07")
+    near = leg(card, 50_000, to: checking, on: "2026-09-11")
+    repo = Hanami.app["repos.transaction_repo"]
+
+    expect(repo.find_partner(repo.row(paid))[:id]).to eq(near)
+  end
+
   it "keeps a pair between currencies while the amounts still match at the printed rate" do
     dollars = account("Conta Dólar", currency: "USD")
     reais = leg(checking, -100_000, to: dollars)

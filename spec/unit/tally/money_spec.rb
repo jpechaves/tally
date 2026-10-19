@@ -197,7 +197,9 @@ RSpec.describe Tally::Money do
   describe "#split" do
     it "splits into parts that differ by at most a cent" do
       expect(money(1_000).split(3).map(&:cents)).to eq([334, 333, 333])
-      expect { money(1).split(0) }.to raise_error(ArgumentError)
+      [0, -1, 1.5].each do |parts|
+        expect { money(1).split(parts) }.to raise_error(ArgumentError, "parts must be a positive Integer")
+      end
     end
   end
 

@@ -153,6 +153,13 @@ RSpec.describe Tally::Cuts do
       expect(signals(payee.([-90.00, -100.00, -100.00, -100.00]))).to include("recurring")
     end
 
+    it "looks back only 4 months, this one included" do
+      rows = history(-50.00, "CLUBE EXEMPLO", months: %w[2026-05 2026-08 2026-09])
+
+      expect(signals(rows)).not_to include("recurring")
+      expect(signals(rows + history(-50.00, "CLUBE EXEMPLO", months: %w[2026-06]))).to include("recurring")
+    end
+
     it "needs a charge this month, not one netted out by a refund" do
       rows = history(-50.00, "CLUBE EXEMPLO") + [
         insight_row("2026-09-10", -50.00, "CLUBE EXEMPLO"),
