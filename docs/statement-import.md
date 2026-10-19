@@ -198,6 +198,8 @@ The import runs as one operation (`ImportStatement`), inside a single DB transac
 
 **Cross-source checks** are on the Accounts page: each Nubank card bill against what the account's "Pagamento de fatura" rows paid toward it (a payment pays the first bill due on or after its date, or up to 5 days before it, and money above what that bill owes goes on to the next bills; a payment never fills an older bill, so a bill paid short keeps its own difference), and each Itaú bill against the payment printed on the next bill. A bill not due yet reads as open, with what was paid so far. A difference is a warning, never a rejection. The Itaú account's balance is flagged when it drifts more than `PASS_THROUGH_TOLERANCE_CENTS` (default R$ 50) from zero.
 
+**Missing statements** (issue #73) show on the Accounts and Import pages: a day between two imported Nubank conta periods that no applied file covers (named by month when whole months are missing, "falta o extrato de jun/2026"), and a month between two imported card bills' due dates with no bill due in it. Only gaps between imports count. Conta Global files span only their first and last rows, so they are left out.
+
 Overlapping files work too: a Nubank export for 15 Jun to 15 Jul followed by one for July only updates the shared rows and inserts the rest.
 
 ## 5. Which date counts for budgets

@@ -10,6 +10,10 @@ module Tally
           import_repo.recent
         end
 
+        expose :gaps do
+          import_repo.gaps
+        end
+
         expose :account_names do
           account_repo.all.to_h { [_1.id, _1.name] }
         end

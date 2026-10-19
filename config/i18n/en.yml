@@ -227,6 +227,20 @@ en:
       rows: Rows last seen in this file
       warnings: Warnings
 
+  gaps:
+    bill:
+      month: "missing the bill due in %{month}"
+      months: "missing the bills due from %{from} to %{to}"
+    statement:
+      day: "missing the statement for %{day}"
+      days: "missing the statement from %{from} to %{to}"
+      month: "missing the %{month} statement"
+      months: "missing the statements from %{from} to %{to}"
+    title: Missing statements
+    note: >-
+      Import these files so the balances and reports are complete. Only gaps between files
+      already imported show here.
+
   accounts:
     index:
       account: Account

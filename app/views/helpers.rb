@@ -130,6 +130,19 @@ module Tally
       # imports kept English text, shown as it is.
       def notice(value) = value.is_a?(Tally::Importers::Notice) ? value.text(locale) : value.to_s
 
+      # A statement or bill missing between the imported ones (Tally::StatementGaps):
+      # "falta o extrato de jun/2026" / "missing the Jun 2026 statement".
+      def gap_label(gap)
+        if gap.whole_months?
+          from, to = [gap.from, gap.to].map { month_label(_1.strftime("%Y-%m")) }
+          from == to ? t("gaps.#{gap.kind}.month", month: from) : t("gaps.#{gap.kind}.months", from:, to:)
+        elsif gap.from == gap.to
+          t("gaps.statement.day", day: date(gap.from.iso8601))
+        else
+          t("gaps.statement.days", from: date(gap.from.iso8601), to: date(gap.to.iso8601))
+        end
+      end
+
       def source_label(source) = t("sources.#{source}", default: source.to_s)
 
       # A row dated after today, like an installment on a bill exported early: committed,

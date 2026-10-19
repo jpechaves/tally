@@ -14,6 +14,9 @@
             <% if account.name == "Itaú conta" && entry[:balance_cents].abs > tolerance_cents %>
               <span class="warning"><%= t("accounts.index.pass_through", tolerance: money(tolerance_cents)) %></span>
             <% end %>
+            <% gaps.fetch(account.id, []).each do |gap| %>
+              <div class="warning"><%= gap_label(gap) %></div>
+            <% end %>
           </td>
         </tr>
       <% end %>
