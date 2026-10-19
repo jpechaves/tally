@@ -8,6 +8,17 @@
       · <a href="/counterparties/<%= row[:counterparty_id] %>?back=/transactions/<%= row[:id] %>"><%= t("counterparties.index.edit") %></a></p>
   <% end %>
 
+  <% unless trips.empty? || row[:kind] == "transfer" %>
+    <form action="/trips/rows" method="post" class="filters">
+      <%= t("transactions.show.trip") %> <select name="trip_id">
+        <% trips.each do |trip| %><option value="<%= trip[:id] %>"><%= trip[:name] %></option><% end %>
+      </select>
+      <input type="hidden" name="transaction_id" value="<%= row[:id] %>"><input type="hidden" name="back" value="/transactions/<%= row[:id] %>">
+      <button type="submit" name="included" value="1"><%= t("transactions.show.add_to_trip") %></button>
+      <button type="submit" name="included" value="0"><%= t("transactions.show.take_out_of_trip") %></button>
+    </form>
+  <% end %>
+
   <h2><%= t("transactions.show.category_and_memo") %></h2>
   <% if row[:kind] == "transfer" %>
     <p class="note"><%= t("transactions.show.transfer") %></p>

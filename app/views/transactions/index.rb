@@ -4,7 +4,7 @@ module Tally
   module Views
     module Transactions
       class Index < Tally::View
-        include Deps["repos.account_repo", "repos.category_repo", "repos.transaction_repo"]
+        include Deps["repos.account_repo", "repos.category_repo", "repos.transaction_repo", "repos.trip_repo"]
 
         PER_PAGE = Tally::Pagination::PER_PAGE
 
@@ -45,6 +45,11 @@ module Tally
 
         expose :this_month, decorate: false do
           Date.today.strftime("%Y-%m")
+        end
+
+        # The trip the trip filter shows.
+        expose :trip_name, decorate: false do |filter|
+          trip_repo.find(filter.trip)&.fetch(:name) if filter.trip
         end
 
         # Who the payee filter shows, named like the report names it.

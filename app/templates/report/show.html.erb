@@ -13,7 +13,9 @@
     <p class="note"><% if averaged.empty? %><%= t("report.show.no_average") %><% else %><%= t("report.show.averages_over", months: averaged.map { month_label(_1) }.join(", ")) %><% end %>
       <%= t("report.show.counting") %>
       <% unless foreign_accounts.empty? %><%= t("report.show.foreign_accounts") %>
-        <% foreign_accounts.each_with_index do |account, index| %><%= ", " if index.positive? %><a href="/accounts/<%= account.id %>/report"><%= account.name %></a><% end %>.<% end %></p>
+        <% foreign_accounts.each_with_index do |account, index| %><%= ", " if index.positive? %><a href="/accounts/<%= account.id %>/report"><%= account.name %></a><% end %>.<% end %>
+      <% if hide_trips %><%= t("report.show.trips_hidden") %> <a href="/report?month=<%= month %>"><%= t("report.show.show_trips") %></a>
+      <% elsif any_trips %><a href="/report?month=<%= month %>&amp;trips=hide"><%= t("report.show.hide_trips") %></a><% end %></p>
 
     <%= render "charts/trend", currency: Tally::Money::DEFAULT_CURRENCY, title: t("report.show.trend"), trend: trend, month: month %>
 
