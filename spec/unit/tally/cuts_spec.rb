@@ -100,6 +100,7 @@ RSpec.describe Tally::Cuts do
     rows = [
       insight_row("2026-09-18", -1_050.00, "Hotel Exemplo", installment_number: 1, installment_total: 6),
       insight_row("2026-09-20", -60.00, "Doceria Exemplo", installment_number: 1, installment_total: 2),
+      insight_row("2026-09-21", -15.00, "Banca Exemplo", installment_number: 1, installment_total: 1),
       *%w[2026-06 2026-07 2026-08 2026-09].each_with_index.map do |month, index|
         insight_row("#{month}-02", -249.99, "LOJA EXEMPLO", installment_number: index + 3, installment_total: 12)
       end

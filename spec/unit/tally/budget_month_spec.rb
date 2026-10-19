@@ -28,6 +28,18 @@ RSpec.describe Tally::BudgetMonth do
     expect(september.unbudgeted_cents).to eq(10_000)
   end
 
+  it "counts the whole month as gone by from the 1st of the next, and is on track when the projection meets the target" do
+    expect(month(Date.new(2026, 10, 1)).elapsed).to eq(1)
+    expect(month(Date.new(2026, 9, 30)).elapsed).to eq(1)
+    expect(month(Date.new(2026, 9, 15), target: 1_000_000 - 110_000 - 150_000)).to be_on_track
+  end
+
+  it "has nothing left to spend on a budget already over, with nothing still to come" do
+    line = described_class::Line.new(category_id: 1, name: "x", parent_name: nil, limit_cents: 1_000, spent_cents: 1_500, expected_cents: 500, committed_cents: 0)
+
+    expect(line.to_spend_cents).to eq(0)
+  end
+
   it "calls a budget ahead of pace only past the margin, and expects whole cents" do
     line = ->(spent) { described_class::Line.new(category_id: 1, name: "x", parent_name: nil, limit_cents: 1_000, spent_cents: spent, expected_cents: 1_000, committed_cents: 0) }
     margin = 1_000 * (100 + described_class::AHEAD_OF_PACE_PCT) / 100

@@ -63,13 +63,13 @@ RSpec.describe Tally::Repos::BillCheckRepo, :db do
     expect(check("2026-07-09")).to include(status: "warning", difference_cents: 1)
   end
 
-  it "counts a payment a few days late toward its own bill, and shows money paid too much" do
-    bill("2026-07-09", 1_000)
+  it "counts a payment a few days late toward its own bill, and shows money paid too much on the latest" do
+    bill("2026-07-09", 1_200)
     bill("2026-08-09", 1_000)
-    payment("2026-07-11", 1_000)
+    payment("2026-07-11", 1_200)
     payment("2026-08-10", 1_500)
 
-    expect(check("2026-07-09")).to include(status: "ok", paid_cents: 100_000)
+    expect(check("2026-07-09")).to include(status: "ok", paid_cents: 120_000)
     expect(check("2026-08-09")).to include(status: "warning", paid_cents: 150_000, difference_cents: 50_000)
   end
 

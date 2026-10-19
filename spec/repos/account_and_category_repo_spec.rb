@@ -10,6 +10,15 @@ RSpec.describe "Account and category totals", :db do
       .to eq([{rows: 0, balance_cents: 12_345}])
   end
 
+  it "adds an account's rows to its opening balance" do
+    account = db[:accounts].insert(name: "Conta Exemplo", kind: "checking", opening_balance_cents: 12_345)
+    db[:transactions].insert(account_id: account, occurred_on: "2026-09-10", amount_cents: -2_345, kind: "purchase",
+      description: "Loja", raw_description: "Loja", external_id: "loja")
+
+    expect(Hanami.app["repos.account_repo"].with_balances.map { _1.slice(:rows, :balance_cents) })
+      .to eq([{rows: 1, balance_cents: 10_000}])
+  end
+
   it "knows when there are no categories, and counts nothing for one no row uses" do
     categories = Hanami.app["repos.category_repo"]
     expect(categories).to be_empty
