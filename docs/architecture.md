@@ -273,6 +273,7 @@ budgets                         -- monthly limit per category; written when a pl
   UNIQUE(category_id, month)
 
 transaction_adjustments         -- what you know about a row that its statement doesn't say (issue #14)
+trips, trip_accounts, trip_rows -- a trip's dates, accounts and the rows you added or took out (issue #75)
   transaction_id         INTEGER NOT NULL UNIQUE REFERENCES transactions(id)
   kind                   TEXT NOT NULL   -- canceled | reimbursed | amount_changed
   amount_cents           INTEGER NULL    -- reimbursed: what came back (> 0); amount_changed: the real amount, signed like the row
@@ -428,6 +429,7 @@ Every number should lead to the transactions behind it. The transactions page ta
 | `nature` | `fixed`, `essential`, `discretionary`, `unset` | whose own category has that nature; `unset` is a category without one, or no category |
 | `payee` | `counterparty:12`, `description:padaria exemplo` | paid to that counterparty (all its name variants, see `Tally::Merchants`), or, without one, with that description as the review list groups them (`Tally::Review.key`, also a SQLite function, `tally_payee_key`) |
 | `purchase` | id of any installment | every installment of that card purchase, linked the way the installment calendar links them (`Tally::InstallmentCalendar.series`) |
+| `trip` | trip id | the trip's rows, as its page counts them (`Tally::Trip`) |
 
 `TransactionRepo` applies a filter to both the page of rows and the totals over all pages. With `kind=spending` the total reads as spending (a positive amount), like the report.
 
@@ -436,6 +438,17 @@ Filters the form has no field for (nature, payee) show as badges above the list,
 On the report, each line of the category, nature and payee tables links to its month's rows with `kind=spending`, so the list adds up to the line's amount and row count (a request spec checks every line of every month of the fixtures).
 
 Each purchase on the installments page, and each installment in the report, links to its purchase. With a purchase filter the page also says what is left to pay from this month on (`7 × R$ 120,00 = R$ 840,00`, and the last month): computed from the latest installment's number and amount, since future bills aren't imported. The same figure is the purchase's share of the committed months on the installments page.
+
+### 8.8 Trips
+
+`/trips` (issue #75, `Tally::Trip`) adds up a trip as one total across accounts. A trip has a name, a first and last day, and the accounts to look in (`trip_accounts`; none means all).
+
+- Its rows are the spending rows bought between its dates (an installment's purchase date, else the posting date) in those accounts, plus the rows you added from any date, minus the ones you took out (`trip_rows`, `included` 1 or 0, kept apart from the rows so re-imports keep them). Rows are added or taken out from a row's page, and taken out or put back on the trip's page.
+- A card purchase in installments is in or out as a whole: in when any installment is, out when you took any out. Installments not on a bill yet count too, at the latest one's amount (`InstallmentCalendar::Purchase`).
+- IOF rows (their description says IOF) are in the total and also shown as their own line, net of IOF given back.
+- Rows in another currency (Conta Global) show in their currency and count in reais at the average cost of their account's top-ups up to the end of the trip's last month (`Tally::TopUps`, as the account report does). Without a paired top-up they stay out of the total, and the page says so. Top-ups are transfers and never count.
+- The page shows the total, the foreign subtotal with its reais, by category (top level) and by account, each linked to `/transactions?trip=…` with that category or account, and the rows.
+- Trip rows still count in the monthly report; `/report?trips=hide` leaves every trip's rows out (`InsightRepo#rows(without:)`) to see a normal month.
 
 ## 9. SQLite reliability settings
 
@@ -551,6 +564,7 @@ Only after version 1 is correct and in daily use. Each one only **suggests**; no
 - **Account report** (issue #22, second part): done. `/accounts/:id/report` is one account's report in its own currency (`InsightRepo#rows(account_id:)` through `Tally::Report`): spending by category, by month (with a chart) and by payee, each linked to its rows. A foreign-currency account also lists the month's top-ups with the reais their paired leg paid and the rate, and converts the month's spending to reais at the average cost of every top-up so far (`Tally::TopUps`, exact rationals, IOF and spread included). Nothing is added to the main report, which links to these pages; the accounts page links to every account's report.
 - **Adjusting a transaction** (issue #14): done. From a row's page, mark it canceled, reimbursed (an amount you type, or an imported row that paid it back) or with another amount, with a note; or remove the adjustment. Kept in `transaction_adjustments`, so re-imports keep it (§6).
 - **Counterparty names** (issue #37): done. Each counterparty can have your own display name and a note (`/counterparties/:id`, also linked from a transaction and a review group). Every list shows the display name (`Tally::DB::Repo.counterparty_label`), with the bank's name kept underneath and in tooltips; the counterparties search matches either. Imports, matching (`match_key`), merchant grouping and rules keep using the bank's name.
+- **Trips** (issue #75): done. See §8.8.
 - **Next, milestone 8 (Pi deployment)**, postponed while the app is tried by hand.
 
 ## 17. Public repository: keeping personal data out

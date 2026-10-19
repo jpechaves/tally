@@ -29,6 +29,11 @@ module Tally
     post "/cuts/dismiss", to: "cuts.dismiss", as: :dismiss_cut
     post "/cuts/:id/restore", to: "cuts.restore", as: :restore_cut
     get "/installments", to: "installments.index", as: :installments
+    get "/trips", to: "trips.index", as: :trips
+    post "/trips", to: "trips.create"
+    post "/trips/rows", to: "trips.choose", as: :trip_rows
+    get "/trips/:id", to: "trips.show", as: :trip
+    post "/trips/:id/delete", to: "trips.delete", as: :delete_trip
 
     get "/plan", to: "plans.index", as: :plans
     post "/plan", to: "plans.create"

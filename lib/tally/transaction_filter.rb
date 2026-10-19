@@ -23,8 +23,9 @@ module Tally
   #             "description:padaria exemplo" for rows without a counterparty
   #   purchase  the id of any installment of a card purchase, for all its installments
   #             (Tally::InstallmentCalendar.series)
-  TransactionFilter = Data.define(:account, :month, :category, :kind, :nature, :payee, :purchase) do
-    def initialize(account: nil, month: nil, category: nil, kind: nil, nature: nil, payee: nil, purchase: nil) = super
+  #   trip      a trip's id, for its rows (Tally::Trip)
+  TransactionFilter = Data.define(:account, :month, :category, :kind, :nature, :payee, :purchase, :trip) do
+    def initialize(account: nil, month: nil, category: nil, kind: nil, nature: nil, payee: nil, purchase: nil, trip: nil) = super
 
     # The query string's parameters that are set, in a stable order.
     def query = to_h.compact
@@ -71,7 +72,8 @@ module Tally
         kind: KINDS.find { _1 == params[:kind].to_s },
         nature: NATURES.find { _1 == params[:nature].to_s },
         payee: params[:payee].to_s[PAYEE],
-        purchase: params[:purchase].to_s[ID]&.to_i
+        purchase: params[:purchase].to_s[ID]&.to_i,
+        trip: params[:trip].to_s[ID]&.to_i
       )
     end
   end

@@ -118,11 +118,12 @@ module Tally
       end
 
       # What a filter without a form field shows, for its badge on the transactions page.
-      def carried_filter_label(key, value, payee:, purchase:)
+      def carried_filter_label(key, value, payee:, purchase:, trip: nil)
         case key
         when :nature then nature_label((value == Tally::TransactionFilter::UNSET) ? nil : value)
         when :payee then payee
         when :purchase then purchase ? "#{purchase.description} (#{purchase.account_name})" : value
+        when :trip then trip || value
         end
       end
 

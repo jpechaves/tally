@@ -28,7 +28,7 @@
   <% unless filter.carried.empty? %>
     <p class="filters">
       <% filter.carried.each do |key, value| %>
-        <span class="badge"><%= t("transactions.index.carried.#{key}", value: carried_filter_label(key, value, payee: payee_name, purchase: purchase)) %>
+        <span class="badge"><%= t("transactions.index.carried.#{key}", value: carried_filter_label(key, value, payee: payee_name, purchase: purchase, trip: trip_name)) %>
           <a href="<%= filter.with(key => nil).path %>" title="<%= t("transactions.index.drop") %>" aria-label="<%= t("transactions.index.drop") %>">✕</a></span>
       <% end %>
     </p>

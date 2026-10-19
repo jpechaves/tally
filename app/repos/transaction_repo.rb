@@ -6,6 +6,8 @@ module Tally
     # transfers. Works on plain hashes from the Sequel datasets, because the import
     # compares and updates column by column.
     class TransactionRepo < Tally::DB::Repo
+      include Deps["repos.trip_repo"]
+
       MIRROR_PREFIX = "mirror:"
 
       # The kinds behind each Tally::TransactionFilter kind; the counted ones match the report.
@@ -334,6 +336,7 @@ module Tally
         scope = scope.where(nature_condition(filter.nature)) if filter.nature
         scope = scope.where(payee_key => filter.payee) if filter.payee
         scope = scope.where(column.(:id) => installment_series(filter.purchase).map { _1[:id] }) if filter.purchase
+        scope = scope.where(column.(:id) => trip_ids(filter.trip)) if filter.trip
         # Spending and income as the report counts them, which leaves out rows a
         # re-import flagged as missing, rows dated after today and rows your adjustment
         # says count as nothing (InsightRepo).
@@ -343,6 +346,11 @@ module Tally
             .exclude(column.(:id) => Tally::Adjustments.uncounted_ids(transactions.dataset))
         end
         scope
+      end
+
+      def trip_ids(id)
+        trip = trip_repo.find(id)
+        trip ? trip_repo.build(trip).ids : []
       end
 
       # A category and, for a parent, its children; nil (no category) for NONE.
