@@ -1,6 +1,6 @@
 <main>
   <h1><%= row[:description] %></h1>
-  <%= render "transactions/table", rows: [row] %>
+  <%= render "transactions/table", rows: [row], categories: nil %>
   <p class="note"><%= t("transactions.show.as_printed", text: row[:raw_description]) %></p>
   <% if row[:counterparty_id] %>
     <p><%= t("transactions.show.counterparty", name: row[:counterparty_name]) %><% if display_name(row) %> <span class="note">(<%= row[:counterparty_bank_name] %>)</span><% end %>

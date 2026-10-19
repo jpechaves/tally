@@ -27,11 +27,11 @@
   <% if missing.any? %>
     <h2><%= t("imports.show.gone") %></h2>
     <p><%= t("imports.show.gone_note") %></p>
-    <%= render "transactions/table", rows: missing %>
+    <%= render "transactions/table", rows: missing, categories: nil %>
   <% end %>
 
   <% if rows.any? %>
     <h2><%= t("imports.show.rows") %></h2>
-    <%= render "transactions/table", rows: rows %>
+    <%= render "transactions/table", rows: rows, categories: nil %>
   <% end %>
 </main>

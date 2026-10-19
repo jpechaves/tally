@@ -86,7 +86,8 @@ RSpec.describe "Categorizing", :db, type: :request do
   it "shows categories in the transaction list" do
     get "/transactions"
 
-    expect(last_response.body).to include("<td>Fuel</td>", %(<td class="suggested" title="the bank&#39;s suggestion">Groceries?</td>))
+    expect(last_response.body).to include(%(" selected>Fuel</option>), %(" selected>Groceries</option>))
+    expect(last_response.body).to match(%r{<td class="suggested" title="the bank&#39;s suggestion">\s*<form[^>]*class="inline-category">})
     expect(last_response.body).not_to match(/<t[rd][a-z]/)
   end
 

@@ -1,15 +1,25 @@
+<%# categories: the category tree to change rows' categories from the table, nil for none
+    (back: the filters and page to return to). %>
 <div class="scroll"><table class="rows">
   <thead>
-    <tr><th><%= t("transactions.table.date") %></th><th><%= t("transactions.table.account") %></th><th><%= t("transactions.table.description") %></th><th><%= t("transactions.table.kind") %></th><th><%= t("transactions.table.category") %></th><th><%= t("transactions.table.details") %></th><th class="num"><%= t("transactions.table.amount") %></th></tr>
+    <tr><% if categories %><th><input type="checkbox" data-check-all="recategorize" aria-label="<%= t("transactions.table.select_all") %>"></th><% end %><th><%= t("transactions.table.date") %></th><th><%= t("transactions.table.account") %></th><th><%= t("transactions.table.description") %></th><th><%= t("transactions.table.kind") %></th><th><%= t("transactions.table.category") %></th><th><%= t("transactions.table.details") %></th><th class="num"><%= t("transactions.table.amount") %></th></tr>
   </thead>
   <tbody>
     <% rows.each do |row| %>
       <tr class="<%= "missing" if row[:missing_since_import_id] %>">
+        <% if categories %><td><input type="checkbox" name="ids[]" value="<%= row[:id] %>" form="recategorize" aria-label="<%= t("transactions.table.select") %>"></td><% end %>
         <td><%= date(row[:occurred_on]) %></td>
         <td><%= row[:account_name] %></td>
         <td title="<%= row[:raw_description] %>"><a href="/transactions/<%= row[:id] %>"><%= display_name(row) || row[:description] %></a></td>
         <td><%= kind_label(row[:kind]) %><% if row[:kind] == "transfer" %><%= row[:counter_account_name] ? " ↔ #{row[:counter_account_name]}" : "" %><%= row[:transfer_id] ? "" : " #{t("transactions.table.one_leg")}" %><% end %></td>
-        <% if row[:category_source] == "bank" %><td class="suggested" title="<%= t("transactions.table.bank_suggestion") %>"><% else %><td><% end %><%= category_label(row) %></td>
+        <% if row[:category_source] == "bank" %><td class="suggested" title="<%= t("transactions.table.bank_suggestion") %>"><% else %><td><% end %><% if categories %>
+          <form action="/transactions/category" method="post" class="inline-category">
+            <input type="hidden" name="ids[]" value="<%= row[:id] %>"><%= render "transactions/back", back: back %>
+            <%= render "categories/select", name: "category_id", selected: row[:category_id], categories: categories,
+              blank: t("categories.pick"), none: nil, form: nil %>
+            <noscript><button type="submit"><%= t("common.save") %></button></noscript>
+          </form>
+        <% else %><%= category_label(row) %><% end %></td>
         <td class="details"><%= [
           (row[:description] if display_name(row)), row[:counterparty_note],
           row[:installment_total] && "#{row[:installment_number]}/#{row[:installment_total]}",

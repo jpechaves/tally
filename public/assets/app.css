@@ -159,6 +159,10 @@ input[type=file]::file-selector-button { margin-right: 10px; }
 input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible, a:focus-visible {
   outline: 2px solid var(--focus); outline-offset: 1px;
 }
+/* A row's category in the transactions table: reads as text, opens as a picker. */
+form.inline-category select { appearance: none; background: transparent; border-color: transparent; color: inherit; padding: 2px 6px; min-height: 0; max-width: 16em; cursor: pointer; }
+form.inline-category select:has(option[value=""]:checked) { color: var(--ink-subtle); }
+form.inline-category select:hover { border-color: var(--hairline-strong); background: var(--surface-2); }
 input.amount { width: 8.5em; text-align: right; font-variant-numeric: tabular-nums; }
 button, input[type=file]::file-selector-button {
   background: var(--surface-2); color: var(--ink); border: 1px solid var(--hairline-strong); border-radius: var(--radius-md);
