@@ -69,6 +69,12 @@ RSpec.describe Tally::Importers::NubankCardCSV do
       expect(iof.amount + back.amount).to eq(Tally::Money.zero)
     end
 
+    it "reads a credited IOF of a purchase as a refund" do
+      credit = parse(%(date,title,amount\n2026-06-10,"IOF de ""Loja Exemplo""","- 1,00"\n)).rows.first
+
+      expect(credit).to have_attributes(kind: "refund", counterparty: {name: "Loja Exemplo"}, amount: Tally::Money.new(100))
+    end
+
     it "reads installments and strips the suffix" do
       expect(row("Hotel Exemplo - Parcela 1/6")).to have_attributes(
         description: "Hotel Exemplo", installment_number: 1, installment_total: 6
@@ -106,6 +112,29 @@ RSpec.describe Tally::Importers::NubankCardCSV do
     it "needs the due date in the file name" do
       expect { parse(fixture("Nubank_2026-07-09.csv"), "fatura.csv") }
         .to raise_error(Tally::Importers::Error, /name the file after its due date/)
+    end
+
+    it "rejects a file with another header" do
+      expect { parse("data,descricao,valor\n2026-06-10,Loja,\"1,00\"\n") }
+        .to raise_error(Tally::Importers::Error, /not a Nubank card CSV: expected the header "date,title,amount"/)
+    end
+
+    it "rejects a due date in the file name that isn't a date" do
+      expect { parse(fixture("Nubank_2026-07-09.csv"), "Nubank_2026-02-30.csv") }
+        .to raise_error(Tally::Importers::Error, "the due date in the file name is not a valid date")
+    end
+
+    it "rejects a bill with no rows" do
+      expect { parse("date,title,amount\n") }.to raise_error(Tally::Importers::Error, "the bill has no rows")
+      expect { parse(%(date,title,amount\n2026-06-10,Loja,"0,00"\n)) }
+        .to raise_error(Tally::Importers::Error, "the bill has no rows")
+    end
+
+    it "rejects a row with a missing or extra column" do
+      expect { parse("date,title,amount\n2026-06-10,Loja\n") }
+        .to raise_error(Tally::Importers::Error, "line 2: expected 3 columns")
+      expect { parse(%(date,title,amount\n2026-06-10,Loja,"1,00"\n2026-06-11,Loja,"1,00",x\n)) }
+        .to raise_error(Tally::Importers::Error, "line 3: expected 3 columns")
     end
 
     it "rejects an amount that isn't one" do

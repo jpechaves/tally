@@ -27,4 +27,8 @@ RSpec.describe Tally::Merchants do
 
     expect(keys.uniq).to eq(["CAFEEXEMPLO"])
   end
+
+  it "keys a name with no letters or digits by the name itself" do
+    expect(described_class.key(" * ")).to eq("*")
+  end
 end

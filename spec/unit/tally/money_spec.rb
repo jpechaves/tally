@@ -72,6 +72,10 @@ RSpec.describe Tally::Money do
       expect { described_class.parse(12.34) }.to raise_error(Tally::Money::ParseError)
     end
 
+    it "only knows the comma and the dot as decimal marks" do
+      expect { described_class.parse("1,00", decimal: ";") }.to raise_error(ArgumentError, /decimal must be/)
+    end
+
     it "carries the given currency" do
       expect(described_class.parse("10.00", decimal: ".", currency: "USD")).to eq(money(1_000, "USD"))
     end
@@ -118,6 +122,11 @@ RSpec.describe Tally::Money do
     it "treats different currencies as unequal without raising" do
       expect(money(100)).not_to eq(money(100, "USD"))
       expect(money(100)).not_to eq(100)
+    end
+
+    it "has no order against anything that isn't money" do
+      expect(money(100) <=> 100).to be_nil
+      expect { money(100) < money(100, "USD") }.to raise_error(Tally::Money::CurrencyMismatch)
     end
 
     it "works as a hash key" do
@@ -240,6 +249,15 @@ RSpec.describe Tally::Money do
         expect(described_class.parse(money(cents).to_field).cents).to eq(cents)
       end
     end
+  end
+
+  it "shows its amount when inspected" do
+    expect(money(-706).inspect).to eq("#<Tally::Money -R$ 7,06>")
+  end
+
+  it "writes unknown locales the Brazilian way" do
+    expect(described_class.decimal_mark("fr")).to eq(",")
+    expect(money(123_456).format("fr")).to eq("R$ 1.234,56")
   end
 
   it "exposes the exact decimal value" do

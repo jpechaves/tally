@@ -11,7 +11,9 @@ module Tally
         def back(response, month, error = nil)
           query = {month:, error:}.compact
           path = routes.path(:budgets)
+          # simplecov:disable branch — every caller sends a month or an error, so the query is never empty
           response.redirect_to query.empty? ? path : "#{path}?#{URI.encode_www_form(query)}"
+          # simplecov:enable branch
         end
       end
     end

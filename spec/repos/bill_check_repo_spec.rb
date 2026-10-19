@@ -108,4 +108,35 @@ RSpec.describe Tally::Repos::BillCheckRepo, :db do
 
     expect(check("2026-08-09")).to include(status: "unknown", paid_cents: nil)
   end
+
+  it "leaves out a payment made after the last bill was due" do
+    bill("2026-07-09", 1_000)
+    payment("2026-07-09", 1_000)
+    payment("2026-07-20", 500)
+
+    expect(check("2026-07-09")).to include(status: "ok", paid_cents: 100_000)
+  end
+
+  it "says unknown for every bill when there's no account statement" do
+    bill("2026-07-09", 1_000)
+
+    expect(checks).to eq([{account: "Nubank cartão", due_on: "2026-07-09", total_cents: 100_000, paid_by: "Nubank conta",
+      paid_cents: nil, status: "unknown", difference_cents: nil}])
+  end
+
+  it "chains an Itaú bill to the payment the next bill prints" do
+    itau = db[:accounts].insert(name: "Itaú cartão", kind: "credit_card")
+    statement = ->(due_on, total, payments) do
+      db[:card_statements].insert(account_id: itau, due_on:, total_cents: total, payments_cents: payments, import_id:)
+    end
+    statement.("2026-08-09", 120_000, 90_000)
+    statement.("2026-09-09", 80_000, 120_000)
+    statement.("2026-10-09", 50_000, 79_000)
+
+    expect(checks.map { _1.values_at(:account, :due_on, :paid_by, :paid_cents, :status, :difference_cents) }).to eq([
+      ["Itaú cartão", "2026-08-09", nil, 120_000, "ok", 0],
+      ["Itaú cartão", "2026-09-09", nil, 79_000, "warning", 1_000],
+      ["Itaú cartão", "2026-10-09", nil, nil, "unknown", nil]
+    ])
+  end
 end

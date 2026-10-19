@@ -55,6 +55,19 @@ RSpec.describe Tally::Importers::NubankAccountCSV do
       )
     end
 
+    it "leaves out bank details it can't read, and a bank with no name" do
+      parsed = described_class.new.call(name, csv(
+        "03/07/2026,-10.00,0b6f3a52-1d2e-4c8f-9a7b-5e4d3c2b1a10,Transferência enviada pelo Pix - LOJA UM - 12.345.678/0001-90 - BANCO SEM AGENCIA",
+        "03/07/2026,-20.00,0b6f3a52-1d2e-4c8f-9a7b-5e4d3c2b1a11,Transferência enviada pelo Pix - LOJA DOIS - 12.345.678/0001-91 - (0260) Agência: 1 Conta: 2-3"
+      ))
+
+      expect(parsed.rows.map(&:counterparty)).to eq([
+        {name: "LOJA UM", document: "12.345.678/0001-90", document_kind: "cnpj"},
+        {name: "LOJA DOIS", document: "12.345.678/0001-91", document_kind: "cnpj",
+         bank_name: nil, bank_code: "0260", branch: "1", account_number: "2-3"}
+      ])
+    end
+
     it "keeps a sender with no document as a name only" do
       expect(row("COMPANHIA AEREA").counterparty).to eq(name: "COMPANHIA AEREA EXEMPLO S/A.")
       expect(row("COMPANHIA AEREA").kind).to eq("income")
@@ -149,6 +162,38 @@ RSpec.describe Tally::Importers::NubankAccountCSV do
 
       expect([statement.period_start, statement.period_end]).to eq([Date.new(2026, 7, 2)] * 2)
       expect(statement.warnings.first.to_s).to match(/no period/)
+    end
+
+    it "rejects a row with a missing or extra column" do
+      expect { parse(csv("02/07/2026,-187.43,0b6f3a52-1d2e-4c8f-9a7b-5e4d3c2b1a00")) }
+        .to raise_error(Tally::Importers::Error, "line 2: expected 4 columns")
+      expect { parse(csv(line, "#{line.sub("1a00", "1a01")},x")) }
+        .to raise_error(Tally::Importers::Error, "line 3: expected 4 columns")
+    end
+
+    it "rejects an Identificador that isn't a UUID" do
+      expect { parse(csv(line.sub("0b6f3a52-1d2e-4c8f-9a7b-5e4d3c2b1a00", "12345"))) }
+        .to raise_error(Tally::Importers::Error, 'line 2: Identificador is not a UUID: "12345"')
+    end
+
+    it "rejects a zero amount" do
+      expect { parse(csv(line.sub("-187.43", "0.00"))) }.to raise_error(Tally::Importers::Error, "line 2: zero amount")
+    end
+
+    it "rejects a file with no rows and no period in its name" do
+      expect { parse(csv, "extrato.csv") }
+        .to raise_error(Tally::Importers::Error, "the file has no rows and no period in its name")
+    end
+
+    it "takes the period from the name of a file with no rows" do
+      statement = parse(csv)
+
+      expect([statement.period_start, statement.period_end]).to eq([Date.new(2026, 7, 1), Date.new(2026, 7, 31)])
+    end
+
+    it "rejects a period in the file name that isn't a date range" do
+      expect { parse(csv(line), "NU_12345678_31JUN2026_30JUL2026.csv") }
+        .to raise_error(Tally::Importers::Error, "the period in the file name is not a valid date range")
     end
 
     it "accepts a byte-order mark" do

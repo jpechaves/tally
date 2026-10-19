@@ -121,4 +121,70 @@ RSpec.describe Tally::Cuts do
 
     expect(suggestions(rows).map { [_1.signal, _1.monthly_cents] }).to eq([["big", 20_000], ["fees", 10_500]])
   end
+
+  describe "at each threshold" do
+    def signals(rows) = suggestions(rows).map(&:signal)
+
+    it "needs a category over 5% of spending, not at it, counting only first installments" do
+      rows = [insight_row("2026-09-02", -1_900.00, "MERCADO", **in_category(:market)),
+        insight_row("2026-09-03", -100.00, "IFOOD", **in_category(:delivery))]
+      expect(signals(rows)).not_to include("big")
+
+      rows << insight_row("2026-09-04", -60.00, "IFOOD", **in_category(:delivery), installment_number: 1, installment_total: 3)
+      expect(suggestions(rows).find { _1.signal == "big" }.facts).to include(count: 2, cents: 16_000)
+
+      rows[-1] = insight_row("2026-09-04", -60.00, "IFOOD", **in_category(:delivery), installment_number: 2, installment_total: 3)
+      expect(signals(rows)).not_to include("big")
+    end
+
+    it "needs growth over 25%, and of at least R$ 100" do
+      market = ->(amounts) { amounts.each_with_index.map { |amount, i| insight_row("2026-0#{6 + i}-10", amount, "MERCADO", **in_category(:market)) } }
+
+      expect(signals(market.([-400.00, -400.00, -400.00, -500.00]))).not_to include("growth") # exactly 25%
+      expect(signals(market.([-300.00, -300.00, -300.00, -400.00]))).to include("growth") # exactly R$ 100
+      expect(signals(market.([-300.00, -300.00, -300.00, -399.99]))).not_to include("growth")
+    end
+
+    it "takes the median of the months as the typical charge, allowing exactly 10% around it" do
+      payee = ->(amounts) { amounts.each_with_index.map { |amount, i| insight_row("2026-0#{6 + i}-10", amount, "CLUBE EXEMPLO") } }
+
+      # Sorted 89, 98, 99, 99: the median is 99, and 89 is more than 10% below it.
+      expect(signals(payee.([-89.00, -98.00, -99.00, -99.00]))).not_to include("recurring")
+      expect(signals(payee.([-90.00, -100.00, -100.00, -100.00]))).to include("recurring")
+    end
+
+    it "needs a charge this month, not one netted out by a refund" do
+      rows = history(-50.00, "CLUBE EXEMPLO") + [
+        insight_row("2026-09-10", -50.00, "CLUBE EXEMPLO"),
+        insight_row("2026-09-11", 50.00, "CLUBE EXEMPLO", kind: "refund")
+      ]
+
+      expect(signals(rows)).not_to include("recurring")
+      expect(suggestions(history(-50.00, "CLUBE EXEMPLO"))).to be_empty
+    end
+
+    it "counts only purchases under R$ 50, at least 8 of them" do
+      parking = ->(count, amount, **attributes) { (1..count).map { insight_row("2026-09-%02d" % (_1 * 3), amount, "ESTACIONAMENTO", **attributes) } }
+
+      expect(signals(parking.(7, -14.00))).not_to include("small")
+      expect(signals(parking.(8, -50.00))).not_to include("small")
+      expect(signals(parking.(8, -49.99))).to include("small")
+      expect(signals(parking.(8, -14.00, kind: "fee"))).not_to include("small")
+    end
+
+    it "takes up to 3 equal charges, on the same or the next day, for a duplicate" do
+      charges = ->(*days) { days.map { insight_row("2026-09-#{_1}", -30.00, "LOJA EXEMPLO") } }
+
+      expect(signals(charges.(10, 11))).to include("duplicate")
+      expect(suggestions(charges.(10, 11, 20)).find { _1.signal == "duplicate" }.monthly_cents).to eq(6_000)
+      expect(signals(charges.(10, 12))).not_to include("duplicate")
+      expect(signals(charges.(10, 11, 20, 25))).not_to include("duplicate")
+    end
+
+    it "lists the 5 biggest new installment purchases" do
+      rows = (1..6).map { insight_row("2026-09-0#{_1}", -10.00 * _1, "LOJA #{_1}", installment_number: 1, installment_total: 2) }
+
+      expect(suggestions(rows).first.facts[:biggest]).to eq(["LOJA 6 (2×)", "LOJA 5 (2×)", "LOJA 4 (2×)", "LOJA 3 (2×)", "LOJA 2 (2×)"])
+    end
+  end
 end

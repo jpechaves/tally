@@ -173,4 +173,111 @@ RSpec.describe Tally::Importers::ItauCardPdf do
       expect(statement.card_statement[:next_statement_cents]).to eq(188_789)
     end
   end
+
+  describe "bills drawn a little differently" do
+    def parse(content) = described_class.new.call("fatura.pdf", content)
+
+    # Renders a bill after changing the words on its pages, each [x, y, text, bold].
+    def drawn(bill = ItauBills.october)
+      pages = bill.pages
+      yield pages
+      FakeItauBill::PDFWriter.new(pages).render
+    end
+
+    def word(page, text) = page.items.find { _1[2] == text }
+
+    def rename(page, from, to) = page.items.each { _1[2] = to if _1[2] == from }
+
+    it "rejects a PDF with only the summary page" do
+      expect { parse(drawn { _1.slice!(1..) }) }.to raise_error(Tally::Importers::Error, "the PDF has no text pages")
+    end
+
+    it "rejects a bill without a due date it can read" do
+      expect { parse(ItauBills.october(due: "31/02/2026").to_pdf) }
+        .to raise_error(Tally::Importers::Error, "due date (Vencimento) not found on page 1")
+    end
+
+    it "takes the closing date from Emissão when Postagem is missing, and rejects a bill with neither" do
+      no_postagem = parse(drawn { rename(_1.first, "Postagem:", "Postado") })
+      expect(no_postagem.card_statement[:closing_on]).to eq(Date.new(2026, 10, 2))
+
+      neither = drawn { |pages| rename(pages.first, "Postagem:", "Postado") && rename(pages.first, "Emissão:", "Emitido") }
+      expect { parse(neither) }.to raise_error(Tally::Importers::Error, "closing date (Postagem) not found on page 1")
+    end
+
+    it "rejects a bill without its total" do
+      expect { parse(drawn { rename(_1.first, "desta", "dessa") }) }
+        .to raise_error(Tally::Importers::Error, "this bill's total (Total desta fatura) not found")
+    end
+
+    it "rejects a bill with rows printed twice and no financed balance" do
+      expect { parse(drawn(ItauBills.december) { rename(_1.first, "financiado", "financeiro") }) }
+        .to raise_error(Tally::Importers::Error, "the financed balance (Saldo financiado) not found on page 1")
+    end
+
+    it "rejects fee rows when the bill doesn't print their total" do
+      pdf = drawn do |pages|
+        pages.each do |page|
+          totals = page.items.select { _1[2] == "Lançamentos" }.map { _1[1] }
+          page.items.each { _1[2] = "produto" if _1[2] == "produtos" && totals.include?(_1[1]) }
+        end
+      end
+
+      expect { parse(pdf) }.to raise_error(Tally::Importers::Error,
+        "the printed total for fees (Lançamentos produtos e serviços) was not found, so the rows can't be checked")
+    end
+
+    it "only takes a page 1 figure printed right after its label" do
+      pdf = drawn { |pages| pages.first.items << [570, 80, "1,00", false] }
+
+      expect(parse(pdf).card_statement[:previous_total_cents]).to be_nil
+    end
+
+    it "reads an amount poppler split in two, a little apart" do
+      pdf = drawn do |pages|
+        page = pages.find { word(_1, "1.504,14") }
+        x, y, _, bold = amount = word(page, "1.504,14")
+        page.items[page.items.index(amount), 1] = [[x, y, "1.504", bold], [x + 5 * FakeItauBill::CHAR_WIDTH + 2, y, ",14", bold]]
+      end
+
+      expect(row(parse(pdf), "VOO EXEMPLO*AB12 08/10").amount).to eq(Tally::Money.new(-150_414))
+    end
+
+    it "ignores a lone marker letter between a row and the line below it" do
+      pdf = drawn do |pages|
+        page = pages.find { word(_1, "FARMACIA") }
+        x, y, = word(page, "FARMACIA")
+        page.items << [x, y + 5, "P", false]
+      end
+
+      expect(row(parse(pdf), "FARMACIA EXEMPLO 4021").raw["detail"]).to eq("saúde SAO PAULO")
+    end
+
+    it "reads columns whose header has no R$" do
+      statement = parse(drawn { |pages| pages.drop(1).each { _1.items.reject! { |item| item[2] == "R$" } } })
+
+      expect(statement.rows.size).to eq(20)
+      expect(statement.card_statement[:total_cents]).to eq(266_158)
+    end
+
+    context "with rows of its own" do
+      def bill(*purchases) = ItauBills.october(purchases:, split: [purchases.size])
+
+      it "rejects a row of zero" do
+        expect { parse(bill(ItauBills.row("30/09", "BRINDE EXEMPLO", "0,00")).to_pdf) }
+          .to raise_error(Tally::Importers::Error, "zero amount: BRINDE EXEMPLO")
+      end
+
+      it "rejects a row dated on a day that doesn't exist" do
+        expect { parse(bill(ItauBills.row("31/02", "LOJA EXEMPLO", "10,00")).to_pdf) }
+          .to raise_error(Tally::Importers::Error, "not a date: 31/02 (LOJA EXEMPLO)")
+      end
+
+      it "keeps the whole name when dropping the city would leave too little of it" do
+        statement = parse(bill(ItauBills.row("01/09", "ABSAO PAULO", "10,00", "outros SAO PAULO")).to_pdf)
+
+        expect(row(statement, "ABSAO PAULO").description).to eq("ABSAO PAULO")
+      end
+    end
+  end
 end

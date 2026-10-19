@@ -101,4 +101,25 @@ RSpec.describe Tally::BudgetMonth do
   it "knows a month that hasn't started" do
     expect(month(Date.new(2026, 8, 20))).to have_attributes(elapsed: 0, complete?: false)
   end
+
+  it "has no pace for spending in a budget of zero, and is on pace with nothing spent" do
+    zero = described_class.new(rows, month: "2026-09", budgets: {11 => 0, 12 => 0}, categories:, today: Date.new(2026, 9, 15))
+    unspent = described_class.new([], month: "2026-09", budgets: {11 => 0}, categories:, today: Date.new(2026, 9, 15))
+
+    expect(zero.lines.map { [_1.name, _1.pace_pct, _1.over?] }).to eq([["Delivery", nil, true], ["Supermercado", nil, true]])
+    expect(unspent.lines.first).to have_attributes(pace_pct: 0, ahead_of_pace?: false, over?: false)
+  end
+
+  it "expects nothing more outside the budgets once the month is over" do
+    september = described_class.new(rows, month: "2026-09", budgets: {11 => 500_00, 12 => 2_000_00}, categories:,
+      today: Date.new(2026, 10, 2), expected_income_cents: 10_000_00, expected_unbudgeted_cents: 3_000_00)
+
+    expect(september.unbudgeted_left_cents).to eq(0)
+  end
+
+  it "names a budget whose category it doesn't know by its id" do
+    september = described_class.new(rows, month: "2026-09", budgets: {99 => 100_00}, categories:, today: Date.new(2026, 9, 15))
+
+    expect(september.lines.first).to have_attributes(name: "#99", parent_name: nil)
+  end
 end

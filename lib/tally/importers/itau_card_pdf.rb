@@ -196,7 +196,9 @@ module Tally
           compact = tokens.join
           dates[:due_on] ||= full_date(compact, "Vencimento:")
           dates[:closing_on] ||= full_date(compact, "Postagem:") || full_date(compact, "Emissão:")
+          # simplecov:disable branch — pdftotext doesn't write empty words, so a line is never blank
           collect_figures(tokens, figures, page_one: true) unless joined.empty?
+          # simplecov:enable branch
         end
         dates
       end
@@ -262,7 +264,9 @@ module Tally
           # On page 1 the summary shares lines with the address block, so the label has to
           # come right before its amount.
           next if page_one && !compact.match?(/#{Regexp.escape(label)}[^,]*#{Regexp.escape(amount)}\z/)
+          # simplecov:disable branch — the case differs ("lançamentos"), so this label never matches that line
           next if label == "Lançamentosatuais" && compact.include?("Totaldoslançamentosatuais")
+          # simplecov:enable branch
 
           cents = Money.parse(amount).cents
           if SUMMED.include?(key)

@@ -14,6 +14,17 @@ RSpec.describe Tally::Repos::CounterpartyRepo, :db do
   end
 
   describe "#upsert" do
+    it "keeps one counterparty per document and name, with the latest bank details" do
+      first = repo.upsert(name: "LOJA EXEMPLO", **cnpj, bank_name: "BANCO UM", bank_code: "0001", branch: "1")
+      same = repo.upsert(name: " loja  exemplo ", **cnpj, bank_name: "BANCO UM", bank_code: "0001")
+      moved = repo.upsert(name: "LOJA EXEMPLO", **cnpj, bank_name: "BANCO DOIS", bank_code: "0002", account_number: "9-9")
+
+      expect([same.id, moved.id]).to eq([first.id, first.id])
+      expect(same.updated_at).to eq(first.updated_at)
+      expect(moved.to_h).to include(bank_name: "BANCO DOIS", bank_code: "0002", branch: "1", account_number: "9-9")
+      expect(db[:counterparties].count).to eq(1)
+    end
+
     it "makes a card merchant with a company's name that company" do
       company = repo.upsert(name: "TELEFONIA EXEMPLO", **cnpj)
 
