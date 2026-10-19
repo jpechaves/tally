@@ -57,6 +57,7 @@ pt-BR:
       report: Relatório
       review: Revisar
       rules: Regras
+      subscriptions: Assinaturas
       transactions: Lançamentos
       trips: Viagens
 
@@ -327,6 +328,8 @@ pt-BR:
     show:
       back: Voltar
       bank_name: "No banco: %{name}"
+      subscription: É uma assinatura
+      subscription_note: Mostra na página de assinaturas mesmo quando ela não é encontrada lá.
       transactions: Ver os lançamentos
 
   transactions:
@@ -555,7 +558,35 @@ pt-BR:
         mês e se sobrepõem (uma cobrança recorrente pode estar também numa categoria grande),
         então não somam um total. Dispense uma e ela fica escondida.
       restore: Mostrar de novo
+      subscriptions_html: Cobranças que se repetem todo mês estão na página de <a href="/subscriptions">assinaturas</a>.
       title: O que posso cortar?
+
+  subscriptions:
+    index:
+      a_month: "%{amount} por mês"
+      a_year: "%{amount} por ano"
+      accounts: Contas
+      dismiss: Não é assinatura
+      empty: Nenhuma cobrança se repete todo mês.
+      increase: "subiu %{amount}"
+      intro: >-
+        Cobranças do mesmo favorecido em pelo menos 3 de 4 meses seguidos, cada uma a até 10% do
+        valor típico, até %{month}. Uma cobrança em moeda estrangeira conta com o seu IOF. Parcelas
+        ficam de fora, e as interrompidas (sem cobrança há 2 meses) não entram no total.
+      last: Última cobrança
+      manual: marcada à mão
+      marks: Não são assinaturas, e marcadas à mão
+      monthly: Assinaturas
+      payee: Favorecido
+      per_month: Por mês
+      per_year: Por ano
+      since: Desde
+      stopped: interrompida
+      title: Assinaturas
+      undo: Desfazer
+    marks:
+      dismissed: não é assinatura
+      marked: marcada à mão
 
   trips:
     index:

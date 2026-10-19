@@ -273,12 +273,14 @@ budgets                         -- monthly limit per category; written when a pl
   UNIQUE(category_id, month)
 
 transaction_adjustments         -- what you know about a row that its statement doesn't say (issue #14)
-trips, trip_accounts, trip_rows -- a trip's dates, accounts and the rows you added or took out (issue #75)
   transaction_id         INTEGER NOT NULL UNIQUE REFERENCES transactions(id)
   kind                   TEXT NOT NULL   -- canceled | reimbursed | amount_changed
   amount_cents           INTEGER NULL    -- reimbursed: what came back (> 0); amount_changed: the real amount, signed like the row
   refund_transaction_id  INTEGER NULL UNIQUE REFERENCES transactions(id)   -- reimbursed by an imported row (a Pix back, a card refund)
   note                   TEXT NULL
+
+subscription_marks              -- payees you said are or aren't subscriptions, by payee key (issue #74)
+trips, trip_accounts, trip_rows -- a trip's dates, accounts and the rows you added or took out (issue #75)
 ```
 
 The monthly savings target lives in `savings_plans`. Named goals with a deadline ("R$ 30 mil for a car by 2027-12") are left for later; they would only add tables. The Nubank RDB is an `investment` account whose balance comes from the "Aplicação/Resgate RDB" transfers.
@@ -439,6 +441,15 @@ On the report, each line of the category, nature and payee tables links to its m
 
 Each purchase on the installments page, and each installment in the report, links to its purchase. With a purchase filter the page also says what is left to pay from this month on (`7 × R$ 120,00 = R$ 840,00`, and the last month): computed from the latest installment's number and amount, since future bills aren't imported. The same figure is the purchase's share of the committed months on the installments page.
 
+### 8.7 Subscriptions and recurring charges
+
+`/subscriptions` (issue #74, `Tally::Subscriptions`) lists charges that repeat every month, from two years of `InsightRepo#rows` up to the latest month that is over. A payee (`Insights.payee_key`, so a card merchant and its Pix or boleto payments are one counterparty) is a subscription when, in some 4 months in a row, it charged in at least 3, each month's total within ±10% of their median. Rows count as adjusted (§6), so a canceled charge doesn't keep one alive.
+
+- A foreign charge counts together with its IOF row, which carries the same merchant, so the rate moving month to month doesn't break the match. Fees without a merchant (the card's own fee) and installments are left out.
+- Each row shows the payee (linked to its rows with `kind=spending&payee=…`), category, accounts, last charge and its date, cost per month (the last charge) and per year (×12), and the first month seen.
+- A **price increase** is flagged on any rise of a fixed price (the two charges before were equal), or a rise over 10% on one that varies. A subscription with no charge for 2 months is **stopped** and left out of the totals at the top.
+- "Not a subscription" on a row, or "It's a subscription" on a counterparty's page, is kept in `subscription_marks` by payee key, so re-imports keep it; the page lists them with an undo. The cuts page links here; its "recurring" signal stays as it was.
+
 ### 8.8 Trips
 
 `/trips` (issue #75, `Tally::Trip`) adds up a trip as one total across accounts. A trip has a name, a first and last day, and the accounts to look in (`trip_accounts`; none means all).
@@ -564,6 +575,7 @@ Only after version 1 is correct and in daily use. Each one only **suggests**; no
 - **Account report** (issue #22, second part): done. `/accounts/:id/report` is one account's report in its own currency (`InsightRepo#rows(account_id:)` through `Tally::Report`): spending by category, by month (with a chart) and by payee, each linked to its rows. A foreign-currency account also lists the month's top-ups with the reais their paired leg paid and the rate, and converts the month's spending to reais at the average cost of every top-up so far (`Tally::TopUps`, exact rationals, IOF and spread included). Nothing is added to the main report, which links to these pages; the accounts page links to every account's report.
 - **Adjusting a transaction** (issue #14): done. From a row's page, mark it canceled, reimbursed (an amount you type, or an imported row that paid it back) or with another amount, with a note; or remove the adjustment. Kept in `transaction_adjustments`, so re-imports keep it (§6).
 - **Counterparty names** (issue #37): done. Each counterparty can have your own display name and a note (`/counterparties/:id`, also linked from a transaction and a review group). Every list shows the display name (`Tally::DB::Repo.counterparty_label`), with the bank's name kept underneath and in tooltips; the counterparties search matches either. Imports, matching (`match_key`), merchant grouping and rules keep using the bank's name.
+- **Subscriptions** (issue #74): done. See §8.7.
 - **Trips** (issue #75): done. See §8.8.
 - **Next, milestone 8 (Pi deployment)**, postponed while the app is tried by hand.
 

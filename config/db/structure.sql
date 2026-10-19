@@ -242,6 +242,14 @@ CREATE TABLE `transaction_adjustments`(
   CONSTRAINT `transaction_adjustments_amount` CHECK((kind = 'canceled' AND amount_cents IS NULL) OR(kind = 'reimbursed' AND amount_cents > 0) OR(kind = 'amount_changed' AND amount_cents <> 0)),
   CONSTRAINT `transaction_adjustments_refund` CHECK(refund_transaction_id IS NULL OR kind = 'reimbursed')
 ) STRICT;
+CREATE TABLE `subscription_marks`(
+  `id` integer NOT NULL PRIMARY KEY AUTOINCREMENT,
+  `key` text NOT NULL UNIQUE,
+  `kind` text NOT NULL,
+  `title` text NOT NULL,
+  `created_at` text DEFAULT((strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))) NOT NULL,
+  CONSTRAINT `subscription_marks_kind` CHECK(kind IN('dismissed', 'marked'))
+) STRICT;
 CREATE TABLE `trips`(
   `id` integer NOT NULL PRIMARY KEY AUTOINCREMENT,
   `name` text NOT NULL,
@@ -272,4 +280,5 @@ INSERT INTO schema_migrations (filename) VALUES
 ('20261020000000_add_exchange_to_transactions.rb'),
 ('20261021000000_add_display_name_and_note_to_counterparties.rb'),
 ('20261022000000_create_transaction_adjustments.rb'),
+('20261023000000_create_subscription_marks.rb'),
 ('20261024000000_create_trips.rb');

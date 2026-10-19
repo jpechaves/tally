@@ -45,6 +45,7 @@ en:
       report: Report
       review: Review
       rules: Rules
+      subscriptions: Subscriptions
       transactions: Transactions
       trips: Trips
 
@@ -316,6 +317,8 @@ en:
     show:
       back: Back
       bank_name: "At the bank: %{name}"
+      subscription: It's a subscription
+      subscription_note: Lists it on the subscriptions page even when it isn't found there.
       transactions: See its transactions
 
   transactions:
@@ -543,7 +546,35 @@ en:
         (a recurring charge can also be in a big category), so they don't add up to a total.
         Dismiss one and it stays hidden.
       restore: Show again
+      subscriptions_html: Charges that repeat every month are on the <a href="/subscriptions">subscriptions</a> page.
       title: What can I cut?
+
+  subscriptions:
+    index:
+      a_month: "%{amount} a month"
+      a_year: "%{amount} a year"
+      accounts: Accounts
+      dismiss: Not a subscription
+      empty: No charges repeat every month.
+      increase: "up %{amount}"
+      intro: >-
+        Charges from the same payee in at least 3 of 4 months in a row, each within 10% of the
+        typical amount, up to %{month}. A foreign charge counts with its IOF. Installments are
+        left out, and stopped ones (no charge for 2 months) don't add to the total.
+      last: Last charge
+      manual: marked by hand
+      marks: Not subscriptions, and marked by hand
+      monthly: Subscriptions
+      payee: Payee
+      per_month: Per month
+      per_year: Per year
+      since: Since
+      stopped: stopped
+      title: Subscriptions
+      undo: Undo
+    marks:
+      dismissed: not a subscription
+      marked: marked by hand
 
   trips:
     index:

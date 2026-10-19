@@ -1,0 +1,54 @@
+<main>
+  <h1><%= t("subscriptions.index.title") %></h1>
+  <% if subscriptions.nil? %>
+    <p><%= t("common.nothing_imported_html") %></p>
+  <% else %>
+    <div class="cards">
+      <div><%= t("subscriptions.index.monthly") %><strong><%= t("subscriptions.index.a_month", amount: money(subscriptions.monthly_cents)) %></strong><span class="note"><%= t("subscriptions.index.a_year", amount: money(subscriptions.yearly_cents)) %></span></div>
+    </div>
+    <p class="note"><%= t("subscriptions.index.intro", month: month_label(month)) %></p>
+    <% if subscriptions.items.empty? %>
+      <p><%= t("subscriptions.index.empty") %></p>
+    <% else %>
+      <div class="scroll"><table class="rows">
+        <thead><tr>
+          <th><%= t("subscriptions.index.payee") %></th><th><%= t("report.show.category") %></th><th><%= t("subscriptions.index.accounts") %></th>
+          <th class="num"><%= t("subscriptions.index.last") %></th><th class="num"><%= t("subscriptions.index.per_month") %></th>
+          <th class="num"><%= t("subscriptions.index.per_year") %></th><th><%= t("subscriptions.index.since") %></th><th></th>
+        </tr></thead>
+        <tbody>
+          <% subscriptions.items.each do |item| %>
+            <tr>
+              <td><a href="<%= transactions_path(kind: "spending", payee: item.key) %>"><%= item.payee %></a>
+                <% if item.stopped %> <span class="badge"><%= t("subscriptions.index.stopped") %></span><% end %>
+                <% if item.increase_cents %> <span class="badge"><%= t("subscriptions.index.increase", amount: money(item.increase_cents)) %></span><% end %>
+                <% if item.manual %> <span class="badge"><%= t("subscriptions.index.manual") %></span><% end %></td>
+              <td><%= category_name(item.category_name) %></td>
+              <td><%= item.accounts.join(", ") %></td>
+              <td class="num"><%= money(item.last_cents) %> <span class="note"><%= date(item.last_on) %></span></td>
+              <td class="num"><%= money(item.monthly_cents) %></td>
+              <td class="num"><%= money(item.yearly_cents) %></td>
+              <td><%= month_label(item.first_month) %></td>
+              <td><form action="/subscriptions/marks" method="post">
+                <input type="hidden" name="key" value="<%= item.key %>"><input type="hidden" name="kind" value="dismissed"><input type="hidden" name="title" value="<%= item.payee %>">
+                <button type="submit"><%= t("subscriptions.index.dismiss") %></button></form></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table></div>
+    <% end %>
+  <% end %>
+
+  <% unless marks.empty? %>
+    <h2><%= t("subscriptions.index.marks") %></h2>
+    <div class="scroll"><table class="rows">
+      <% marks.each do |mark| %>
+        <tr>
+          <td><%= mark[:title] %></td>
+          <td class="note"><%= t("subscriptions.marks.#{mark[:kind]}") %> · <%= timestamp(mark[:created_at]) %></td>
+          <td><form action="/subscriptions/marks/<%= mark[:id] %>/remove" method="post"><button type="submit"><%= t("subscriptions.index.undo") %></button></form></td>
+        </tr>
+      <% end %>
+    </table></div>
+  <% end %>
+</main>
