@@ -29,7 +29,7 @@
 
     <h2><%= t("installments.index.purchases_title") %></h2>
     <div class="scroll"><table class="rows">
-      <thead><tr><th><%= t("installments.index.purchase") %></th><th><%= t("installments.index.card") %></th><th><%= t("installments.index.paid") %></th><th><%= t("installments.index.last_one") %></th><th class="num"><%= t("installments.index.each") %></th><th class="num"><%= t("installments.index.left_from", month: month_label(calendar.from)) %></th></tr></thead>
+      <thead><tr><th><%= t("installments.index.purchase") %></th><th><%= t("installments.index.card") %></th><th><%= t("installments.index.paid") %></th><th><%= t("installments.index.last_one") %></th><th class="num"><%= t("installments.index.each") %></th><th class="num"><%= t("installments.index.left_from", month: month_label(calendar.first_month)) %></th></tr></thead>
       <tbody>
         <% calendar.purchases.each do |purchase| %>
           <tr>
