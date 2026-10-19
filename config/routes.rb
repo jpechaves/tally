@@ -29,6 +29,9 @@ module Tally
     post "/cuts/dismiss", to: "cuts.dismiss", as: :dismiss_cut
     post "/cuts/:id/restore", to: "cuts.restore", as: :restore_cut
     get "/installments", to: "installments.index", as: :installments
+    get "/subscriptions", to: "subscriptions.index", as: :subscriptions
+    post "/subscriptions/marks", to: "subscriptions.mark", as: :subscription_marks
+    post "/subscriptions/marks/:id/remove", to: "subscriptions.unmark", as: :subscription_unmark
 
     get "/plan", to: "plans.index", as: :plans
     post "/plan", to: "plans.create"
