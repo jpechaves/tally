@@ -47,6 +47,7 @@ en:
       rules: Rules
       subscriptions: Subscriptions
       transactions: Transactions
+      trips: Trips
 
   charts:
     income: Income
@@ -72,6 +73,7 @@ en:
     invalid_refund: That row cannot pay this purchase back.
     invalid_reimbursed_amount: Enter what came back, more than zero and up to the purchase, like 30.00.
     invalid_target: Enter how much to save each month, like 1500.00.
+    invalid_trip: A trip needs a name, and a first day on or before its last.
     missing_key: Missing suggestion key.
     month_and_category: Pick a month and a spending category.
     name_taken: There is already a category with that name there.
@@ -369,6 +371,7 @@ en:
         nature: "Nature: %{value}"
         payee: "Payee: %{value}"
         purchase: "Purchase: %{value}"
+        trip: "Trip: %{value}"
       clear: Clear filters
       drop: Remove this filter
       empty: No transactions.
@@ -383,11 +386,14 @@ en:
       title: Transactions
       uncategorized: No category
     show:
+      add_to_trip: Add to trip
       as_printed: "As printed: %{text}"
       automatic: Automatic (rules and suggestions)
       category_and_memo: Category and memo
       counterparty: "Counterparty: %{name}"
       memo: Memo
+      take_out_of_trip: Take out of trip
+      trip: "Trip:"
       source:
         bank: "The bank suggests %{category}."
         manual: "You picked %{category}. Imports and rules leave it alone."
@@ -476,6 +482,7 @@ en:
         bill. Transfers between your accounts are left out.
       ends: Ends
       foreign_accounts: "Accounts in another currency have their own report:"
+      hide_trips: Hide trips, to see a normal month.
       income: Income
       installment: Installment
       installments: Card installments this month
@@ -486,12 +493,14 @@ en:
       purchase: Purchase
       saved: Saved
       share: Share
+      show_trips: Show them.
       spending: Spending
       spent: Spent
       this_month: this month
       title: Where the money went
       top_payees: Top payees
       trend: Income and spending by month
+      trips_hidden: Trip rows are hidden.
       uncategorized: No category
       uncategorized_note_html: Rows without a category are under "%{name}"; the <a href="/review">review list</a> sorts them out.
 
@@ -566,6 +575,43 @@ en:
     marks:
       dismissed: not a subscription
       marked: marked by hand
+
+  trips:
+    index:
+      accounts: Accounts to look in (none for all)
+      dates: Dates
+      empty: No trips yet.
+      ends_on: Last day
+      intro: >-
+        A trip adds up everything bought between its dates, in every account, as one total.
+        Add rows from other dates (a flight bought weeks before) from the row's page.
+      name: Name
+      new: New trip
+      starts_on: First day
+      title: Trips
+      total: Total
+    show:
+      added: added
+      all_accounts: all accounts
+      by_account: By account
+      confirm_delete: Delete this trip? Its rows stay as they are.
+      delete: Delete trip
+      foreign: In another currency
+      future:
+        one: "1 installment to come: %{amount}"
+        other: "%{count} installments to come: %{amount}"
+      in_reais: "%{amount} at what the top-ups cost"
+      intro: >-
+        A card purchase in installments counts whole, with the installments not on a bill yet.
+        Top-ups of Conta Global are transfers and don't count twice. Trip rows still count in
+        the monthly report, which can hide them.
+      iof: "IOF: %{amount}"
+      put_back: Put back
+      rows: Rows
+      take_out: Take out
+      taken_out: Taken out
+      total: Total
+      unpriced: "%{amount}; some have no top-up to price them, so the total leaves them out"
 
   installments:
     index:

@@ -250,6 +250,26 @@ CREATE TABLE `subscription_marks`(
   `created_at` text DEFAULT((strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))) NOT NULL,
   CONSTRAINT `subscription_marks_kind` CHECK(kind IN('dismissed', 'marked'))
 ) STRICT;
+CREATE TABLE `trips`(
+  `id` integer NOT NULL PRIMARY KEY AUTOINCREMENT,
+  `name` text NOT NULL,
+  `starts_on` text NOT NULL,
+  `ends_on` text NOT NULL,
+  `created_at` text DEFAULT((strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))) NOT NULL,
+  CONSTRAINT `trips_dates` CHECK(starts_on <= ends_on)
+) STRICT;
+CREATE TABLE `trip_accounts`(
+  `trip_id` integer NOT NULL REFERENCES `trips` ON DELETE CASCADE,
+  `account_id` integer NOT NULL REFERENCES `accounts` ON DELETE CASCADE,
+  PRIMARY KEY(`trip_id`, `account_id`)
+) STRICT;
+CREATE TABLE `trip_rows`(
+  `trip_id` integer NOT NULL REFERENCES `trips` ON DELETE CASCADE,
+  `transaction_id` integer NOT NULL REFERENCES `transactions` ON DELETE CASCADE,
+  `included` integer NOT NULL,
+  PRIMARY KEY(`trip_id`, `transaction_id`),
+  CONSTRAINT `trip_rows_included` CHECK(included IN(0, 1))
+) STRICT;
 INSERT INTO schema_migrations (filename) VALUES
 ('20261015000000_create_accounts.rb'),
 ('20261015100000_create_import_tables.rb'),
@@ -260,4 +280,5 @@ INSERT INTO schema_migrations (filename) VALUES
 ('20261020000000_add_exchange_to_transactions.rb'),
 ('20261021000000_add_display_name_and_note_to_counterparties.rb'),
 ('20261022000000_create_transaction_adjustments.rb'),
-('20261023000000_create_subscription_marks.rb');
+('20261023000000_create_subscription_marks.rb'),
+('20261024000000_create_trips.rb');

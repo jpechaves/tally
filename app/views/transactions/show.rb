@@ -4,7 +4,7 @@ module Tally
   module Views
     module Transactions
       class Show < Tally::View
-        include Deps["repos.category_repo", "repos.transaction_repo"]
+        include Deps["repos.category_repo", "repos.transaction_repo", "repos.trip_repo"]
 
         expose :row
 
@@ -13,6 +13,11 @@ module Tally
 
         expose :categories do
           category_repo.tree
+        end
+
+        # Trips the row can be added to or taken out of (Tally::Trip).
+        expose :trips, decorate: false do
+          trip_repo.all
         end
 
         # Rows that could have paid this purchase back, for the reimbursed form.

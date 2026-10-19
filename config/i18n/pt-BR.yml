@@ -59,6 +59,7 @@ pt-BR:
       rules: Regras
       subscriptions: Assinaturas
       transactions: Lançamentos
+      trips: Viagens
 
   charts:
     income: Receitas
@@ -84,6 +85,7 @@ pt-BR:
     invalid_refund: Esse lançamento não pode devolver esta compra.
     invalid_reimbursed_amount: Digite quanto voltou, mais que zero e até o valor da compra, como 30,00.
     invalid_target: Informe quanto guardar por mês, como 1.500,00.
+    invalid_trip: Uma viagem precisa de um nome, e de um primeiro dia igual ou anterior ao último.
     missing_key: Falta a chave da sugestão.
     month_and_category: Escolha um mês e uma categoria de despesa.
     name_taken: Já existe uma categoria com esse nome aí.
@@ -380,6 +382,7 @@ pt-BR:
         nature: "Natureza: %{value}"
         payee: "Favorecido: %{value}"
         purchase: "Compra: %{value}"
+        trip: "Viagem: %{value}"
       clear: Limpar filtros
       drop: Tirar este filtro
       empty: Nenhum lançamento.
@@ -394,11 +397,14 @@ pt-BR:
       title: Lançamentos
       uncategorized: Sem categoria
     show:
+      add_to_trip: Adicionar à viagem
       as_printed: "Como veio no extrato: %{text}"
       automatic: Automática (regras e sugestões)
       category_and_memo: Categoria e observação
       counterparty: "Contraparte: %{name}"
       memo: Observação
+      take_out_of_trip: Tirar da viagem
+      trip: "Viagem:"
       source:
         bank: "O banco sugere %{category}."
         manual: "Você escolheu %{category}. Importações e regras não mexem nela."
@@ -488,6 +494,7 @@ pt-BR:
         Transferências entre suas contas ficam de fora.
       ends: Termina
       foreign_accounts: "Contas em outra moeda têm seu próprio relatório:"
+      hide_trips: Esconder viagens, para ver um mês normal.
       income: Receitas
       installment: Parcela
       installments: Parcelas do cartão neste mês
@@ -498,12 +505,14 @@ pt-BR:
       purchase: Compra
       saved: Sobrou
       share: Fatia
+      show_trips: Mostrar.
       spending: Gastos
       spent: Gasto
       this_month: este mês
       title: Para onde foi o dinheiro
       top_payees: Maiores favorecidos
       trend: Receitas e gastos por mês
+      trips_hidden: Os lançamentos de viagens estão escondidos.
       uncategorized: Sem categoria
       uncategorized_note_html: Lançamentos sem categoria ficam em "%{name}"; a <a href="/review">revisão</a> resolve isso.
 
@@ -578,6 +587,44 @@ pt-BR:
     marks:
       dismissed: não é assinatura
       marked: marcada à mão
+
+  trips:
+    index:
+      accounts: Contas onde procurar (nenhuma para todas)
+      dates: Datas
+      empty: Nenhuma viagem ainda.
+      ends_on: Último dia
+      intro: >-
+        Uma viagem soma tudo o que foi comprado entre as suas datas, em todas as contas, num
+        total só. Adicione lançamentos de outras datas (uma passagem comprada semanas antes)
+        pela página do lançamento.
+      name: Nome
+      new: Nova viagem
+      starts_on: Primeiro dia
+      title: Viagens
+      total: Total
+    show:
+      added: adicionado
+      all_accounts: todas as contas
+      by_account: Por conta
+      confirm_delete: Excluir esta viagem? Os lançamentos continuam como estão.
+      delete: Excluir viagem
+      foreign: Em outra moeda
+      future:
+        one: "1 parcela por vir: %{amount}"
+        other: "%{count} parcelas por vir: %{amount}"
+      in_reais: "%{amount} pelo custo das recargas"
+      intro: >-
+        Uma compra parcelada no cartão conta inteira, com as parcelas que ainda não estão numa
+        fatura. As recargas da Conta Global são transferências e não contam duas vezes. Os
+        lançamentos da viagem continuam no relatório mensal, que pode escondê-los.
+      iof: "IOF: %{amount}"
+      put_back: Devolver
+      rows: Lançamentos
+      take_out: Tirar
+      taken_out: Tirados
+      total: Total
+      unpriced: "%{amount}; alguns não têm recarga para dar o preço, e o total os deixa de fora"
 
   installments:
     index:

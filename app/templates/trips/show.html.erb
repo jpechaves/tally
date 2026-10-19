@@ -1,0 +1,72 @@
+<main>
+  <h1><%= trip[:name] %></h1>
+  <p class="note"><%= t("common.range", from: date(trip[:starts_on]), to: date(trip[:ends_on])) %> ·
+    <%= account_names.empty? ? t("trips.show.all_accounts") : account_names.join(", ") %></p>
+  <div class="cards">
+    <div><%= t("trips.show.total") %><strong><%= money(result.total_cents) %></strong>
+      <span class="note"><%= t("trips.show.iof", amount: money(result.iof_cents)) %></span></div>
+    <% unless result.foreign.empty? %>
+      <div><%= t("trips.show.foreign") %><strong><%= money_each(result.foreign) %></strong>
+        <span class="note"><%= t(result.unpriced ? "trips.show.unpriced" : "trips.show.in_reais", amount: money(result.foreign_reais_cents)) %></span></div>
+    <% end %>
+  </div>
+  <p class="note"><%= t("trips.show.intro") %></p>
+  <% result.future.each do |item| %>
+    <p><%= item.description %>: <%= t("trips.show.future", count: item.count, amount: money(item.cents)) %></p>
+  <% end %>
+
+  <h2><%= t("report.show.by_category") %></h2>
+  <div class="scroll"><table class="rows">
+    <tbody>
+      <% result.by_category.each do |line| %>
+        <tr><td><a href="<%= transactions_path(category: line.id || Tally::TransactionFilter::NONE, trip: trip[:id]) %>"><%= category_name(line.name) || t("report.show.uncategorized") %></a></td>
+          <td class="num"><%= money(line.cents) %></td></tr>
+      <% end %>
+    </tbody>
+  </table></div>
+
+  <h2><%= t("trips.show.by_account") %></h2>
+  <div class="scroll"><table class="rows">
+    <tbody>
+      <% result.by_account.each do |line| %>
+        <tr><td><a href="<%= transactions_path(account: line.id, trip: trip[:id]) %>"><%= line.name %></a></td>
+          <td class="num"><%= money(line.own_cents, line.currency) unless line.currency == Tally::Money::DEFAULT_CURRENCY %></td>
+          <td class="num"><%= money(line.cents) %></td></tr>
+      <% end %>
+    </tbody>
+  </table></div>
+
+  <h2><%= t("trips.show.rows") %></h2>
+  <div class="scroll"><table class="rows">
+    <thead><tr><th><%= t("transactions.table.date") %></th><th><%= t("transactions.table.description") %></th><th><%= t("transactions.table.account") %></th>
+      <th class="num"><%= t("transactions.table.amount") %></th><th class="num">R$</th><th></th></tr></thead>
+    <tbody>
+      <% result.rows.each do |row| %>
+        <tr>
+          <td><%= date(row[:occurred_on]) %></td>
+          <td><a href="/transactions/<%= row[:id] %>"><%= row[:description] %></a><% if result.added?(row) %> <span class="badge"><%= t("trips.show.added") %></span><% end %></td>
+          <td><%= row[:account_name] %></td>
+          <td class="num"><%= money(-row[:amount_cents], row[:currency]) %></td>
+          <td class="num"><%= money(result.reais(row)) %></td>
+          <td><form action="/trips/rows" method="post"><input type="hidden" name="trip_id" value="<%= trip[:id] %>"><input type="hidden" name="transaction_id" value="<%= row[:id] %>">
+            <button type="submit" name="included" value="0"><%= t("trips.show.take_out") %></button></form></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table></div>
+
+  <% unless taken_out.empty? %>
+    <h2><%= t("trips.show.taken_out") %></h2>
+    <div class="scroll"><table class="rows">
+      <% taken_out.each do |row| %>
+        <tr><td><%= date(row[:occurred_on]) %></td><td><a href="/transactions/<%= row[:id] %>"><%= row[:description] %></a></td>
+          <td><form action="/trips/rows" method="post"><input type="hidden" name="trip_id" value="<%= trip[:id] %>"><input type="hidden" name="transaction_id" value="<%= row[:id] %>">
+            <button type="submit" name="included" value=""><%= t("trips.show.put_back") %></button></form></td></tr>
+      <% end %>
+    </table></div>
+  <% end %>
+
+  <form action="/trips/<%= trip[:id] %>/delete" method="post" data-confirm="<%= t("trips.show.confirm_delete") %>">
+    <button type="submit"><%= t("trips.show.delete") %></button>
+  </form>
+</main>

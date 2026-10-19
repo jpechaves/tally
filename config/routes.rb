@@ -32,6 +32,11 @@ module Tally
     get "/subscriptions", to: "subscriptions.index", as: :subscriptions
     post "/subscriptions/marks", to: "subscriptions.mark", as: :subscription_marks
     post "/subscriptions/marks/:id/remove", to: "subscriptions.unmark", as: :subscription_unmark
+    get "/trips", to: "trips.index", as: :trips
+    post "/trips", to: "trips.create"
+    post "/trips/rows", to: "trips.choose", as: :trip_rows
+    get "/trips/:id", to: "trips.show", as: :trip
+    post "/trips/:id/delete", to: "trips.delete", as: :delete_trip
 
     get "/plan", to: "plans.index", as: :plans
     post "/plan", to: "plans.create"
