@@ -116,6 +116,10 @@ RSpec.describe "Categorization", :db do
       expect(db[:categories].count).to eq(52)
     end
 
+    it "counts only the rows it changed, so running it again changes none" do
+      expect(op("categorize").().value!).to eq(0)
+    end
+
     it "uses the rules, then the bank's category as a suggestion" do
       expect(category_of("Compra no débito via NuPay - iFood")).to eq(["Delivery", "rule"])
       expect(category_of("iFood - NuPay", 2150)).to eq(["Delivery", "rule"])

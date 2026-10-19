@@ -73,6 +73,16 @@ RSpec.describe Tally::Repos::BillCheckRepo, :db do
     expect(check("2026-08-09")).to include(status: "warning", paid_cents: 150_000, difference_cents: 50_000)
   end
 
+  it "counts a payment toward its bill up to 5 days late, and toward the next one after that" do
+    bill("2026-07-09", 1_000)
+    bill("2026-08-09", 1_000)
+    payment("2026-07-14", 1_000)
+    payment("2026-08-15", 1_000)
+
+    expect(check("2026-07-09")).to include(status: "ok", paid_cents: 100_000)
+    expect(check("2026-08-09")).to include(status: "unknown", paid_cents: nil)
+  end
+
   it "keeps a bill's shortfall on that bill, not on the later ones" do
     bill("2026-01-09", 1_000)
     bill("2026-02-09", 500)

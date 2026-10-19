@@ -30,6 +30,7 @@ RSpec.describe Tally::Exchange do
   it "needs a rate into the other leg's currency" do
     expect(legs?(dollars.merge(exchange_rate: nil), reais)).to be(false)
     expect(legs?(dollars.merge(exchange_currency: "EUR"), reais)).to be(false)
+    expect(legs?(reais.merge(exchange_rate: "0.185", exchange_currency: "EUR"), dollars.except(:exchange_rate), "BRL", "USD")).to be(false)
   end
 
   it "allows the other leg 2% under to 8% over the converted amount, for IOF and rounding" do

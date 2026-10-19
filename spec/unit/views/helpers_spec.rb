@@ -22,8 +22,8 @@ RSpec.describe Tally::Views::Helpers do
   def suggestion(signal, **facts) = Tally::Cuts::Suggestion.new(key: "k", signal:, facts:, monthly_cents: 0, ids: [])
 
   it "writes short amounts for chart axes, in thousands and millions" do
-    expect([0, 29_950, 150_000, 123_456, 1_250_000_00, -300_000_000, 1_000_000_00].map { helpers.money_compact(_1) })
-      .to eq(["R$ 0", "R$ 300", "R$ 1.5K", "R$ 1.2K", "R$ 1.3M", "-R$ 3M", "R$ 1M"])
+    expect([0, 29_950, 150_000, 123_456, 1_250_000_00, -300_000_000, 1_000_000_00, 100_000, 99_999, 90_000_000].map { helpers.money_compact(_1) })
+      .to eq(["R$ 0", "R$ 300", "R$ 1.5K", "R$ 1.2K", "R$ 1.3M", "-R$ 3M", "R$ 1M", "R$ 1K", "R$ 1000", "R$ 900K"])
     expect(helpers.money_compact(30_000, "USD")).to eq("US$ 300")
 
     i18n.locale = :"pt-BR"

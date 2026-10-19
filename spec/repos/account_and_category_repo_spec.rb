@@ -18,4 +18,22 @@ RSpec.describe "Account and category totals", :db do
     expect(categories).not_to be_empty
     expect(categories.tree.map { _1.slice(:name, :rows, :total_cents) }).to eq([{name: "Feira", rows: 0, total_cents: 0}])
   end
+
+  it "lists each parent before its children, labels a child with its parent, and leaves archived ones out" do
+    casa = db[:categories].insert(name: "Casa", kind: "expense")
+    db[:categories].insert(name: "Água", kind: "expense", parent_id: casa)
+    db[:categories].insert(name: "Dados", kind: "expense")
+    db[:categories].insert(name: "Antiga", kind: "expense", archived_at: "2026-09-01T00:00:00Z")
+    categories = Hanami.app["repos.category_repo"]
+
+    expect(categories.tree.map { _1[:label] }).to eq(["Casa", "Casa › Água", "Dados"])
+    expect(categories.tree(include_archived: true).map { _1[:label] }).to eq(["Antiga", "Casa", "Casa › Água", "Dados"])
+  end
+
+  it "totals nothing for a counterparty with no rows" do
+    Hanami.app["repos.counterparty_repo"].upsert(name: "LOJA EXEMPLO")
+
+    expect(Hanami.app["repos.counterparty_repo"].with_totals.map { _1.slice(:name, :rows, :total_cents) })
+      .to eq([{name: "LOJA EXEMPLO", rows: 0, total_cents: 0}])
+  end
 end

@@ -95,6 +95,17 @@ RSpec.describe Tally::InstallmentCalendar do
     calendar = described_class.new(rows, from: "2026-10")
 
     expect(calendar.purchases.map { [_1.number, _1.ends] }).to eq([[2, "2026-10"]])
+    expect(described_class.series_of(rows, rows.last[:id])).to eq([rows.last])
+  end
+
+  it "gives each of two identical purchases a month apart its own installments" do
+    row = ->(due, number) { insight_row("#{due}-02", -25.00, "TENIS EXEMPLO", installment_number: number, installment_total: 4, bill_due_on: "#{due}-09") }
+    older = [row.("2026-07", 1), row.("2026-08", 2), row.("2026-09", 3)]
+    newer = [row.("2026-08", 1), row.("2026-09", 2)]
+    rows = [older[0], older[1], newer[0], newer[1], older[2]]
+
+    expect(described_class.series_of(rows, older.first[:id])).to eq(older)
+    expect(described_class.series_of(rows, newer.first[:id])).to eq(newer)
   end
 
   it "finds the purchase an installment belongs to, and what is left of it" do

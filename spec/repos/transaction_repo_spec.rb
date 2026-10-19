@@ -23,14 +23,34 @@ RSpec.describe Tally::Repos::TransactionRepo, :db do
     expect(repo.list(import_id: later).map { _1[:description] }).to eq(["Lida"])
   end
 
-  it "offers money that came in from a week before a purchase to four months after it" do
+  it "counts spending up to today, and leaves out what an adjustment says counts as nothing" do
+    allow(Date).to receive(:today).and_return(Date.new(2026, 9, 10))
+    insert("Hoje", -1_000)
+    insert("Amanhã", -1_000, on: "2026-09-11")
+    insert("Um centavo", 1)
+    canceled = insert("Cancelada", -3_000)
+    db[:transaction_adjustments].insert(transaction_id: canceled, kind: "canceled")
+    descriptions = ->(kind) { repo.list(Tally::TransactionFilter.new(kind:)).map { _1[:description] } }
+
+    expect(descriptions.("spending")).to eq(["Hoje"])
+    expect(descriptions.("income")).to eq(["Um centavo"])
+    expect(descriptions.(nil)).to eq(["Amanhã", "Cancelada", "Um centavo", "Hoje"])
+    expect(repo.to_review.map { _1[:description] }).to contain_exactly("Hoje", "Amanhã", "Um centavo")
+  end
+
+  it "offers money that came in, up to the purchase's amount, from a week before it to four months after, nearest first" do
     purchase = insert("Compra", -10_000)
     insert("Antes", 1_000, on: "2026-09-03")
     insert("Cedo demais", 1_000, on: "2026-09-02")
     insert("Depois", 1_000, on: "2026-12-20")
     insert("Tarde demais", 1_000, on: "2027-01-09")
+    insert("Igual", 10_000, on: "2026-09-12")
+    insert("Maior", 10_001, on: "2026-09-11")
+    insert("Centavo", 1, on: "2026-09-20")
 
     candidates = repo.refund_candidates(repo.list(id: purchase).first)
-    expect(candidates.map { _1[:description] }).to contain_exactly("Antes", "Depois")
+    expect(candidates.map { _1[:description] }).to eq(%w[Igual Antes Centavo Depois])
+    20.times { |i| insert("Mais #{i}", 100, on: "2026-10-#{10 + i}") }
+    expect(repo.refund_candidates(repo.list(id: purchase).first).size).to eq(20)
   end
 end

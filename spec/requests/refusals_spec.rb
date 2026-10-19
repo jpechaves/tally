@@ -94,6 +94,8 @@ RSpec.describe "Refused requests", :db, type: :request do
   it "goes back to the imports page when no file was sent" do
     post "/imports"
     expect(location).to eq("/imports")
+    post "/imports", files: [{name: "not a file"}]
+    expect(location).to eq("/imports")
     expect(db[:imports].count).to eq(1)
   end
 

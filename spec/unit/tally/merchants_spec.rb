@@ -14,7 +14,8 @@ RSpec.describe Tally::Merchants do
       "Turismo B" => "Turismo",
       "TURISMO" => "TURISMO",
       "A" => "A",
-      "*" => "*"
+      "*" => "*",
+      "  FARMACIA   EXEMPLO 0123 " => "FARMACIA EXEMPLO"
     }.each do |name, stable|
       it "reads #{name.inspect} as #{stable.inspect}" do
         expect(described_class.stable_name(name)).to eq(stable)

@@ -70,7 +70,14 @@ RSpec.describe Tally::Charts do
     ])
   end
 
+  it "labels every column up to 12, and every other one from 13" do
+    labels = ->(count) { chart(labels: (1..count).map { "m#{_1}" }, series: [{name: "x", css: "s", values: [1] * count}]).scan(/>m\d+</).size }
+
+    expect([labels.(12), labels.(13)]).to eq([12, 7])
+  end
+
   it "gives bar widths as a share of the largest" do
+    expect(described_class.percent(1, 3)).to eq(33.3)
     expect(described_class.percent(50, 200)).to eq(25.0)
     expect(described_class.percent(300, 200)).to eq(100.0)
     expect(described_class.percent(-5, 200)).to eq(0.0)

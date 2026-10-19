@@ -20,6 +20,16 @@ RSpec.describe Tally::Repos::PlanRepo, :db do
     expect(repo.budgets_for("2026-09")).to eq({})
   end
 
+  it "knows the first month any budget applies to" do
+    expect(repo.first_budget_month).to be_nil
+
+    other = db[:categories].insert(name: "Padaria", kind: "expense")
+    repo.set_budget(category, "2026-09", 50_000)
+    repo.set_budget(other, "2026-06", 40_000)
+    repo.remove_budget(other, "2026-08")
+    expect(repo.first_budget_month).to eq("2026-06")
+  end
+
   it "counts no budgets for a plan that wrote none" do
     plan = db[:savings_plans].insert(target_cents: 100_000, starts_month: "2026-09", baseline_from: "2026-06",
       baseline_to: "2026-08", baseline_income_cents: 0, baseline_spending_cents: 0)

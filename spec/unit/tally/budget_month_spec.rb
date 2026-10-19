@@ -28,6 +28,15 @@ RSpec.describe Tally::BudgetMonth do
     expect(september.unbudgeted_cents).to eq(10_000)
   end
 
+  it "calls a budget ahead of pace only past the margin, and expects whole cents" do
+    line = ->(spent) { described_class::Line.new(category_id: 1, name: "x", parent_name: nil, limit_cents: 1_000, spent_cents: spent, expected_cents: 1_000, committed_cents: 0) }
+    margin = 1_000 * (100 + described_class::AHEAD_OF_PACE_PCT) / 100
+
+    expect([line.(margin), line.(margin + 1)].map(&:ahead_of_pace?)).to eq([false, true])
+    tenth = described_class.new(rows, month: "2026-09", budgets: {11 => 1_00}, categories:, today: Date.new(2026, 9, 1))
+    expect(tenth.lines.first.expected_cents).to eq(3).and be_an(Integer)
+  end
+
   it "projects the month: expected income, minus spending so far and what's left in each budget" do
     september = month(Date.new(2026, 9, 15))
 

@@ -84,13 +84,14 @@ RSpec.describe Tally::Cuts do
     rows = [
       insight_row("2026-09-15", -189.90, "ACADEMIA EXEMPLO"),
       insight_row("2026-09-15", -189.90, "ACADEMIA EXEMPLO"),
+      insight_row("2026-09-16", -189.90, "ACADEMIA EXEMPLO"),
       insight_row("2026-09-25", -50.00, "LOJA"),
       insight_row("2026-09-29", -50.00, "LOJA")
     ]
 
     duplicate = suggestions(rows).find { _1.signal == "duplicate" }
-    expect(duplicate).to have_attributes(key: "duplicate:description:academia exemplo:-18990", monthly_cents: 18_990,
-      facts: {payee: "ACADEMIA EXEMPLO", cents: 18_990, count: 2, dates: ["2026-09-15"]})
+    expect(duplicate).to have_attributes(key: "duplicate:description:academia exemplo:-18990", monthly_cents: 37_980,
+      facts: {payee: "ACADEMIA EXEMPLO", cents: 18_990, count: 3, dates: ["2026-09-15", "2026-09-16"]})
     expect(suggestions(rows).count { _1.signal == "duplicate" }).to eq(1)
     expect(suggestions(rows, dismissed: [duplicate.key]).map(&:signal)).not_to include("duplicate")
   end
