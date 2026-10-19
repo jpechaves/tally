@@ -375,10 +375,14 @@ en:
         payee: "Payee: %{value}"
         purchase: "Purchase: %{value}"
         trip: "Trip: %{value}"
+      ask: "Change the category of %{rows} to %{category}?"
       change_category: Change category
+      changed: "Changed the category of %{rows}."
       clear: Clear filters
+      clear_search: Clear search
       drop: Remove this filter
       empty: No transactions.
+      no_match: No transactions match these filters.
       kinds:
         income: Income
         spending: Spending
@@ -386,6 +390,13 @@ en:
       purchase_done: "Installments %{paid}: nothing left to pay, the last one was in %{ends}."
       purchase_left: "Installments %{paid}. Left to pay from %{month}: %{left}, the last one in %{ends}."
       recategorize: "For the ticked rows:"
+      search: Search description, note or amount
+      select_all:
+        one: Select the 1 result
+        other: "Select all %{count} results"
+      skipped:
+        one: "1 transfer left as it was: transfers have no category."
+        other: "%{count} transfers left as they were: transfers have no category."
       summary: "%{rows}, net %{net}."
       summary_spent: "%{rows}, spent %{spent}."
       title: Transactions

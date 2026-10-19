@@ -93,6 +93,11 @@ module Tally
         Tally::InstallmentCalendar.series_of(rows, id)
       end
 
+      # The ids and kinds of every row the filter matches, on every page.
+      def matching(filter)
+        filtered(transactions.dataset.unordered, filter).select(Sequel[:transactions][:id], Sequel[:transactions][:kind]).all
+      end
+
       def ids_for_counterparty(counterparty_id)
         transactions.dataset.where(counterparty_id:).select_map(:id)
       end
@@ -337,6 +342,7 @@ module Tally
         scope = scope.where(payee_key => filter.payee) if filter.payee
         scope = scope.where(column.(:id) => installment_series(filter.purchase).map { _1[:id] }) if filter.purchase
         scope = scope.where(column.(:id) => trip_ids(filter.trip)) if filter.trip
+        scope = scope.where(search(filter.q)) if filter.q
         # Spending and income as the report counts them, which leaves out rows a
         # re-import flagged as missing, rows dated after today and rows your adjustment
         # says count as nothing (InsightRepo).
@@ -346,6 +352,37 @@ module Tally
             .exclude(column.(:id) => Tally::Adjustments.uncounted_ids(transactions.dataset))
         end
         scope
+      end
+
+      # Rows whose amount is the search, as imported or as adjusted, of either sign unless
+      # one is typed; or whose texts (theirs, their adjustment's note, their counterparty's
+      # names and note) hold every word of it. A search that is neither matches nothing.
+      def search(query)
+        sign, cents = Tally::Search.amount(query)
+        words = Tally::Search.fold(query).split
+        conditions = []
+        conditions << {Sequel[:transactions][:id] => amount_ids(sign, cents)} if cents
+        conditions << Sequel.&(*words.map { search_word(_1) }) unless words.empty?
+        conditions.empty? ? false : Sequel.|(*conditions)
+      end
+
+      def amount_ids(sign, cents)
+        amount = Sequel[:transactions][:amount_cents]
+        scope = Tally::Adjustments.join(transactions.dataset.unordered)
+          .where(Sequel.|({Sequel.function(:abs, amount) => cents}, {Sequel.function(:abs, Tally::Adjustments.counted_amount) => cents}))
+        scope = scope.where(sign.negative? ? (amount < 0) : (amount > 0)) if sign
+        scope.select(Sequel[:transactions][:id])
+      end
+
+      def search_word(word)
+        like = ->(table, column) { Tally::Search.like(Sequel[table][column], word) }
+        db = transactions.dataset.db
+        Sequel.|(
+          *%i[description raw_description memo].map { like.(:transactions, _1) },
+          {Sequel[:transactions][:counterparty_id] => db[:counterparties]
+            .where(Sequel.|(*%i[name display_name note].map { like.(:counterparties, _1) })).select(:id)},
+          {Sequel[:transactions][:id] => db[:transaction_adjustments].where(like.(:transaction_adjustments, :note)).select(:transaction_id)}
+        )
       end
 
       def trip_ids(id)

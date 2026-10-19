@@ -9,6 +9,7 @@ module Tally
         PER_PAGE = Tally::Pagination::PER_PAGE
 
         expose :filter, decorate: false
+        expose :changed, :skipped, decorate: false
 
         expose :accounts do
           account_repo.all

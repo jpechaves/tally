@@ -386,10 +386,14 @@ pt-BR:
         payee: "Favorecido: %{value}"
         purchase: "Compra: %{value}"
         trip: "Viagem: %{value}"
+      ask: "Mudar a categoria de %{rows} para %{category}?"
       change_category: Mudar categoria
+      changed: "Categoria mudada em %{rows}."
       clear: Limpar filtros
+      clear_search: Limpar busca
       drop: Tirar este filtro
       empty: Nenhum lançamento.
+      no_match: Nenhum lançamento com estes filtros.
       kinds:
         income: Receitas
         spending: Gastos
@@ -397,6 +401,13 @@ pt-BR:
       purchase_done: "Parcelas %{paid}: nada a pagar, a última foi em %{ends}."
       purchase_left: "Parcelas %{paid}. Falta pagar a partir de %{month}: %{left}, a última em %{ends}."
       recategorize: "Para as linhas marcadas:"
+      search: Buscar descrição, nota ou valor
+      select_all:
+        one: Marcar o 1 resultado
+        other: "Marcar todos os %{count} resultados"
+      skipped:
+        one: "1 transferência ficou como estava: transferências não têm categoria."
+        other: "%{count} transferências ficaram como estavam: transferências não têm categoria."
       summary: "%{rows}, saldo %{net}."
       summary_spent: "%{rows}, gasto %{spent}."
       title: Lançamentos

@@ -24,8 +24,10 @@ module Tally
   #   purchase  the id of any installment of a card purchase, for all its installments
   #             (Tally::InstallmentCalendar.series)
   #   trip      a trip's id, for its rows (Tally::Trip)
-  TransactionFilter = Data.define(:account, :month, :category, :kind, :nature, :payee, :purchase, :trip) do
-    def initialize(account: nil, month: nil, category: nil, kind: nil, nature: nil, payee: nil, purchase: nil, trip: nil) = super
+  #   q         a search: rows whose amount is it (Tally::Search.amount), or whose texts
+  #             have every word of it (TransactionRepo)
+  TransactionFilter = Data.define(:account, :month, :category, :kind, :nature, :payee, :purchase, :trip, :q) do
+    def initialize(account: nil, month: nil, category: nil, kind: nil, nature: nil, payee: nil, purchase: nil, trip: nil, q: nil) = super
 
     # The query string's parameters that are set, in a stable order.
     def query = to_h.compact
@@ -57,7 +59,10 @@ module Tally
     NATURES = (Categories::NATURES + [UNSET]).freeze
 
     # Filters with a field of their own in the transactions page's form.
-    FORM_FIELDS = %i[account month category kind].freeze
+    FORM_FIELDS = %i[account month category kind q].freeze
+
+    # The longest search read; the rest is dropped.
+    SEARCH_MAX = 100
 
     ID = /\A\d{1,9}\z/
     MONTH = Insights::MONTH
@@ -73,7 +78,8 @@ module Tally
         nature: NATURES.find { _1 == params[:nature].to_s },
         payee: params[:payee].to_s[PAYEE],
         purchase: params[:purchase].to_s[ID]&.to_i,
-        trip: params[:trip].to_s[ID]&.to_i
+        trip: params[:trip].to_s[ID]&.to_i,
+        q: params[:q].to_s.strip[0, SEARCH_MAX].then { _1 unless _1.empty? }
       )
     end
   end

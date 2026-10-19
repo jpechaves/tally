@@ -214,7 +214,7 @@ RSpec.describe "Changing categories from the transactions table", :db, type: :re
     expect(body).to include(%(<script src="/assets/table.js"></script>))
 
     get "/assets/table.js"
-    expect(last_response.body).to include("inline-category", "checkAll")
+    expect(last_response.body).to include("inline-category", "checkAll", "dataset.ask")
   end
 
   it "gives the chosen rows a category of your own, back on the same filters and page" do
@@ -223,7 +223,7 @@ RSpec.describe "Changing categories from the transactions table", :db, type: :re
       "month" => "2026-09", "page" => "2"
 
     expect(last_response.status).to eq(302)
-    expect(last_response.location).to eq("/transactions?month=2026-09&page=2")
+    expect(last_response.location).to eq("/transactions?month=2026-09&page=2&changed=2&skipped=0")
     changed = db[:transactions].where(id: ids.map(&:to_i)).select_map(%i[category_id category_source])
     expect(changed).to all(eq([category_id("Restaurantes"), "manual"]))
     expect(row("SUPERMARKET EX")[:category_id]).to eq(category_id("Supermercado"))
@@ -234,6 +234,90 @@ RSpec.describe "Changing categories from the transactions table", :db, type: :re
     expect(last_response.status).to eq(422)
 
     post "/transactions/category", "ids" => [row("CAFE EXEMPLO")[:id].to_s, "x"]
+    expect(last_response.status).to eq(422)
+  end
+end
+
+RSpec.describe "Searching transactions", :db, type: :request do
+  let(:db) { Hanami.app["db.gateway"].connection }
+
+  before do
+    %w[Nubank_2026-08-09.csv itau_2026-10.pdf].each do |name|
+      Hanami.app["operations.import_statement"].(file_name: name, content: fixture(name))
+    end
+  end
+
+  after { FileUtils.rm_rf(Hanami.app.root.join(Hanami.app["settings"].import_storage_dir)) }
+
+  def row(description) = db[:transactions].where(description:).first
+
+  def category_id(name) = db[:categories].where(name:).get(:id)
+
+  def found(query, **filters)
+    get "/transactions", q: query, **filters
+    last_response.body.scan(%r{<a href="/transactions/\d+">([^<]*)</a>}).flatten
+  end
+
+  it "finds rows by any of their texts, without accents or case, every word in any order" do
+    db[:counterparties].where(id: row("CAFE EXEMPLO")[:counterparty_id]).update(display_name: "Padaria do Bairro")
+    db[:counterparties].where(id: row("LIVRARIA EXEMPLO")[:counterparty_id]).update(note: "padaria da esquina")
+    db[:transaction_adjustments].insert(transaction_id: row("SUPERMARKET EX")[:id], kind: "canceled", note: "padaria, dividido")
+    db[:transactions].where(id: row("POSTO EXEMPLO")[:id]).update(memo: "Pão na padaria")
+
+    expect(found("PADARÍA")).to contain_exactly("PADARIA EXEMPLO", "Padaria do Bairro", "LIVRARIA EXEMPLO", "SUPERMARKET EX", "POSTO EXEMPLO")
+    expect(found("bairro padaria")).to eq(["Padaria do Bairro"])
+    expect(found("exemplosao")).to contain_exactly("PADARIA EXEMPLO", "MERCADO EXEMPLO", "Padaria do Bairro")
+    expect(found("%")).to be_empty
+  end
+
+  it "finds rows by amount, of either sign unless one is typed, as imported or as adjusted" do
+    db[:transaction_adjustments].insert(transaction_id: row("POSTO EXEMPLO")[:id], kind: "amount_changed", amount_cents: -12_000)
+
+    expect(found("32,90")).to contain_exactly("LIVRARIA EXEMPLO", "CANCELAMENTO DE COMPRA")
+    expect(found("R$ 32.90")).to contain_exactly("LIVRARIA EXEMPLO", "CANCELAMENTO DE COMPRA")
+    expect(found("-32,90")).to eq(["LIVRARIA EXEMPLO"])
+    expect(found("+32,90")).to eq(["CANCELAMENTO DE COMPRA"])
+    expect(found("32")).to be_empty
+    expect(found("120")).to eq(["POSTO EXEMPLO"])
+    expect(found("150,00")).to eq(["POSTO EXEMPLO"])
+  end
+
+  it "combines with the other filters, and keeps the search in the form and in changes made from the table" do
+    expect(found("exemplo", month: "2026-09", category: "none")).to contain_exactly("MARKETPLACE*EXEMPLO", "PET EXEMPLO*PETL", "ASSINATURA EXEMPLO")
+
+    body = last_response.body
+    expect(body).to include(%(<input type="search" name="q" value="exemplo" placeholder="Search description, note or amount"))
+    expect(body).to include("3 rows, net", %(<a href="/transactions?month=2026-09&amp;category=none">Clear search</a>))
+    expect(body).to include(%(<input type="hidden" name="q" value="exemplo">))
+    expect(body).to include(%(<input type="checkbox" name="all" value="1" data-check-all="recategorize"> Select all 3 results))
+    expect(body).to include(%(data-ask="Change the category of %{rows} to %{category}?"))
+
+    get "/transactions", q: "nada assim"
+    expect(last_response.body).to include("No transactions match these filters.")
+
+    get "/transactions"
+    expect(last_response.body).not_to include("Clear search", "Select all")
+  end
+
+  it "changes the category of every row the filters find, on every page, skipping transfers" do
+    db[:transactions].where(id: row("Pagamento via conta")[:id]).update(memo: "estacionamento")
+    parking = db[:transactions].where(description: "ESTACIONAMENTO EXEMPLO").select_map(:id)
+
+    post "/transactions/category", "all" => "1", "q" => "estacionamento", "category_id" => category_id("Restaurantes").to_s, "page" => "1"
+
+    expect(last_response.location).to eq("/transactions?q=estacionamento&page=1&changed=2&skipped=1")
+    expect(db[:transactions].where(id: parking).select_map(%i[category_id category_source])).to all(eq([category_id("Restaurantes"), "manual"]))
+    expect(row("Pagamento via conta")[:category_id]).to be_nil
+
+    follow_redirect!
+    expect(last_response.body).to include("Changed the category of 2 rows. 1 transfer left as it was: transfers have no category.")
+  end
+
+  it "refuses to change every row when nothing narrows them" do
+    expect {
+      post "/transactions/category", "all" => "1", "category_id" => category_id("Restaurantes").to_s
+    }.not_to change { db[:transactions].where(category_id: category_id("Restaurantes")).count }
+
     expect(last_response.status).to eq(422)
   end
 end

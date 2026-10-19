@@ -24,4 +24,14 @@ RSpec.describe Tally::TransactionFilter do
     query = URI.decode_www_form(URI(filter.path).query).to_h.transform_keys(&:to_sym)
     expect(described_class.parse(query)).to eq(filter)
   end
+
+  it "reads a search, stripped and at most 100 characters, as one more filter" do
+    expect(described_class.parse({q: "  padaria exemplo "}).q).to eq("padaria exemplo")
+    expect(described_class.parse({q: "x" * 150}).q.length).to eq(100)
+    expect(described_class.parse({q: "   "}).q).to be_nil
+
+    filter = described_class.new(month: "2026-08", category: "none", q: "mercado")
+    expect(filter.path).to eq("/transactions?month=2026-08&category=none&q=mercado")
+    expect(filter.carried).to eq({})
+  end
 end
