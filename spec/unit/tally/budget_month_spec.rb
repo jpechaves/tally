@@ -28,6 +28,27 @@ RSpec.describe Tally::BudgetMonth do
     expect(september.unbudgeted_cents).to eq(10_000)
   end
 
+  it "counts the whole month as gone by from the 1st of the next, and is on track when the projection meets the target" do
+    expect(month(Date.new(2026, 10, 1)).elapsed).to eq(1)
+    expect(month(Date.new(2026, 9, 30)).elapsed).to eq(1)
+    expect(month(Date.new(2026, 9, 15), target: 1_000_000 - 110_000 - 150_000)).to be_on_track
+  end
+
+  it "has nothing left to spend on a budget already over, with nothing still to come" do
+    line = described_class::Line.new(category_id: 1, name: "x", parent_name: nil, limit_cents: 1_000, spent_cents: 1_500, expected_cents: 500, committed_cents: 0)
+
+    expect(line.to_spend_cents).to eq(0)
+  end
+
+  it "calls a budget ahead of pace only past the margin, and expects whole cents" do
+    line = ->(spent) { described_class::Line.new(category_id: 1, name: "x", parent_name: nil, limit_cents: 1_000, spent_cents: spent, expected_cents: 1_000, committed_cents: 0) }
+    margin = 1_000 * (100 + described_class::AHEAD_OF_PACE_PCT) / 100
+
+    expect([line.(margin), line.(margin + 1)].map(&:ahead_of_pace?)).to eq([false, true])
+    tenth = described_class.new(rows, month: "2026-09", budgets: {11 => 1_00}, categories:, today: Date.new(2026, 9, 1))
+    expect(tenth.lines.first.expected_cents).to eq(3).and be_an(Integer)
+  end
+
   it "projects the month: expected income, minus spending so far and what's left in each budget" do
     september = month(Date.new(2026, 9, 15))
 
@@ -100,5 +121,39 @@ RSpec.describe Tally::BudgetMonth do
 
   it "knows a month that hasn't started" do
     expect(month(Date.new(2026, 8, 20))).to have_attributes(elapsed: 0, complete?: false)
+  end
+
+  it "has no pace for spending in a budget of zero, and is on pace with nothing spent" do
+    zero = described_class.new(rows, month: "2026-09", budgets: {11 => 0, 12 => 0}, categories:, today: Date.new(2026, 9, 15))
+    unspent = described_class.new([], month: "2026-09", budgets: {11 => 0}, categories:, today: Date.new(2026, 9, 15))
+
+    expect(zero.lines.map { [_1.name, _1.pace_pct, _1.over?] }).to eq([["Delivery", nil, true], ["Supermercado", nil, true]])
+    expect(unspent.lines.first).to have_attributes(pace_pct: 0, ahead_of_pace?: false, over?: false)
+  end
+
+  it "expects nothing more outside the budgets once the month is over" do
+    september = described_class.new(rows, month: "2026-09", budgets: {11 => 500_00, 12 => 2_000_00}, categories:,
+      today: Date.new(2026, 10, 2), expected_income_cents: 10_000_00, expected_unbudgeted_cents: 3_000_00)
+
+    expect(september.unbudgeted_left_cents).to eq(0)
+  end
+
+  it "projects from the income so far when it's more than expected, and from none expected by default" do
+    more = month(Date.new(2026, 9, 15), income: 5_000_00)
+    unplanned = described_class.new(rows, month: "2026-09", budgets: {}, categories:, today: Date.new(2026, 9, 3))
+
+    expect(more).to have_attributes(month: "2026-09", projected_saved_cents: 1_000_000 - 110_000 - 150_000)
+    # On the 3rd nothing is in yet: no income expected, and the month's R$ 1.100 committed.
+    expect(unplanned.projected_saved_cents).to eq(-110_000)
+  end
+
+  it "counts a month that saved exactly its target as a hit" do
+    expect(month(Date.new(2026, 10, 2), target: 8_900_00).score).to include(hit: true, difference_cents: 0)
+  end
+
+  it "names a budget whose category it doesn't know by its id" do
+    september = described_class.new(rows, month: "2026-09", budgets: {99 => 100_00}, categories:, today: Date.new(2026, 9, 15))
+
+    expect(september.lines.first).to have_attributes(name: "#99", parent_name: nil)
   end
 end

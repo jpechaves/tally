@@ -17,6 +17,13 @@ RSpec.describe Tally::StatementGaps do
       expect(described_class.statements(periods)).to eq([])
     end
 
+    it "merges a period inside another, then the one that follows both" do
+      periods = [d("2026-01-01")..d("2026-01-31"), d("2026-03-10")..d("2026-03-20"), d("2026-03-01")..d("2026-03-31"),
+        d("2026-04-01")..d("2026-04-30")]
+
+      expect(described_class.statements(periods).map { [_1.from, _1.to] }).to eq([[d("2026-02-01"), d("2026-02-28")]])
+    end
+
     it "keeps a statement exported mid-month, and finds the days after it" do
       gaps = described_class.statements([d("2026-10-01")..d("2026-10-16"), d("2026-11-01")..d("2026-11-30")])
 
@@ -35,6 +42,8 @@ RSpec.describe Tally::StatementGaps do
       gaps = described_class.bills([d("2026-07-09"), d("2026-11-09"), d("2026-08-09")])
 
       expect(gaps).to eq([described_class::Gap.new(kind: "bill", from: d("2026-09-01"), to: d("2026-10-01"))])
+      expect(described_class.bills([d("2026-07-09"), d("2026-09-09")]).map { [_1.from, _1.to] })
+        .to eq([[d("2026-08-01"), d("2026-08-01")]])
     end
 
     it "finds nothing for bills a month apart, even when a due date moves" do

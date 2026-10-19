@@ -39,4 +39,29 @@ RSpec.describe Tally::Review do
     expect(regex).not_to match("pet exemplo petlove")
     expect(regex).not_to match("super pet exemplo petl")
   end
+
+  it "groups and matches a description with no letters by all of it" do
+    groups = described_class.groups([row(1, "123-456", -100), row(2, "123-456", -50), row(3, "123-457", -10)])
+
+    expect(groups.map { [_1.key, _1.ids, _1.pattern] }).to eq([
+      ["description:123-456", [1, 2], "^123\\-456$"],
+      ["description:123-457", [3], "^123\\-457$"]
+    ])
+  end
+
+  it "labels a group by its first row, and keeps a total per currency" do
+    groups = described_class.groups([
+      row(1, "LOJA EXEMPLO 1", -100, currency: "USD"),
+      row(2, "LOJA EXEMPLO 2", -300),
+      row(3, "LOJA EXEMPLO 3", -50)
+    ])
+
+    expect(groups.first).to have_attributes(label: "LOJA EXEMPLO 1", total_cents: -450, totals: {"USD" => -100, "BRL" => -350})
+  end
+
+  it "orders groups of the same size by their label" do
+    groups = described_class.groups([row(1, "ZETA", -100), row(2, "ALFA", 100)])
+
+    expect(groups.map(&:label)).to eq(%w[ALFA ZETA])
+  end
 end

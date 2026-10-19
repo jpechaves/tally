@@ -76,6 +76,17 @@ RSpec.describe Tally::InstallmentCalendar do
     expect(calendar.purchases.map { [_1.number, _1.ends] }).to eq([[2, "2026-11"]])
   end
 
+  it "follows a purchase across the new year" do
+    rows = [
+      insight_row("2026-11-02", -50.00, "BICICLETA EXEMPLO", installment_number: 1, installment_total: 4, bill_due_on: "2026-11-09"),
+      insight_row("2026-12-02", -50.00, "BICICLETA EXEMPLO", installment_number: 2, installment_total: 4, bill_due_on: "2026-12-09"),
+      insight_row("2027-01-02", -50.00, "BICICLETA EXEMPLO", installment_number: 3, installment_total: 4, bill_due_on: "2027-01-09")
+    ]
+
+    expect(described_class.new(rows, from: "2027-02").purchases.map { [_1.number, _1.ends] }).to eq([[3, "2027-02"]])
+    expect(described_class.series_of(rows, rows.first[:id])).to eq(rows)
+  end
+
   it "keeps a purchase seen only mid-way apart from an older one it can't follow" do
     rows = [
       insight_row("2026-01-02", -60.00, "SOFA EXEMPLO", installment_number: 1, installment_total: 3, bill_due_on: "2026-01-09"),
@@ -84,6 +95,17 @@ RSpec.describe Tally::InstallmentCalendar do
     calendar = described_class.new(rows, from: "2026-10")
 
     expect(calendar.purchases.map { [_1.number, _1.ends] }).to eq([[2, "2026-10"]])
+    expect(described_class.series_of(rows, rows.last[:id])).to eq([rows.last])
+  end
+
+  it "gives each of two identical purchases a month apart its own installments" do
+    row = ->(due, number) { insight_row("#{due}-02", -25.00, "TENIS EXEMPLO", installment_number: number, installment_total: 4, bill_due_on: "#{due}-09") }
+    older = [row.("2026-07", 1), row.("2026-08", 2), row.("2026-09", 3)]
+    newer = [row.("2026-08", 1), row.("2026-09", 2)]
+    rows = [older[0], older[1], newer[0], newer[1], older[2]]
+
+    expect(described_class.series_of(rows, older.first[:id])).to eq(older)
+    expect(described_class.series_of(rows, newer.first[:id])).to eq(newer)
   end
 
   it "finds the purchase an installment belongs to, and what is left of it" do

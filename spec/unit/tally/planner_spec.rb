@@ -63,6 +63,33 @@ RSpec.describe Tally::Planner do
     expect(planner).to have_attributes(spending_cents: 12_000, uncategorized_cents: 3_000)
   end
 
+  it "cuts every category to its maximum when the gap is exactly what may be cut" do
+    planner = plan(4_600.00)
+
+    expect(planner).to have_attributes(gap_cents: 310_000, cuts_cents: 310_000, shortfall_cents: 0)
+    expect(planner.lines.map(&:cut_cents)).to eq([60_000, 150_000, 100_000, 0])
+  end
+
+  it "cuts nothing when only fixed costs are left, and the whole gap is short" do
+    fixed = rows.reject { _1[:nature] && _1[:nature] != "fixed" }
+    planner = plan(12_000.00, rows: fixed)
+
+    expect(planner.lines.map { [_1.name, _1.cut_cents] }).to eq([["Energia", 0]])
+    expect(planner).to have_attributes(gap_cents: 150_000, cuts_cents: 0, shortfall_cents: 150_000)
+  end
+
+  it "has no lines without categorized spending, and leaves out other months and refunds-only categories" do
+    rows = [
+      insight_row("2026-08-10", 1_000.00, "EMPRESA"),
+      insight_row("2026-08-11", 30.00, "IFOOD", kind: "refund", **in_category(:delivery)),
+      insight_row("2026-09-12", -90.00, "MERCADO", **in_category(:market))
+    ]
+    planner = plan(500.00, rows:)
+
+    expect(planner.lines).to be_empty
+    expect(planner).to have_attributes(income_cents: 33_333, spending_cents: -1_000, cuts_cents: 0)
+  end
+
   it "refuses a target that isn't positive" do
     expect { plan(0) }.to raise_error(ArgumentError)
   end

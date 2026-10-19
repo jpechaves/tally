@@ -41,6 +41,8 @@ RSpec.describe "Report, cuts and installments", :db, type: :request do
     expect(last_response.body).to include(%(<option value="2026-09" selected>))
     get "/cuts"
     expect(last_response.body).to include(%(<option value="2026-09" selected>))
+    get "/cuts", month: "2026-07"
+    expect(last_response.body).to include(%(<option value="2026-07" selected>))
 
     allow(Date).to receive(:today).and_return(Date.new(2026, 1, 15))
     get "/report"

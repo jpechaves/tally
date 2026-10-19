@@ -52,6 +52,17 @@ RSpec.describe Tally::BasicAuth do
     end
   end
 
+  it "takes the credentials from the settings when none are given, a blank one counting as unset" do
+    settings = Hanami.app["settings"]
+    allow(settings).to receive_messages(basic_auth_username: username, basic_auth_password: "  ")
+    expect(request(described_class.new(inner, required: false), username:, password: "").status).to eq(503)
+
+    allow(settings).to receive(:basic_auth_password).and_return(password)
+    middleware = described_class.new(inner, required: true)
+    expect(request(middleware, username:, password:).status).to eq(200)
+    expect(request(middleware).status).to eq(401)
+  end
+
   it "refuses to serve when only one of the two settings is set" do
     middleware = described_class.new(inner, username: username, required: false)
 

@@ -70,10 +70,11 @@ class FakeItauBill
 
   def total = current + sum(@reprinted)
 
-  def to_pdf
-    pages = [summary_page] + transaction_pages
-    PDFWriter.new(pages).render
-  end
+  # Page 1, then the transaction pages; tests can move or drop their words before
+  # rendering them with PDFWriter.
+  def pages = [summary_page] + transaction_pages
+
+  def to_pdf = PDFWriter.new(pages).render
 
   private
 

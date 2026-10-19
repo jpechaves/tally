@@ -40,6 +40,11 @@ RSpec.describe Tally::Categorizer do
     expect(decide(description: "IFOOD *RESTAURANTE")).to include(category_id: delivery)
   end
 
+  it "folds text to lower case without accents or extra spaces" do
+    expect(Tally::Categories.fold("  ÁGUA   Mineral ")).to eq("agua mineral")
+    expect(Tally::Categories.fold(nil)).to eq("")
+  end
+
   it "matches description rules on the raw description too" do
     expect(decide(description: "Restaurante", raw_description: "Compra no débito via NuPay - iFood"))
       .to include(category_id: delivery)
@@ -59,6 +64,21 @@ RSpec.describe Tally::Categorizer do
   it "checks the amount range" do
     expect(decide(counterparty_document: "•••.123.456-••")).to include(category_id: pix, rule_id: 13)
     expect(decide(kind: "refund", amount_cents: 1000, counterparty_document: "•••.123.456-••")).to include(source: "none")
+  end
+
+  it "keeps both ends of the amount range in it" do
+    ranged = {id: 1, field: "description", operator: "contains", pattern: "posto", category_id: food,
+              amount_min_cents: -5_000, amount_max_cents: -1_000}
+    categorizer = described_class.new(rules: [ranged], categories:)
+    decide = ->(cents) { categorizer.(row(description: "Posto", amount_cents: cents)).rule_id }
+
+    expect([-5_001, -5_000, -3_000, -1_000, -999].map(&decide)).to eq([nil, 1, 1, 1, nil])
+  end
+
+  it "matches nothing with an operator it doesn't know" do
+    odd = {id: 1, field: "description", operator: "ends_with", pattern: "X", category_id: food}
+
+    expect(described_class.new(rules: [odd], categories:).(row).source).to eq("none")
   end
 
   it "falls back to the bank's category as a suggestion" do

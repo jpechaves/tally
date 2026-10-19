@@ -14,7 +14,8 @@ RSpec.describe Tally::Merchants do
       "Turismo B" => "Turismo",
       "TURISMO" => "TURISMO",
       "A" => "A",
-      "*" => "*"
+      "*" => "*",
+      "  FARMACIA   EXEMPLO 0123 " => "FARMACIA EXEMPLO"
     }.each do |name, stable|
       it "reads #{name.inspect} as #{stable.inspect}" do
         expect(described_class.stable_name(name)).to eq(stable)
@@ -26,5 +27,9 @@ RSpec.describe Tally::Merchants do
     keys = ["Café Exemplo", "CAFE EXEMPLO", "CafeExemplo", "cafe-exemplo*XYZ"].map { described_class.key(_1) }
 
     expect(keys.uniq).to eq(["CAFEEXEMPLO"])
+  end
+
+  it "keys a name with no letters or digits by the name itself" do
+    expect(described_class.key(" * ")).to eq("*")
   end
 end

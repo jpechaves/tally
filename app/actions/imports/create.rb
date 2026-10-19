@@ -11,7 +11,9 @@ module Tally
           uploads = Array(request.params[:files]).select { _1.is_a?(Hash) && _1[:tempfile] }
           if uploads.empty?
             response.redirect_to routes.path(:imports)
+            # simplecov:disable line — redirect_to halts the action, so this is never reached
             return
+            # simplecov:enable line
           end
 
           imports = uploads.map do |upload|

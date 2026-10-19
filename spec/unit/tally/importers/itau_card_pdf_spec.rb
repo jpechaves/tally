@@ -153,6 +153,19 @@ RSpec.describe Tally::Importers::ItauCardPdf do
       )
     end
 
+    it "checks each printed total on its own: international, this bill's charges and payments" do
+      december = ItauBills.december.to_pdf
+      expect { parse(december.sub("(59,62)", "(59,63)")) }.to raise_error(Tally::Importers::Error,
+        "international purchases (Total lançamentos inter.): the rows add up to R$ 59.62, but the bill prints R$ 59.63")
+      expect { parse(december.sub("(544,57)", "(544,58)")) }.to raise_error(Tally::Importers::Error,
+        "this bill's charges (Lançamentos atuais): the rows add up to R$ 544.57, but the bill prints R$ 544.58")
+
+      payments = ItauBills.october.to_pdf.split("(-3.456,78)")
+      tampered = payments[0..1].join("(-3.456,78)") + "(-3.456,79)" + payments[2..].join("(-3.456,78)")
+      expect { parse(tampered) }.to raise_error(Tally::Importers::Error,
+        "payments (Total dos pagamentos): the rows add up to -R$ 3,456.79, but the bill prints -R$ 3,456.78")
+    end
+
     it "rejects a file poppler can't read" do
       expect { parse("%PDF-1.4 not really") }.to raise_error(Tally::Importers::Error, /pdftotext could not read/)
     end
@@ -171,6 +184,156 @@ RSpec.describe Tally::Importers::ItauCardPdf do
       statement = parse(pdf)
       expect(statement.warnings.first.to_s).to match(/future installments list adds up to R\$ 1,887\.88/)
       expect(statement.card_statement[:next_statement_cents]).to eq(188_789)
+    end
+  end
+
+  describe "bills drawn a little differently" do
+    def parse(content) = described_class.new.call("fatura.pdf", content)
+
+    # Renders a bill after changing the words on its pages, each [x, y, text, bold].
+    def drawn(bill = ItauBills.october)
+      pages = bill.pages
+      yield pages
+      FakeItauBill::PDFWriter.new(pages).render
+    end
+
+    def word(page, text) = page.items.find { _1[2] == text }
+
+    def rename(page, from, to) = page.items.each { _1[2] = to if _1[2] == from }
+
+    it "rejects a PDF with only the summary page" do
+      expect { parse(drawn { _1.slice!(1..) }) }.to raise_error(Tally::Importers::Error, "the PDF has no text pages")
+    end
+
+    it "rejects a bill without a due date it can read" do
+      expect { parse(ItauBills.october(due: "31/02/2026").to_pdf) }
+        .to raise_error(Tally::Importers::Error, "due date (Vencimento) not found on page 1")
+    end
+
+    it "takes the closing date from Emissão when Postagem is missing, and rejects a bill with neither" do
+      no_postagem = parse(drawn { rename(_1.first, "Postagem:", "Postado") })
+      expect(no_postagem.card_statement[:closing_on]).to eq(Date.new(2026, 10, 2))
+
+      neither = drawn { |pages| rename(pages.first, "Postagem:", "Postado") && rename(pages.first, "Emissão:", "Emitido") }
+      expect { parse(neither) }.to raise_error(Tally::Importers::Error, "closing date (Postagem) not found on page 1")
+    end
+
+    it "rejects a bill without its total" do
+      expect { parse(drawn { rename(_1.first, "desta", "dessa") }) }
+        .to raise_error(Tally::Importers::Error, "this bill's total (Total desta fatura) not found")
+    end
+
+    it "rejects a bill with rows printed twice and no financed balance" do
+      expect { parse(drawn(ItauBills.december) { rename(_1.first, "financiado", "financeiro") }) }
+        .to raise_error(Tally::Importers::Error, "the financed balance (Saldo financiado) not found on page 1")
+    end
+
+    it "rejects fee rows when the bill doesn't print their total" do
+      pdf = drawn do |pages|
+        pages.each do |page|
+          totals = page.items.select { _1[2] == "Lançamentos" }.map { _1[1] }
+          page.items.each { _1[2] = "produto" if _1[2] == "produtos" && totals.include?(_1[1]) }
+        end
+      end
+
+      expect { parse(pdf) }.to raise_error(Tally::Importers::Error,
+        "the printed total for fees (Lançamentos produtos e serviços) was not found, so the rows can't be checked")
+    end
+
+    it "needs no fees or payments total on a bill without fees or payments" do
+      pdf = drawn(ItauBills.october(fees: [])) do |pages|
+        pages.drop(1).each do |page|
+          # The payment's line in its own column; the next column shares its y.
+          x, y, = word(page, "Pagamento")
+          page.items.reject! { |item_x, item_y| x && item_y == y && (x - 30...x + 200).cover?(item_x) }
+          totals = page.items.select { _1[2] == "Lançamentos" }.map { _1[1] }
+          page.items.each { _1[2] = "pagos" if _1[2] == "pagamentos" }
+          page.items.each { _1[2] = "produto" if _1[2] == "produtos" && totals.include?(_1[1]) }
+        end
+      end
+
+      expect(parse(pdf).card_statement).to include(fees_cents: 0, payments_cents: 0)
+    end
+
+    it "only takes a page 1 figure printed right after its label" do
+      pdf = drawn { |pages| pages.first.items << [570, 80, "1,00", false] }
+
+      expect(parse(pdf).card_statement[:previous_total_cents]).to be_nil
+    end
+
+    it "reads an amount poppler split in two, a little apart" do
+      pdf = drawn do |pages|
+        page = pages.find { word(_1, "1.504,14") }
+        x, y, _, bold = amount = word(page, "1.504,14")
+        page.items[page.items.index(amount), 1] = [[x, y, "1.504", bold], [x + 5 * FakeItauBill::CHAR_WIDTH + 2, y, ",14", bold]]
+      end
+
+      expect(row(parse(pdf), "VOO EXEMPLO*AB12 08/10").amount).to eq(Tally::Money.new(-150_414))
+    end
+
+    it "ignores a lone marker letter between a row and the line below it" do
+      pdf = drawn do |pages|
+        page = pages.find { word(_1, "FARMACIA") }
+        x, y, = word(page, "FARMACIA")
+        page.items << [x, y + 5, "P", false]
+      end
+
+      expect(row(parse(pdf), "FARMACIA EXEMPLO 4021").raw["detail"]).to eq("saúde SAO PAULO")
+    end
+
+    it "reads columns whose header has no R$" do
+      statement = parse(drawn { |pages| pages.drop(1).each { _1.items.reject! { |item| item[2] == "R$" } } })
+
+      expect(statement.rows.size).to eq(20)
+      expect(statement.card_statement[:total_cents]).to eq(266_158)
+    end
+
+    context "with rows of its own" do
+      def bill(*purchases) = ItauBills.october(purchases:, split: [purchases.size])
+
+      it "rejects a row of zero" do
+        expect { parse(bill(ItauBills.row("30/09", "BRINDE EXEMPLO", "0,00")).to_pdf) }
+          .to raise_error(Tally::Importers::Error, "zero amount: BRINDE EXEMPLO")
+      end
+
+      it "rejects a row dated on a day that doesn't exist" do
+        expect { parse(bill(ItauBills.row("31/02", "LOJA EXEMPLO", "10,00")).to_pdf) }
+          .to raise_error(Tally::Importers::Error, "not a date: 31/02 (LOJA EXEMPLO)")
+      end
+
+      it "keeps two rows repeated in the same order as purchases: only 3 or more make a reprinted block" do
+        b = ItauBills.row("11/09", "MERCADO EXEMPLO", "20,00")
+        c = ItauBills.row("12/09", "FARMACIA EXEMPLO", "5,00")
+        statement = parse(bill(ItauBills.row("10/09", "LOJA EXEMPLO", "10,00"), b, c, ItauBills.row("13/09", "PADARIA EXEMPLO", "7,00"), b, c).to_pdf)
+
+        expect(statement.rows.count { _1.raw_description == "MERCADO EXEMPLO" }).to eq(2)
+        expect(statement.warnings).to be_empty
+      end
+
+      it "finds a reprinted block of exactly 3 rows" do
+        rows = [ItauBills.row("15/11", "LOJA EXEMPLO", "-0,05"), ItauBills.row("15/11", "MERCADO EXEMPLO", "-0,12"),
+          ItauBills.row("16/11", "FARMACIA EXEMPLO", "-0,02")]
+        statement = parse(ItauBills.december(reprinted: rows).to_pdf)
+
+        expect(statement.warnings.map(&:to_s)).to contain_exactly(/3 rows adding up to -R\$ 0\.19 are printed twice/)
+      end
+
+      it "drops the city when exactly 3 letters of the name are left, and needs a city of 3 letters or more" do
+        statement = parse(bill(ItauBills.row("01/09", "ABCSAO PAULO", "10,00", "outros SAO PAULO"),
+          ItauBills.row("02/09", "LOJA EXEMPLOSAO", "11,00", "outros SAO PAULO"),
+          ItauBills.row("03/09", "LOJA EXEMPLORIO", "12,00", "outros RIO"),
+          ItauBills.row("04/09", "LOJA EXEMPLOSP", "13,00", "outros SP"),
+          ItauBills.row("05/09", "LOJA ABC SAO", "14,00", "outros SAO PAULO")).to_pdf)
+
+        expect(statement.rows.select { _1.kind == "purchase" }.map(&:description).first(5))
+          .to eq(["ABC", "LOJA EXEMPLO", "LOJA EXEMPLO", "LOJA EXEMPLOSP", "LOJA ABC"])
+      end
+
+      it "keeps the whole name when dropping the city would leave too little of it" do
+        statement = parse(bill(ItauBills.row("01/09", "ABSAO PAULO", "10,00", "outros SAO PAULO")).to_pdf)
+
+        expect(row(statement, "ABSAO PAULO").description).to eq("ABSAO PAULO")
+      end
     end
   end
 end

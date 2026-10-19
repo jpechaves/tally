@@ -13,6 +13,15 @@ RSpec.describe "Home page", type: :request do
     expect(last_response.body).to include("<th scope=\"row\">Foreign keys</th><td>on</td>")
   end
 
+  it "says when foreign keys are off" do
+    db = Hanami.app["db.gateway"].connection
+    allow(db).to receive(:fetch).and_call_original
+    allow(db).to receive(:fetch).with("PRAGMA foreign_keys").and_return(instance_double(Sequel::Dataset, single_value: 0))
+
+    get "/"
+    expect(last_response.body).to include("<th scope=\"row\">Foreign keys</th><td>off</td>")
+  end
+
   it "serves the stylesheet, and nothing else from the assets folder by name" do
     get "/assets/app.css"
     expect(last_response.status).to eq(200)

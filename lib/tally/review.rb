@@ -11,7 +11,9 @@ module Tally
       def suggested_category_name
         return unless suggested_category_id
 
+        # simplecov:disable branch — the suggestion comes from these rows, so find never returns nil
         rows.find { _1[:category_id] == suggested_category_id }&.fetch(:category_name)
+        # simplecov:enable branch
       end
     end
 

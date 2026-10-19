@@ -47,6 +47,9 @@ RSpec.describe "Languages", :db, type: :request do
     post "/locale", locale: "en", back: "//evil.example/x"
     expect(last_response.headers["Location"]).to end_with("/")
     expect(last_response.headers["Location"]).not_to include("evil")
+
+    post "/locale", locale: "en"
+    expect(last_response.headers["Location"]).to end_with("/")
   end
 
   it "reads amounts typed in forms with the language's decimal mark" do

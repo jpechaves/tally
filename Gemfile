@@ -46,4 +46,7 @@ group :test do
   # Web integration
   gem "capybara"
   gem "rack-test"
+
+  # Line and branch coverage of app/ and lib/ (spec/spec_helper.rb)
+  gem "simplecov", require: false
 end

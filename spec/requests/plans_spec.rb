@@ -56,6 +56,9 @@ RSpec.describe "Savings plan and budgets", :db, type: :request do
     follow_redirect!
     expect(last_response.body).to include("Enter how much to save each month")
 
+    post "/plan", target: "100.00"
+    expect(db[:savings_plans].get(:starts_month)).to eq("2026-09")
+
     allow(Date).to receive(:today).and_return(Date.new(2030, 1, 1))
     post "/plan", target: "100.00"
     follow_redirect!
@@ -156,6 +159,16 @@ RSpec.describe "Savings plan and budgets", :db, type: :request do
     follow_redirect!
 
     expect(last_response.body).to match(/short of its R\$ 1,000,000\.00 target/)
+  end
+
+  it "projects a later month from the three months before this one, since this one isn't over" do
+    account = db[:accounts].where(name: "Nubank conta").get(:id)
+    db[:transactions].insert(account_id: account, occurred_on: "2026-08-05", amount_cents: 500_000, kind: "income",
+      description: "Bônus", raw_description: "Bônus", external_id: "bonus")
+    post "/budgets", category_id: category_id("Delivery").to_s, month: "2026-09", amount: "10.00"
+
+    get "/budgets", month: "2026-09"
+    expect(last_response.body).to match(%r{Projected\s*<strong class="">R\$ 1,472\.11</strong>})
   end
 
   it "shows the plan's target only from the month the plan starts" do

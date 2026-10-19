@@ -111,6 +111,100 @@ RSpec.describe Tally::Importers::ContaGlobalCSV do
     end
   end
 
+  describe "rows on their own" do
+    # A file with only the header and one line of the fixture (1-based, as the file numbers
+    # them), its fields changed by name.
+    def alone(line, **changes)
+      header, *lines = fixture(name).force_encoding("UTF-8").lines
+      fields = CSV.parse_line(lines[line - 2], headers: CSV.parse_line(header))
+      changes.each { |field, value| fields[field.to_s.tr("_", " ")] = value }
+      header + CSV.generate_line(fields.fields)
+    end
+
+    let(:top_up) { 11 }
+    let(:cafe) { 9 }
+    let(:london) { 8 }
+
+    it "rejects a file missing a column it needs" do
+      content = fixture(name).force_encoding("UTF-8").sub(%("Running Balance"), %("Saldo"))
+
+      expect { parse(content) }
+        .to raise_error(Tally::Importers::Error, "not a Conta Global CSV: missing the columns Running Balance")
+    end
+
+    it "rejects a file with no rows" do
+      expect { parse(fixture(name).lines.first) }.to raise_error(Tally::Importers::Error, "the file has no rows")
+    end
+
+    it "rejects a row with no ID, time or amount" do
+      expect { parse(alone(top_up, "TransferWise ID": "")) }
+        .to raise_error(Tally::Importers::Error, "line 2: no TransferWise ID")
+      expect { parse(alone(top_up, Date_Time: "18/07/2026 10:00")) }
+        .to raise_error(Tally::Importers::Error, 'line 2: not a date and time: "18/07/2026 10:00"')
+      expect { parse(alone(top_up, Amount: "0.00", Running_Balance: "0.00")) }
+        .to raise_error(Tally::Importers::Error, "line 2: zero amount")
+    end
+
+    it "names a card row after its description when neither Merchant nor the wording names one" do
+      row = parse(alone(cafe, Merchant: "", Description: "Compra Exemplo")).rows.first
+
+      expect(row).to have_attributes(kind: "purchase", description: "Compra Exemplo", counterparty: {name: "Compra Exemplo"})
+    end
+
+    it "trims the spaces around every field" do
+      padded = parse(alone(london, "TransferWise ID": " CARD-8000000002 ", Merchant: "  Pub Exemplo ", Currency: " USD ")).rows.first
+      plain = parse(alone(london, Merchant: "Pub Exemplo")).rows.first
+
+      expect(padded).to have_attributes(external_id: plain.external_id, description: "Pub Exemplo", counterparty: {name: "Pub Exemplo"})
+      cafe_row = parse(alone(cafe, Merchant: "", Description: "Transação por cartão de 3,10 USD emitida por  Café Exemplo")).rows.first
+      expect(cafe_row.counterparty).to eq(name: "Café Exemplo")
+    end
+
+    it "keeps an unknown type that takes money out as a purchase" do
+      expect(parse(alone(cafe, Transaction_Details_Type: "DEPOSIT")).rows.first.kind).to eq("purchase")
+    end
+
+    it "keeps no fee when the column is blank or zero" do
+      expect(parse(alone(london, Total_fees: "")).rows.first.fee).to be_nil
+      expect(parse(alone(london, Total_fees: "0.00")).rows.first.fee).to be_nil
+      expect(parse(alone(london)).rows.first.fee).to eq(usd(19))
+    end
+
+    it "reads fees and the other amount by their size, whatever sign the file prints" do
+      row = parse(alone(london, Total_fees: "-0.19", Exchange_To_Amount: "-41.20")).rows.first
+
+      expect(row).to have_attributes(fee: usd(19), exchange_amount: Tally::Money.new(-4_120, "GBP"))
+    end
+
+    it "keeps no exchange when either currency of the pair is blank" do
+      expect(parse(alone(london, Exchange_From: "")).rows.first.exchange_currency).to be_nil
+      expect(parse(alone(london, Exchange_To: "")).rows.first.exchange_currency).to be_nil
+    end
+
+    it "keeps the rate without the other amount when the file leaves it out" do
+      expect(parse(alone(london, Exchange_To_Amount: "")).rows.first)
+        .to have_attributes(exchange_currency: "GBP", exchange_amount: nil, exchange_rate: "0.7825")
+    end
+
+    it "keeps the other amount positive on a refund in another currency" do
+      row = parse(alone(london, Amount: "52.84", Running_Balance: "52.84", Transaction_Type: "CREDIT")).rows.first
+
+      expect(row).to have_attributes(kind: "refund", exchange_amount: Tally::Money.new(4_120, "GBP"))
+    end
+
+    it "rejects an exchange that doesn't involve the account's currency" do
+      expect { parse(alone(top_up, Exchange_To: "GBP")) }
+        .to raise_error(Tally::Importers::Error, "line 2: an exchange from BRL to GBP doesn't involve USD")
+    end
+
+    it "rejects an exchange rate that isn't a positive number" do
+      expect { parse(alone(top_up, Exchange_Rate: "abc")) }
+        .to raise_error(Tally::Importers::Error, 'line 2: not an exchange rate: "abc"')
+      expect { parse(alone(top_up, Exchange_Rate: "0.000")) }
+        .to raise_error(Tally::Importers::Error, "line 2: zero exchange rate")
+    end
+  end
+
   # Raises a line's running balance by some cents.
   def bump(line, cents)
     fields = CSV.parse_line(line)

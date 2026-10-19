@@ -42,14 +42,26 @@ RSpec.describe Tally::Report do
     expect(report.categories.sum(&:cents)).to eq(report.spending_cents)
   end
 
-  it "splits spending by nature" do
-    expect(report.natures.map { [_1.name, _1.cents] })
-      .to eq([["essential", 80_000], ["discretionary", 35_000], ["fixed", 30_000], ["unset", 24_999]])
+  it "splits spending by nature, each with its own average" do
+    expect(report.natures.map { [_1.name, _1.cents, _1.average_cents] })
+      .to eq([["essential", 80_000, 80_000], ["discretionary", 35_000, 20_000], ["fixed", 30_000, 30_000], ["unset", 24_999, 0]])
   end
 
-  it "lists top payees" do
-    expect(report.payees(limit: 2).map { [_1.name, _1.cents, _1.rows] })
-      .to eq([["MERCADO EXEMPLO", 80_000, 1], ["IFOOD", 35_000, 2]])
+  it "measures the change against the size of the average, whatever its sign, to one decimal" do
+    line = described_class::Line.new(id: nil, name: "x", cents: 500, average_cents: -300, share: 0, rows: 1, children: [])
+
+    expect(line.change).to eq(266.7)
+  end
+
+  it "lists top payees, with their own averages" do
+    expect(report.payees(limit: 2).map { [_1.name, _1.cents, _1.rows, _1.average_cents] })
+      .to eq([["MERCADO EXEMPLO", 80_000, 1, 80_000], ["IFOOD", 35_000, 2, 20_000]])
+  end
+
+  it "names a payee after its first row" do
+    rows = [insight_row("2026-09-02", -10.00, "FARMACIA EXEMPLO 4021"), insight_row("2026-09-03", -20.00, "FARMACIA EXEMPLO 1187")]
+
+    expect(described_class.new(rows, month: "2026-09").payees.map { [_1.name, _1.cents] }).to eq([["FARMACIA EXEMPLO 4021", 3_000]])
   end
 
   it "shows the month's installments and when each ends" do
