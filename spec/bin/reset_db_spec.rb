@@ -22,7 +22,7 @@ RSpec.describe "bin/reset-db" do
   end
 
   # One example: each reset boots the app three times.
-  it "asks first, backs the database up, then recreates it with the schema and the starting categories" do
+  it "asks first, backs the database up, then recreates it with the schema and the starting categories, keeping home bills" do
     output, status = reset("--force")
     expect(status).to be_success, output
     query("INSERT INTO accounts (name, institution, kind) VALUES ('Conta exemplo', 'nubank', 'checking')")
@@ -32,6 +32,8 @@ RSpec.describe "bin/reset-db" do
     expect(output).to include("This deletes everything in #{path}", "Nothing was changed")
     expect(query("SELECT count(*) FROM accounts")).to eq(1)
 
+    query("INSERT INTO home_bills (name, due_day) VALUES ('Energia', 10)")
+
     output, status = reset(input: "yes\n")
     expect(status).to be_success, output
     backups = Dir[File.join(@dir, "tally-backup-*.sqlite")]
@@ -40,6 +42,8 @@ RSpec.describe "bin/reset-db" do
     expect(query("SELECT count(*) FROM accounts", backups.first)).to eq(1)
     expect(query("SELECT count(*) FROM accounts")).to eq(0)
     expect(query("SELECT count(*) FROM categories")).to be_positive
+    expect(output).to include("Home bills kept: 1.")
+    expect(query("SELECT name FROM home_bills")).to eq("Energia")
   end
 
   it "refuses to run in production, and --force outside development" do

@@ -5,6 +5,9 @@
 # starting categories and generic rules from the seeds. Use it to import everything again
 # after an importer change.
 #
+# Home bills, their payments and receipts are kept (Tally::HomeBillsCopy): they are copied
+# back from the backup, and the receipt files in storage/receipts are never touched.
+#
 # Before deleting anything it copies the database next to itself
 # (db/tally.sqlite -> db/tally-backup-20261016-143000.sqlite) and prints where the copy went.
 # It refuses to run with HANAMI_ENV=production or on a Raspberry Pi, where the live database is.
@@ -21,6 +24,7 @@ require "hanami"
 require "hanami/db/testing"
 require "sqlite3"
 require "uri"
+require_relative "../lib/tally/home_bills_copy"
 
 ROOT = File.expand_path("..", __dir__)
 PI_MODEL_FILE = "/proc/device-tree/model"
@@ -46,12 +50,13 @@ refuse "it only resets SQLite databases, and DATABASE_URL is #{uri.scheme}://" u
 path = File.expand_path("#{uri.host}#{uri.path}", ROOT)
 shown = path.delete_prefix("#{ROOT}/")
 
+backup = nil
 if File.exist?(path)
   unless force
     db = SQLite3::Database.new(path, readonly: true)
     rows = db.get_first_value("SELECT count(*) FROM sqlite_master WHERE name = 'transactions'").zero? ? 0 : db.get_first_value("SELECT count(*) FROM transactions")
     db.close
-    puts "This deletes everything in #{shown} (#{env}): #{rows} transactions, your categories, rules, plans and budgets."
+    puts "This deletes everything in #{shown} (#{env}): #{rows} transactions, your categories, rules, plans and budgets. Home bills and their receipts are kept."
     puts "A copy is kept next to it first. Stop bin/dev before going on."
     print 'Type "yes" to reset it: '
     answer = $stdin.gets.to_s.strip
@@ -72,4 +77,6 @@ system(*hanami, "create", "--skip-test-db", exception: true)
 system(*hanami, "migrate", "--no-dump", "--skip-test-db", exception: true)
 # The seed logs every SQL statement in development.
 system(*hanami, "seed", "--skip-test-db", out: File::NULL, exception: true)
+bills = backup ? Tally::HomeBillsCopy.call(from: backup, to: path) : 0
+puts "Home bills kept: #{bills}." if bills.positive?
 puts "#{shown} is empty again, with the starting categories. Import your statements to fill it."

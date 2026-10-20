@@ -1,0 +1,72 @@
+<main>
+  <%= render "shared/breadcrumb", parents: [[t("layout.nav.home-bills"), "/home-bills"]], current: bill[:name] %>
+  <h1><%= bill[:name] %></h1>
+  <p class="note"><%= [category_name(bill[:category_name]), t("home_bills.day", day: bill[:due_day]), money(bill[:expected_cents]), bill[:payee_label]].reject { _1.to_s.empty? }.join(" · ") %></p>
+
+  <% months.each do |entry| %>
+    <section class="home-bill-month">
+      <h2><%= month_label(entry.month) %></h2>
+      <p><%= home_bill_status(entry) %></p>
+      <% payment = entry.payment %>
+      <% if payment %>
+        <% id = linked[[payment[:account_name], payment[:external_id]]] %>
+        <form action="/home-bills/<%= bill[:id] %>/payments/remove" method="post">
+          <input type="hidden" name="month" value="<%= entry.month %>">
+          <% if id %><a href="<%= transaction_path(id) %>"><%= t("home_bills.show.see_row") %></a><% end %>
+          <button type="submit"><%= t("home_bills.show.unpay") %></button>
+        </form>
+      <% else %>
+        <% candidates = Tally::HomeBills.candidates(bill, entry.month, rows) %>
+        <% if candidates.empty? %>
+          <p class="note"><%= t("home_bills.show.no_rows") %></p>
+        <% else %>
+          <% suggested = Tally::HomeBills.suggest(bill, entry.month, rows) %>
+          <form action="/home-bills/<%= bill[:id] %>/payments" method="post">
+            <input type="hidden" name="month" value="<%= entry.month %>">
+            <p><label><%= t("home_bills.show.pick") %><br><select name="transaction_id" data-picker>
+              <% candidates.each do |row| %>
+                <option value="<%= row[:id] %>"<%= " selected" if row.equal?(suggested) %>><%= [date(row[:occurred_on]), Tally::Insights.payee_label(row), money(-row[:amount_cents]), row[:account_name]].join(" · ") %></option>
+              <% end %>
+            </select></label></p>
+            <button type="submit" class="primary"><%= t("home_bills.show.link") %></button>
+          </form>
+        <% end %>
+        <details>
+          <summary><%= t("home_bills.show.by_hand") %></summary>
+          <form action="/home-bills/<%= bill[:id] %>/payments" method="post">
+            <input type="hidden" name="month" value="<%= entry.month %>">
+            <p><label><%= t("home_bills.show.paid_on") %><br><input type="date" name="paid_on" required value="<%= entry.due_on %>"></label></p>
+            <p><label><%= t("home_bills.show.amount") %><br><input name="amount" inputmode="decimal" size="12" required value="<%= bill[:expected_cents] && amount_field(bill[:expected_cents]) %>"></label></p>
+            <p><label><%= t("home_bills.show.paid_by") %><br><input name="paid_by" size="30"></label></p>
+            <button type="submit"><%= t("home_bills.show.mark_paid") %></button>
+          </form>
+        </details>
+      <% end %>
+
+      <h3><%= t("home_bills.show.receipts") %></h3>
+      <div class="receipts">
+        <% receipts.fetch([bill[:id], entry.month], []).each do |receipt| %>
+          <figure>
+            <% if receipt[:mime].start_with?("image/") %>
+              <a href="/receipts/<%= receipt[:id] %>"><img src="/receipts/<%= receipt[:id] %>" alt="<%= receipt[:filename] %>" loading="lazy"></a>
+            <% else %>
+              <a class="receipt-file" href="/receipts/<%= receipt[:id] %>"><%= receipt[:filename] %></a>
+            <% end %>
+            <figcaption class="note"><%= timestamp(receipt[:uploaded_at]) %>
+              <form action="/receipts/<%= receipt[:id] %>/delete" method="post" data-confirm="<%= t("home_bills.show.confirm_delete_receipt") %>"><button type="submit"><%= t("home_bills.show.delete_receipt") %></button></form>
+            </figcaption>
+          </figure>
+        <% end %>
+      </div>
+      <form action="/home-bills/<%= bill[:id] %>/receipts" method="post" enctype="multipart/form-data">
+        <input type="hidden" name="month" value="<%= entry.month %>">
+        <input type="file" name="file" accept="image/jpeg,image/png,application/pdf" required>
+        <button type="submit"><%= t("home_bills.show.upload") %></button>
+      </form>
+    </section>
+  <% end %>
+
+  <form action="/home-bills/<%= bill[:id] %>/delete" method="post" data-confirm="<%= t("home_bills.show.confirm_delete") %>">
+    <button type="submit"><%= t("home_bills.show.delete") %></button>
+  </form>
+</main>

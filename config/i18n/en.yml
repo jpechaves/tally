@@ -43,6 +43,7 @@ en:
       counterparties: Counterparties
       cuts: Cuts
       home: Home
+      home-bills: Home bills
       imports: Import
       installments: Installments
       plan: Savings plan
@@ -58,6 +59,7 @@ en:
     detail:
       accounts: Account report
       counterparties: Counterparty
+      home-bills: Home bill
       imports: Import
       plan: Plan
       transactions: Transaction
@@ -80,6 +82,7 @@ en:
     invalid_adjustment: Pick canceled, reimbursed or amount changed.
     invalid_amount: "Amounts look like -50.00 (spending is negative)."
     invalid_field: Pick what to match and how.
+    invalid_home_bill: A bill needs a name, a due day from 1 to 31, and an amount like 182.40 if you give one.
     invalid_kind: Pick expense or income.
     invalid_limit: A limit is an amount of zero or more, like 500.00.
     invalid_max_cut: The maximum cut is a percentage from 0 to 100.
@@ -88,6 +91,8 @@ en:
     invalid_pattern: That is not a valid regular expression.
     invalid_refund: That row cannot pay this purchase back.
     invalid_reimbursed_amount: Enter what came back, more than zero and up to the purchase, like 30.00.
+    invalid_payment: Enter the day it was paid and the amount, like 182.40.
+    invalid_receipt: A receipt is a JPEG, PNG or PDF of up to 10 MB.
     invalid_target: Enter how much to save each month, like 1500.00.
     invalid_trip: A trip needs a name, and a first day on or before its last.
     missing_key: Missing suggestion key.
@@ -585,6 +590,47 @@ en:
       subscriptions_html: Charges that repeat every month are on the <a href="/subscriptions">subscriptions</a> page.
       title: What can I cut?
 
+  home_bills:
+    day: day %{day}
+    due: due on %{date}
+    late: late since %{date}
+    paid: paid on %{date}
+    index:
+      a_month: "%{amount} a month"
+      due_day: Due day
+      empty: No home bills yet.
+      expected: Expected
+      expected_optional: Expected amount (optional; leave blank if it varies a lot)
+      intro: >-
+        Rent, energy, water, internet: what is due each month, and who paid it. Link a month to
+        its row from a statement, or mark it paid by hand, and keep the receipt.
+      late:
+        one: 1 late
+        other: "%{count} late"
+        zero: none late
+      late_title: Late
+      name: Name
+      new: New home bill
+      no_category: No category
+      title: Home bills
+    show:
+      amount: Amount
+      by_hand: Paid by hand
+      confirm_delete: Delete this bill, its payments and receipts?
+      confirm_delete_receipt: Delete this receipt?
+      delete: Delete bill
+      delete_receipt: Delete
+      link: It was this one
+      mark_paid: Mark paid
+      no_rows: No spending near the due day to link.
+      paid_by: Who paid
+      paid_on: Paid on
+      pick: Payment from a statement
+      receipts: Receipts
+      see_row: See the row
+      unpay: Not paid
+      upload: Add receipt
+
   subscriptions:
     index:
       a_month: "%{amount} a month"
@@ -607,6 +653,7 @@ en:
       since: Since
       stopped: stopped
       title: Subscriptions
+      track: Track as home bill
       undo: Undo
     marks:
       dismissed: not a subscription

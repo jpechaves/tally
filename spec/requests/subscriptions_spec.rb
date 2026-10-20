@@ -32,6 +32,7 @@ RSpec.describe "Subscriptions", :db, type: :request do
     expect(body).to include("StreamFlix", "up R$ 5.00", "Academia Forte", "Nubank conta, Nubank cartão", "Jul 2026")
     expect(body).to include("MUSICAPP", %(<span class="badge">stopped</span>))
     expect(body).to include(%(href="/transactions?kind=spending&amp;payee=counterparty%3A#{db[:counterparties].where(name: "StreamFlix").get(:id)}&amp;back=%2Fsubscriptions"))
+    expect(body).to include(%(href="/home-bills?payee=counterparty%3A#{db[:counterparties].where(name: "StreamFlix").get(:id)}&amp;name=StreamFlix&amp;amount=44.90&amp;day=5#new">Track as home bill))
 
     get "/cuts"
     expect(last_response.body).to include(%(href="/subscriptions"))

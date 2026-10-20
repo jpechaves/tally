@@ -281,6 +281,9 @@ transaction_adjustments         -- what you know about a row that its statement 
 
 subscription_marks              -- payees you said are or aren't subscriptions, by payee key (issue #74)
 trips, trip_accounts, trip_rows -- a trip's dates, accounts and the rows you added or took out (issue #75)
+home_bills                      -- a household bill: name, category, expected amount, due day, payee by match key (issue #113)
+home_bill_payments              -- one per bill and month: paid on, amount, who paid; linked rows by (account name, external_id)
+home_bill_receipts              -- receipt files in storage/receipts/<sha256>: hash, type, size, name, bill-month
 ```
 
 The monthly savings target lives in `savings_plans`. Named goals with a deadline ("R$ 30 mil for a car by 2027-12") are left for later; they would only add tables. The Nubank RDB is an `investment` account whose balance comes from the "Aplicação/Resgate RDB" transfers.
@@ -463,6 +466,18 @@ Each purchase on the installments page, and each installment in the report, link
 - The page shows the total, the foreign subtotal with its reais, by category (top level) and by account, each linked to `/transactions?trip=…` with that category or account, and the rows.
 - Trip rows still count in the monthly report; `/report?trips=hide` leaves every trip's rows out (`InsightRepo#rows(without:)`) to see a normal month.
 
+### 8.9 Home bills
+
+`/home-bills` (issue #113, `Tally::HomeBills`) tracks fixed household bills: rent, energy, water, internet, condo fee, car or mortgage payments. A bill (`home_bills`) has a name, an optional category and expected amount, a due day (1-31, clamped to the month's last day) and optionally a payee, set when it is added from a subscription ("Track as home bill" on `/subscriptions` fills in the form).
+
+- Each month is **paid** once it has a payment (`home_bill_payments`, one per bill and month), else **due** up to its due day and **late** after it. The list shows the month before and this one; a bill's page shows both with their payment, receipts and forms.
+- A payment is either **linked** to an imported row or entered **by hand** (day, amount, who paid). A link keeps the row's account name and bank `external_id` (the re-import upsert key, §7), never its `id`, so it finds the row again after a re-import or a reset. Who paid a linked row is its account for now; with the household people of #21 it becomes the account's owner.
+- The bill's page **suggests** the row: the payee's spending row nearest the due day (±15 days); without a payee, a row of its category within 20% of the expected amount. You confirm it, or pick another from the searchable picker of every spending row near the due day.
+- A payee is kept by its counterparty's `match_key` (`match:…`), not the counterparty id, which a reset changes.
+- **Receipts** (`Tally::Receipts`, `home_bill_receipts`): photos or PDFs of a boleto or Pix, any number per bill-month. JPEG, PNG and PDF only, told apart by their first bytes, up to 10 MB. Files go to `RECEIPT_STORAGE_DIR` (`storage/receipts/`, gitignored), named by their SHA-256 (written to a temporary file, then renamed), so the same file is kept once; the table keeps the hash, type, size, original name, month and upload time. They are served only by `/receipts/:id` (behind the login, with `send_file`, cached for a year since files never change), never from `public/`. Deleting the last row that uses a file deletes the file.
+- `bin/reset-db` keeps home bills: after recreating the database it copies the three tables back from its backup (`Tally::HomeBillsCopy`, a category found again by its name and its parent's), and never touches `storage/`.
+- Backups: the database as today, plus the receipts folder (rsync it daily alongside the database backup).
+
 ## 9. SQLite reliability settings
 
 Set for every connection in `config/providers/db.rb` (milestone 1), and shown on the home page.
@@ -474,7 +489,7 @@ Set for every connection in `config/providers/db.rb` (milestone 1), and shown on
 | `synchronous` | `FULL` | Writes are rare, so pay for durability on an SD card that may lose power. |
 | `busy_timeout` | `5000` | Wait instead of failing on concurrent writes. |
 
-Plus a **nightly backup** (`sqlite3 … ".backup"`, 30 copies kept, copied off the SD card), a **weekly `PRAGMA integrity_check`** shown on the home page if it fails, and the original statement files kept in `storage/imports/` so the database can be rebuilt from them.
+Plus a **nightly backup** (`sqlite3 … ".backup"`, 30 copies kept, copied off the SD card), a **weekly `PRAGMA integrity_check`** shown on the home page if it fails, and the original statement files kept in `storage/imports/` so the database can be rebuilt from them. Home bill receipts live in `storage/receipts/` (§8.9) and are copied off daily with rsync.
 
 ## 10. Running on the Pi Zero 2 W
 
@@ -583,6 +598,7 @@ Only after version 1 is correct and in daily use. Each one only **suggests**; no
 - **Counterparty names** (issue #37): done. Each counterparty can have your own display name and a note (`/counterparties/:id`, also linked from a transaction and a review group). Every list shows the display name (`Tally::DB::Repo.counterparty_label`), with the bank's name kept underneath and in tooltips; the counterparties search matches either. Imports, matching (`match_key`), merchant grouping and rules keep using the bank's name.
 - **Subscriptions** (issue #74): done. See §8.7.
 - **Trips** (issue #75): done. See §8.8.
+- **Home bills** (issue #113): done. See §8.9.
 - **Next, milestone 8 (Pi deployment)**, postponed while the app is tried by hand.
 
 ## 17. Public repository: keeping personal data out

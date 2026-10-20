@@ -40,12 +40,12 @@ The home page shows the SQLite settings in effect (WAL, foreign keys, full sync)
 | `bin/hanami db migrate` | Applies new migrations to the dev and test databases (`bin/setup` does it too). |
 | `bin/hanami db seed` | Adds the starting categories and generic rules that are missing, updates starting rules a new version rewrote, loads `data/seeds.rb`, and categorizes the rows again. It never changes or brings back what you edited, archived or switched off. |
 | `bin/hanami db version` | Prints the database's schema version. |
-| `bin/reset-db` | Wipes the database and starts it again, empty, with the starting categories. See below. |
+| `bin/reset-db` | Wipes the database and starts it again, empty, with the starting categories (home bills are kept). See below. |
 | `bin/check-private --all` | Scans every tracked file for the strings in `data/private-patterns.txt`. |
 
 ### Starting the database again
 
-`bin/reset-db` deletes everything in the database (statements, categories you changed, rules, plans, budgets) and recreates it from the migrations and seeds, for example to import everything again after an importer change. It asks you to type `yes`, then copies the database next to itself first (`db/tally-backup-20261016-143000.sqlite`) and prints where the copy went. Stop `bin/dev` before running it.
+`bin/reset-db` deletes everything in the database (statements, categories you changed, rules, plans, budgets) and recreates it from the migrations and seeds, for example to import everything again after an importer change. It asks you to type `yes`, then copies the database next to itself first (`db/tally-backup-20261016-143000.sqlite`) and prints where the copy went. Home bills, their payments and receipts are copied back from that backup, and receipt files in `storage/receipts/` are never touched. Stop `bin/dev` before running it.
 
 It refuses to run with `HANAMI_ENV=production` or on a Raspberry Pi, where the live database is. `bin/reset-db --force` skips the question, for scripts, and only works in development. To get your data back, stop the server and copy the backup over the database file.
 
@@ -59,6 +59,7 @@ Settings come from environment variables, loaded from `.env` files in developmen
 | `BASIC_AUTH_USERNAME`, `BASIC_AUTH_PASSWORD` | unset | Optional login, in every environment. Both empty: no login (production logs a warning at boot). Both set: the browser asks for them. Only one set: the app answers 503. |
 | `HANAMI_MAX_THREADS` | `2` | Puma threads; 2 suits the Pi Zero 2 W. |
 | `IMPORT_STORAGE_DIR` | `storage/imports` | Where each imported file is kept, named by its SHA-256. Gitignored. |
+| `RECEIPT_STORAGE_DIR` | `storage/receipts` | Where home bill receipts are kept, named by their SHA-256. Gitignored. Back it up with the database (for example `rsync -a storage/receipts/ backup-host:tally/receipts/` daily). |
 | `PASS_THROUGH_TOLERANCE_CENTS` | `5000` | How far the Itaú account's balance may drift from zero before the Accounts page warns. |
 | `TIME_ZONE` | `America/Sao_Paulo` | The time zone import and plan times are shown in, by its IANA name. The database keeps times in UTC. |
 | `DEFAULT_LOCALE` | `pt-BR` | The language pages open in (`pt-BR` or `en`), and the one new databases get their starting categories in. Each browser can switch from the menu; starting category names follow it, names you type stay as typed. |

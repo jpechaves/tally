@@ -15,7 +15,7 @@
         <thead><tr>
           <th><%= t("subscriptions.index.payee") %></th><th><%= t("report.show.category") %></th><th><%= t("subscriptions.index.accounts") %></th>
           <th class="num"><%= t("subscriptions.index.last") %></th><th class="num"><%= t("subscriptions.index.per_month") %></th>
-          <th class="num"><%= t("subscriptions.index.per_year") %></th><th><%= t("subscriptions.index.since") %></th><th></th>
+          <th class="num"><%= t("subscriptions.index.per_year") %></th><th><%= t("subscriptions.index.since") %></th><th></th><th></th>
         </tr></thead>
         <tbody>
           <% subscriptions.items.each do |item| %>
@@ -30,6 +30,7 @@
               <td class="num"><%= money(item.monthly_cents) %></td>
               <td class="num"><%= money(item.yearly_cents) %></td>
               <td><%= month_label(item.first_month) %></td>
+              <td><a href="/home-bills?<%= URI.encode_www_form(payee: item.key, name: item.payee, amount: amount_field(item.last_cents), day: item.last_on[8, 2].to_i) %>#new"><%= t("subscriptions.index.track") %></a></td>
               <td><form action="/subscriptions/marks" method="post">
                 <input type="hidden" name="key" value="<%= item.key %>"><input type="hidden" name="kind" value="dismissed"><input type="hidden" name="title" value="<%= item.payee %>">
                 <button type="submit"><%= t("subscriptions.index.dismiss") %></button></form></td>

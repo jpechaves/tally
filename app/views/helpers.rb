@@ -185,6 +185,18 @@ module Tally
         end
       end
 
+      # How a home bill's month stands (Tally::HomeBills::Month): "paid on Oct 8, 2026 ·
+      # R$ 182.40 · Nubank conta", "due on Oct 10, 2026" or "late since Oct 10, 2026".
+      def home_bill_status(entry)
+        payment = entry.payment
+        text = if payment
+          [t("home_bills.paid", date: date(payment[:paid_on])), money(payment[:amount_cents]), payment[:paid_by] || payment[:account_name]].compact.join(" · ")
+        else
+          t("home_bills.#{entry.status}", date: date(entry.due_on))
+        end
+        %(<span class="home-bill-#{entry.status}">#{ERB::Util.html_escape(text)}</span>).html_safe
+      end
+
       def source_label(source) = t("sources.#{source}", default: source.to_s)
 
       # A row dated after today, like an installment on a bill exported early: committed,
