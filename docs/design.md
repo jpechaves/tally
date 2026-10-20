@@ -11,6 +11,10 @@ Tally looks like a dark product tool, after Linear's app: dense, quiet, and read
 - **Type.** Inter if installed, otherwise the system's UI sans (SF Pro on a Mac). 14px body, 26px page titles at weight 600 with slightly negative tracking, 11.5px uppercase group labels. Numbers in tables use tabular figures so columns line up; big stat values don't.
 - **Layout.** A 232px sidebar with the pages grouped by task (Overview, Planning, Data, Organize) and the language switch at the bottom. Below 860px it folds into a top bar, stat tiles go two per row, and wide tables scroll sideways inside their panel.
 
+## Breadcrumb
+
+Pages below a section show where they sit above the `<h1>`: small `--ink-subtle` crumbs, `›` between them, the lavender hover on links, and the current page last in `--ink-muted`, cut with an ellipsis when long. It is a `<nav>` with `aria-current="page"` on the last crumb (`app/templates/shared/_breadcrumb.html.erb`).
+
 ## Charts
 
 Charts are drawn on the server as inline SVG (`Tally::Charts`) or plain HTML bars, so there is no charting library to ship to the Pi and nothing for the Content Security Policy to block.

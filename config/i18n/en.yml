@@ -50,6 +50,17 @@ en:
       transactions: Transactions
       trips: Trips
 
+  breadcrumb:
+    back: Back
+    detail:
+      accounts: Account report
+      counterparties: Counterparty
+      imports: Import
+      plan: Plan
+      transactions: Transaction
+      trips: Trip
+    label: You are here
+
   charts:
     income: Income
     millions: "%{n}M"
@@ -316,7 +327,6 @@ en:
       hint: "Leave it blank to show “%{name}” again. Imports and rules keep using the bank's name."
       note: Note
     show:
-      back: Back
       bank_name: "At the bank: %{name}"
       subscription: It's a subscription
       subscription_note: Lists it on the subscriptions page even when it isn't found there.

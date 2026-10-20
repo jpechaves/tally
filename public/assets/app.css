@@ -92,6 +92,13 @@ main { padding: 32px 40px 64px; max-width: 1160px; width: 100%; min-width: 0; }
 /* --- Type ----------------------------------------------------------------------------- */
 
 h1 { margin: 0 0 20px; font-size: 26px; line-height: 1.2; font-weight: 600; letter-spacing: -0.025em; }
+/* Breadcrumb: small muted crumbs above the title, "›" between them, the current page last. */
+.breadcrumb ol { display: flex; flex-wrap: wrap; align-items: center; margin: 0 0 8px; padding: 0; list-style: none; font-size: 12.5px; color: var(--ink-subtle); }
+.breadcrumb li { display: flex; min-width: 0; }
+.breadcrumb li + li::before { content: "›"; margin: 0 8px; color: var(--ink-tertiary); }
+.breadcrumb a { color: var(--ink-subtle); text-decoration: none; }
+.breadcrumb a:hover { color: var(--accent-hover); }
+.breadcrumb [aria-current] { max-width: 40ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink-muted); }
 h2 { margin: 36px 0 12px; font-size: 16px; line-height: 1.3; font-weight: 600; letter-spacing: -0.015em; }
 h1 + h2 { margin-top: 0; }
 p { margin: 0 0 12px; color: var(--ink-muted); }

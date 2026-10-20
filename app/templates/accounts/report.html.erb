@@ -1,5 +1,6 @@
 <main>
   <% currency = account.currency %><% symbol = Tally::Money::SYMBOLS.fetch(currency, currency) %>
+  <%= render "shared/breadcrumb", parents: [[t("layout.nav.accounts"), "/accounts"]], current: account.name %>
   <h1><%= t("accounts.report.title", account: account.name) %></h1>
   <% if report.nil? %>
     <p><%= t("accounts.report.empty") %></p>
@@ -72,7 +73,7 @@
             <% month_top_ups.each do |top_up| %>
               <% cost = Tally::TopUps.cost_of(top_up) %>
               <tr>
-                <td><a href="/transactions/<%= top_up[:id] %>"><%= date(top_up[:occurred_on]) %></a></td>
+                <td><a href="<%= transaction_path(top_up[:id]) %>"><%= date(top_up[:occurred_on]) %></a></td>
                 <td><%= top_up[:other_account_name] || t("accounts.report.not_paired") %></td>
                 <td class="num"><%= money(top_up[:amount_cents], currency) %></td>
                 <td class="num"><%= cost ? money(cost.paid_cents) : "" %></td>

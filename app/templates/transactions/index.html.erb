@@ -1,4 +1,5 @@
 <main>
+  <% if return_to %><%= render "shared/breadcrumb", parents: [[back_label(return_to, categories), return_to]], current: t("layout.nav.transactions") %><% end %>
   <h1><%= t("transactions.index.title") %></h1>
   <% if changed %><p class="notice"><%= [t("transactions.index.changed", rows: t("common.row_count", count: changed)),
     (t("transactions.index.skipped", count: skipped) if skipped.positive?)].compact.join(" ") %></p><% end %>
@@ -25,6 +26,7 @@
       <% end %>
     </select>
     <% filter.carried.each do |key, value| %><input type="hidden" name="<%= key %>" value="<%= value %>"><% end %>
+    <%= render "transactions/back", back: {back: return_to}.compact %>
     <button type="submit"><%= t("common.show") %></button>
     <% if filter.any? %><a href="<%= Tally::TransactionFilter::PATH %>"><%= t("transactions.index.clear") %></a><% end %>
   </form>
@@ -49,7 +51,7 @@
     <% count = t("common.row_count", count: totals[:rows]) %>
     <p><%= filter.spending? ? t("transactions.index.summary_spent", rows: count, spent: money_each(totals[:net].transform_values(&:-@))) : t("transactions.index.summary", rows: count, net: money_each(totals[:net])) %><% if filter.q %>
       <a href="<%= filter.with(q: nil).path %>"><%= t("transactions.index.clear_search") %></a><% end %></p>
-    <%= render "shared/pages", page: pagination, path: filter.pages %>
+    <%= render "shared/pages", page: pagination, path: filter.pages(back: return_to) %>
     <form action="/transactions/category" method="post" id="recategorize" class="filters" data-total="<%= totals[:rows] %>"
       data-ask="<%= t("transactions.index.ask", rows: "%{rows}", category: "%{category}") %>" data-one="<%= t("common.row_count", count: 1) %>" data-other="<%= t("common.row_count")[:other] %>">
       <%= t("transactions.index.recategorize") %>
@@ -59,7 +61,7 @@
       <button type="submit"><%= t("transactions.index.change_category") %></button>
     </form>
     <%= render "transactions/table", rows: rows, categories: categories, back: back %>
-    <%= render "shared/pages", page: pagination, path: filter.pages %>
+    <%= render "shared/pages", page: pagination, path: filter.pages(back: return_to) %>
     <script src="/assets/table.js"></script>
   <% end %>
 </main>
