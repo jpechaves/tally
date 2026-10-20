@@ -42,6 +42,11 @@ module Tally
     # local path, so a link can't send you to another site.
     def back_param(value) = value.to_s[%r{\A/(?![/\\])[^\s]{0,500}\z}]
 
+    # Keeps a browser's choice (language, theme) in a cookie for a year.
+    def remember(response, cookie, value)
+      response.cookies[cookie] = {value:, path: "/", max_age: 365 * 24 * 60 * 60, same_site: :lax}
+    end
+
     # +path+ with a query of the +params+ that are set: "/transactions/5?back=%2Freview".
     def path_with(path, **params)
       params = params.compact

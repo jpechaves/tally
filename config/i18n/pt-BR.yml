@@ -40,11 +40,14 @@ pt-BR:
     show: Mostrar
 
   layout:
+    dark: Tema escuro
+    debug: Informações de debug
     groups:
       data: Dados
       organize: Organizar
       overview: Visão geral
       planning: Planejamento
+    light: Tema claro
     nav:
       accounts: Contas
       budgets: Orçamentos
@@ -153,18 +156,22 @@ pt-BR:
       manual: manual
       seed: padrão
 
-  home:
+  debug:
     show:
-      all_categories: Todas as categorias
       busy_timeout: Busy timeout
       database: Banco de dados
       foreign_keys: Chaves estrangeiras
-      intro_html: Gastos da casa, orçamentos e economia. Comece <a href="/imports">importando seus extratos</a>.
       journal_mode: Modo de journal
-      month_note: "Mostrando %{month}, o último mês completo."
-      open_report: Abrir o relatório
       sqlite_version: Versão do SQLite
       synchronous: Synchronous
+      title: Informações de debug
+
+  home:
+    show:
+      all_categories: Todas as categorias
+      intro_html: Gastos da casa, orçamentos e economia. Comece <a href="/imports">importando seus extratos</a>.
+      month_note: "Mostrando %{month}, o último mês completo."
+      open_report: Abrir o relatório
       title: Visão geral
       top_categories: "Para onde foi o dinheiro em %{month}"
       trend: Receitas e gastos por mês
