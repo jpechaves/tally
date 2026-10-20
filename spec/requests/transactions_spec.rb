@@ -8,7 +8,7 @@ RSpec.describe "Filtering transactions", :db, type: :request do
   before do
     %w[NU_12345678_01JUL2026_31JUL2026.csv Nubank_2026-07-09.csv Nubank_2026-08-09.csv itau_2026-10.pdf
       itau_2027-01_tight.pdf].each do |name|
-      Hanami.app["operations.import_statement"].(file_name: name, content: fixture(name))
+      Hanami.app["operations.import_statement"].call(file_name: name, content: fixture(name))
     end
   end
 
@@ -78,7 +78,7 @@ RSpec.describe "Report rows link to their transactions", :db, type: :request do
     allow(Date).to receive(:today).and_return(Date.new(2027, 2, 1))
     %w[NU_12345678_01JUL2026_31JUL2026.csv Nubank_2026-07-09.csv Nubank_2026-08-09.csv itau_2026-10.pdf
       itau_2027-01_tight.pdf].each do |name|
-      Hanami.app["operations.import_statement"].(file_name: name, content: fixture(name))
+      Hanami.app["operations.import_statement"].call(file_name: name, content: fixture(name))
     end
   end
 
@@ -137,7 +137,7 @@ RSpec.describe "Installments link to their purchase", :db, type: :request do
   before do
     %w[NU_12345678_01JUL2026_31JUL2026.csv Nubank_2026-07-09.csv Nubank_2026-08-09.csv itau_2026-10.pdf
       itau_2027-01_tight.pdf].each do |name|
-      Hanami.app["operations.import_statement"].(file_name: name, content: fixture(name))
+      Hanami.app["operations.import_statement"].call(file_name: name, content: fixture(name))
     end
   end
 
@@ -190,7 +190,7 @@ RSpec.describe "Changing categories from the transactions table", :db, type: :re
 
   before do
     %w[Nubank_2026-08-09.csv itau_2026-10.pdf].each do |name|
-      Hanami.app["operations.import_statement"].(file_name: name, content: fixture(name))
+      Hanami.app["operations.import_statement"].call(file_name: name, content: fixture(name))
     end
   end
 
@@ -243,7 +243,7 @@ RSpec.describe "Searching transactions", :db, type: :request do
 
   before do
     %w[Nubank_2026-08-09.csv itau_2026-10.pdf].each do |name|
-      Hanami.app["operations.import_statement"].(file_name: name, content: fixture(name))
+      Hanami.app["operations.import_statement"].call(file_name: name, content: fixture(name))
     end
   end
 

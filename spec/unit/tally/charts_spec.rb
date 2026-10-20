@@ -16,10 +16,10 @@ RSpec.describe Tally::Charts do
       series: [{name: "Income", css: "s-income", values: [900_000, 0]}, {name: "Spending", css: "s-spending", values: [300_000, 150_000]}])
 
     expect(svg).to start_with(%(<svg viewBox="0 0 760 202" role="img" aria-label="Income &amp; spending">))
-    expect(svg.scan(/<path class="mark /).size).to eq(3)
+    expect(svg.scan('<path class="mark ').size).to eq(3)
     expect(svg).to include("<title>jul/2026 · Income: R$ 900000</title>", "<title>&lt;ago&gt; · Income: R$ 0</title>")
     expect(svg).to include(%(class="current">&lt;ago&gt;</text>), ">R$ 9000</text>", %(<line class="baseline"))
-    expect(svg.scan(/<g>/).size).to eq(svg.scan(%r{</g>}).size)
+    expect(svg.scan("<g>").size).to eq(svg.scan(%r{</g>}).size)
   end
 
   it "keeps columns at most 24px wide, rounded at the top" do
@@ -73,7 +73,7 @@ RSpec.describe Tally::Charts do
   it "labels every column up to 12, and every other one from 13" do
     labels = ->(count) { chart(labels: (1..count).map { "m#{_1}" }, series: [{name: "x", css: "s", values: [1] * count}]).scan(/>m\d+</).size }
 
-    expect([labels.(12), labels.(13)]).to eq([12, 7])
+    expect([labels.call(12), labels.call(13)]).to eq([12, 7])
   end
 
   it "gives bar widths as a share of the largest" do

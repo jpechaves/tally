@@ -27,6 +27,8 @@ end
 
 group :development, :test do
   gem "dotenv"
+  # Linter and formatter: `bundle exec standardrb` (`--fix` to autocorrect)
+  gem "standard", require: false
   # Syntax highlighting SQL logs
   gem "rouge"
 end

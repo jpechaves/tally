@@ -62,7 +62,7 @@ module Tally
       :source, :account_name, :period_start, :period_end, :rows, :card_statement, :warnings
     ) do
       def initialize(card_statement: nil, warnings: [], **rest)
-        super(card_statement:, warnings:, **rest)
+        super
       end
     end
 
@@ -90,9 +90,7 @@ module Tally
       def initialize(purchased_on: nil, bank_category: nil, location: nil, installment_number: nil,
         installment_total: nil, purchase_key: nil, counterparty: nil, counter_account: nil,
         exchange_currency: nil, exchange_amount: nil, exchange_rate: nil, fee: nil, **rest)
-        super(purchased_on:, bank_category:, location:, installment_number:, installment_total:,
-          purchase_key:, counterparty:, counter_account:, exchange_currency:, exchange_amount:,
-          exchange_rate:, fee:, **rest)
+        super
       end
     end
 
@@ -155,7 +153,7 @@ module Tally
 
     # A short stable key from the parts that identify a row.
     def self.digest(*parts)
-      Digest::SHA256.hexdigest(parts.map(&:to_s).join("|"))[0, 32]
+      Digest::SHA256.hexdigest(parts.join("|"))[0, 32]
     end
 
     # Numbers identical rows: the k-th repeat of the same identity gets k (0, 1, 2, ...), so

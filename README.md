@@ -33,6 +33,7 @@ The home page shows the SQLite settings in effect (WAL, foreign keys, full sync)
 | `bin/hanami console` | A Ruby console with the app loaded, e.g. `app["repos.plan_repo"].active`. |
 | `bundle exec rspec` | Runs the tests. Add a path to run some: `bundle exec rspec spec/requests/plans_spec.rb:20`. |
 | `bundle exec rspec spec/local` | Checks the parsers against your real statements in `data/statements/` (skipped when it is empty). |
+| `bundle exec standardrb` | Checks the code style ([Standard Ruby](https://github.com/standardrb/standard)); CI runs it too. Add `--fix` to correct what it can. |
 | `bundle exec rake "tally:import[data/statements/*]"` | Imports statement files from disk (see [Importing statements](#importing-statements)). |
 | `bin/hanami db migrate` | Applies new migrations to the dev and test databases (`bin/setup` does it too). |
 | `bin/hanami db seed` | Adds the starting categories and generic rules that are missing, updates starting rules a new version rewrote, loads `data/seeds.rb`, and categorizes the rows again. It never changes or brings back what you edited, archived or switched off. |

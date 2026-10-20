@@ -119,10 +119,10 @@ RSpec.describe "Importing statements", :db, type: :request do
     expect(body).to include("16 rows, net #{Tally::Money.new(net).format("en")}", "Page 1 of 4")
     expect(body).to include(%(href="/transactions?account=#{account}&amp;month=2026-07&amp;page=2">Next))
     expect(body).not_to include("Previous")
-    expect(rows.(body)).to eq(5)
+    expect(rows.call(body)).to eq(5)
 
     get "/transactions", account:, month: "2026-07", page: "4"
-    expect(last_response.body).to include("Page 4 of 4", "Previous").and(satisfy { rows.(_1) == 1 })
+    expect(last_response.body).to include("Page 4 of 4", "Previous").and(satisfy { rows.call(_1) == 1 })
     expect(last_response.body).not_to include("Next →")
 
     get "/transactions", account:, month: "2026-07", page: "99"
@@ -147,7 +147,7 @@ RSpec.describe "Importing statements", :db, type: :request do
   it "strikes through rows that are no longer in the file" do
     upload("Nubank_2026-08-09.csv")
     shorter = fixture("Nubank_2026-08-09.csv").force_encoding("UTF-8").sub(/^2026-07-10.*\n/, "")
-    Hanami.app["operations.import_statement"].(file_name: "Nubank_2026-08-09.csv", content: shorter)
+    Hanami.app["operations.import_statement"].call(file_name: "Nubank_2026-08-09.csv", content: shorter)
 
     get "/imports/#{db[:imports].max(:id)}"
     expect(last_response.body).to include(%(<tr class="missing">))

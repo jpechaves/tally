@@ -97,8 +97,8 @@ module Tally
       months = Insights.previous_months(@month, RECURRING_MONTHS - 1) + [@month]
 
       charges = ->(rows) { single(rows).reject { _1[:kind] == "fee" } }
-      charges.(@rows).group_by { Insights.payee_key(_1) }.filter_map do |key, rows|
-        totals = months.to_h { |m| [m, Insights.spent_cents(charges.(@by_month.fetch(m, [])).select { Insights.payee_key(_1) == key })] }
+      charges.call(@rows).group_by { Insights.payee_key(_1) }.filter_map do |key, rows|
+        totals = months.to_h { |m| [m, Insights.spent_cents(charges.call(@by_month.fetch(m, [])).select { Insights.payee_key(_1) == key })] }
           .select { |_, cents| cents.positive? }
         next if totals.size < RECURRING_MIN_MONTHS
 

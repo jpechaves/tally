@@ -23,12 +23,12 @@ RSpec.describe "Pairing transfers", :db do
     paid = leg(checking, -50_000, to: card, on: "2026-09-10")
     received = leg(card, 50_000, to: checking, on: "2026-09-12")
 
-    expect(pair.().value!).to eq(1)
+    expect(pair.call.value!).to eq(1)
     expect(transfer_of(paid)).to eq(transfer_of(received)).and be_truthy
     expect(db[:transfers].get(:occurred_on)).to eq("2026-09-10")
 
     db[:transactions].where(id: received).update(amount_cents: 50_100)
-    expect(pair.(touched_ids: [paid]).value!).to eq(0)
+    expect(pair.call(touched_ids: [paid]).value!).to eq(0)
     expect([transfer_of(paid), transfer_of(received)]).to eq([nil, nil])
     expect(db[:transfers].count).to eq(0)
   end
@@ -36,10 +36,10 @@ RSpec.describe "Pairing transfers", :db do
   it "splits a pair when one leg is no longer a transfer, even if it still names the other account" do
     paid = leg(checking, -50_000, to: card)
     received = leg(card, 50_000, to: checking)
-    pair.()
+    pair.call
 
     db[:transactions].where(id: paid).update(kind: "purchase")
-    pair.(touched_ids: [paid])
+    pair.call(touched_ids: [paid])
     expect([transfer_of(paid), transfer_of(received)]).to eq([nil, nil])
   end
 
@@ -57,13 +57,13 @@ RSpec.describe "Pairing transfers", :db do
     reais = leg(checking, -100_000, to: dollars)
     top_up = leg(dollars, 17_874, to: checking, exchange_currency: "BRL", exchange_rate: "5.405405")
 
-    expect(pair.().value!).to eq(1)
+    expect(pair.call.value!).to eq(1)
     transfer = transfer_of(top_up)
-    expect(pair.(touched_ids: [reais, top_up]).value!).to eq(0)
+    expect(pair.call(touched_ids: [reais, top_up]).value!).to eq(0)
     expect(transfer_of(reais)).to eq(transfer)
 
     db[:transactions].where(id: reais).update(amount_cents: -200_000)
-    pair.(touched_ids: [reais])
+    pair.call(touched_ids: [reais])
     expect([transfer_of(reais), transfer_of(top_up)]).to eq([nil, nil])
   end
 
@@ -71,7 +71,7 @@ RSpec.describe "Pairing transfers", :db do
     savings = account("Poupança Exemplo", mirror: 1)
     saved = leg(checking, -30_000, to: savings, on: "2026-09-05")
 
-    expect(pair.().value!).to eq(1)
+    expect(pair.call.value!).to eq(1)
     mirror = db[:transactions].where(account_id: savings).first
     expect(mirror).to include(amount_cents: 30_000, counter_account_id: checking, external_id: "mirror:#{saved}",
       transfer_id: transfer_of(saved))
@@ -80,7 +80,7 @@ RSpec.describe "Pairing transfers", :db do
     db[:transactions].update(transfer_id: nil)
     db[:transfers].delete
     db[:transactions].where(id: saved).update(amount_cents: -35_000)
-    expect(pair.().value!).to eq(1)
+    expect(pair.call.value!).to eq(1)
     expect(db[:transactions].where(account_id: savings).select_map([:id, :amount_cents])).to eq([[mirror[:id], 35_000]])
     expect(transfer_of(mirror[:id])).to eq(transfer_of(saved))
   end

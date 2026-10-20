@@ -17,10 +17,10 @@ module Tally
           ids, skipped = chosen(params, filter)
           halt 422, t("errors.could_not_save", reason: :no_filter) unless ids
 
-          result = assign_category.(ids:, category_id: params[:category_id].to_i)
+          result = assign_category.call(ids:, category_id: params[:category_id].to_i)
           halt 422, t("errors.could_not_save", reason: result.failure) if result.failure?
 
-          response.redirect_to "#{filter.pages(back: back_param(params[:back])).(Tally::Pagination.param(params[:page]))}&changed=#{result.value!}&skipped=#{skipped}"
+          response.redirect_to "#{filter.pages(back: back_param(params[:back])).call(Tally::Pagination.param(params[:page]))}&changed=#{result.value!}&skipped=#{skipped}"
         end
 
         private

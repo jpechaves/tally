@@ -9,7 +9,7 @@ namespace :tally do
     import_statement = Hanami.app["operations.import_statement"]
     import_repo = Hanami.app["repos.import_repo"]
     paths.each do |path|
-      result = import_statement.(file_name: File.basename(path), content: File.binread(path))
+      result = import_statement.call(file_name: File.basename(path), content: File.binread(path))
       import = result.value_or { result.failure }
       line = "#{File.basename(path)}: #{import.status.tr("_", " ")}"
       if import.status == "applied"

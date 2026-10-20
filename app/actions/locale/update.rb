@@ -20,7 +20,7 @@ module Tally
         # Only a path on this site, never another host.
         def local_path(path)
           path = path.to_s
-          path.start_with?("/") && !path.start_with?("//") ? path : "/"
+          (path.start_with?("/") && !path.start_with?("//")) ? path : "/"
         end
       end
     end

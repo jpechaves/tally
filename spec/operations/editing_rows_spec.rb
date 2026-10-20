@@ -15,7 +15,7 @@ RSpec.describe "Editing imported rows", :db do
 
   before do
     name = "NU_12345678_01JUL2026_31JUL2026.csv"
-    op("import_statement").(file_name: name, content: fixture(name))
+    op("import_statement").call(file_name: name, content: fixture(name))
   end
 
   after { FileUtils.rm_rf(Hanami.app.root.join(Hanami.app["settings"].import_storage_dir)) }
@@ -24,15 +24,15 @@ RSpec.describe "Editing imported rows", :db do
     let(:cobranca) { row("Cobrança exemplo") }
 
     it "needs rows and a category in use" do
-      expect(op("assign_category").(ids: [], category_id: category_id("Lazer")).failure).to eq(:no_rows)
-      expect(op("assign_category").(ids: [cobranca[:id]], category_id: 999_999).failure).to eq(:category_not_found)
+      expect(op("assign_category").call(ids: [], category_id: category_id("Lazer")).failure).to eq(:no_rows)
+      expect(op("assign_category").call(ids: [cobranca[:id]], category_id: 999_999).failure).to eq(:category_not_found)
     end
 
     it "learns a description rule once, pointing it at the latest choice" do
-      assign = ->(name) { op("assign_category").(ids: [cobranca[:id]], category_id: category_id(name), always: true, pattern: "^cobranca exemplo") }
+      assign = ->(name) { op("assign_category").call(ids: [cobranca[:id]], category_id: category_id(name), always: true, pattern: "^cobranca exemplo") }
 
-      expect(assign.("Lazer").value!).to eq(1)
-      expect(assign.("Assinaturas").value!).to eq(1)
+      expect(assign.call("Lazer").value!).to eq(1)
+      expect(assign.call("Assinaturas").value!).to eq(1)
 
       rules = db[:category_rules].where(pattern: "^cobranca exemplo")
       expect(rules.select_map([:origin, :category_id, :priority])).to eq([["learned", category_id("Assinaturas"), 50]])
@@ -40,7 +40,7 @@ RSpec.describe "Editing imported rows", :db do
     end
 
     it "refuses a pattern that isn't a valid regex" do
-      result = op("assign_category").(ids: [cobranca[:id]], category_id: category_id("Lazer"), always: true, pattern: "(")
+      result = op("assign_category").call(ids: [cobranca[:id]], category_id: category_id("Lazer"), always: true, pattern: "(")
 
       expect(result.failure).to eq(:invalid_pattern)
       expect(row("Cobrança exemplo")[:category_source]).not_to eq("manual")
@@ -48,7 +48,7 @@ RSpec.describe "Editing imported rows", :db do
   end
 
   describe "adjusting a row" do
-    def adjust(text, **attributes) = op("adjust_transaction").(id: row(text)[:id], **attributes)
+    def adjust(text, **attributes) = op("adjust_transaction").call(id: row(text)[:id], **attributes)
 
     def money(cents) = Tally::Money.new(cents)
 
@@ -69,7 +69,7 @@ RSpec.describe "Editing imported rows", :db do
     end
 
     it "refuses what it can't adjust" do
-      expect(op("adjust_transaction").(id: 999_999, kind: "canceled").failure).to eq(:not_found)
+      expect(op("adjust_transaction").call(id: 999_999, kind: "canceled").failure).to eq(:not_found)
       expect(adjust("Aplicação RDB", kind: "canceled").failure).to eq(:not_adjustable)
       expect(adjust("iFood", kind: "forgotten").failure).to eq(:invalid_adjustment)
       expect(adjust("iFood", kind: "amount_changed").failure).to eq(:invalid_adjusted_amount)
@@ -77,6 +77,7 @@ RSpec.describe "Editing imported rows", :db do
       expect(adjust("ANA EXEMPLO", kind: "reimbursed", amount: money(100)).failure).to eq(:not_reimbursable)
       expect(adjust("iFood", kind: "reimbursed", refund_id: row("ANA EXEMPLO")[:id]).failure).to eq(:invalid_refund)
       expect(adjust("iFood", kind: "reimbursed", amount: money(4_591)).failure).to eq(:invalid_reimbursed_amount)
+      expect(adjust("iFood", kind: "reimbursed").failure).to eq(:invalid_reimbursed_amount)
       expect(db[:transaction_adjustments].count).to eq(0)
     end
   end
@@ -87,17 +88,17 @@ RSpec.describe "Editing imported rows", :db do
     it "turns its rows into transfers and back into what the statement said" do
       ana = party("ANA EXEMPLO")
 
-      op("mark_self").(counterparty_id: ana, is_self: true)
+      op("mark_self").call(counterparty_id: ana, is_self: true)
       expect(row("ANA EXEMPLO")).to include(kind: "transfer", counter_account_id: nil)
 
-      op("mark_self").(counterparty_id: ana, is_self: false)
+      op("mark_self").call(counterparty_id: ana, is_self: false)
       expect(row("ANA EXEMPLO")).to include(kind: "income", counter_account_id: nil)
     end
 
     it "leaves purchases and income alone when the counterparty isn't you" do
       ana = party("ANA EXEMPLO")
 
-      op("mark_self").(counterparty_id: ana, is_self: false)
+      op("mark_self").call(counterparty_id: ana, is_self: false)
       expect(row("ANA EXEMPLO")).to include(kind: "income", counter_account_id: nil)
     end
 
@@ -105,12 +106,12 @@ RSpec.describe "Editing imported rows", :db do
       leg = row("SECRETARIA EXEMPLO")
       expect(leg).to include(kind: "transfer", counter_account_id: leg[:account_id])
 
-      op("mark_self").(counterparty_id: party("SECRETARIA EXEMPLO"), is_self: false)
+      op("mark_self").call(counterparty_id: party("SECRETARIA EXEMPLO"), is_self: false)
       expect(row("SECRETARIA EXEMPLO")).to include(kind: "transfer", counter_account_id: leg[:account_id])
     end
 
     it "needs a counterparty that exists" do
-      expect(op("mark_self").(counterparty_id: 999_999, is_self: true).failure).to eq(:not_found)
+      expect(op("mark_self").call(counterparty_id: 999_999, is_self: true).failure).to eq(:not_found)
     end
   end
 end

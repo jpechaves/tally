@@ -8,7 +8,7 @@ RSpec.describe "An account's own report", :db, type: :request do
   before do
     allow(Date).to receive(:today).and_return(Date.new(2026, 10, 15))
     %w[NU_12345678_01JUL2026_31JUL2026.csv conta-global-2026-08.csv].each do |name|
-      Hanami.app["operations.import_statement"].(file_name: name, content: fixture(name))
+      Hanami.app["operations.import_statement"].call(file_name: name, content: fixture(name))
     end
   end
 

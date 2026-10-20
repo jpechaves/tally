@@ -100,8 +100,8 @@ RSpec.describe Tally::InstallmentCalendar do
 
   it "gives each of two identical purchases a month apart its own installments" do
     row = ->(due, number) { insight_row("#{due}-02", -25.00, "TENIS EXEMPLO", installment_number: number, installment_total: 4, bill_due_on: "#{due}-09") }
-    older = [row.("2026-07", 1), row.("2026-08", 2), row.("2026-09", 3)]
-    newer = [row.("2026-08", 1), row.("2026-09", 2)]
+    older = [row.call("2026-07", 1), row.call("2026-08", 2), row.call("2026-09", 3)]
+    newer = [row.call("2026-08", 1), row.call("2026-09", 2)]
     rows = [older[0], older[1], newer[0], newer[1], older[2]]
 
     expect(described_class.series_of(rows, older.first[:id])).to eq(older)

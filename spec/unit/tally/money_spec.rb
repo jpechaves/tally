@@ -14,7 +14,7 @@ RSpec.describe Tally::Money do
 
     it "refuses floats and other non-integers" do
       expect { money(12.5) }.to raise_error(TypeError, /Integer cents/)
-      expect { money(BigDecimal("1")) }.to raise_error(TypeError)
+      expect { money(BigDecimal(1)) }.to raise_error(TypeError)
       expect { money("100") }.to raise_error(TypeError)
     end
 

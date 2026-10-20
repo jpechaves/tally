@@ -7,7 +7,7 @@ RSpec.describe "Categorizing", :db, type: :request do
 
   before do
     %w[NU_12345678_01JUL2026_31JUL2026.csv itau_2026-10.pdf].each do |name|
-      Hanami.app["operations.import_statement"].(file_name: name, content: fixture(name))
+      Hanami.app["operations.import_statement"].call(file_name: name, content: fixture(name))
     end
   end
 
@@ -51,11 +51,11 @@ RSpec.describe "Categorizing", :db, type: :request do
     expect(body.scan(/(\d+) rows have no category and (\d+) only/).flatten.sum(&:to_i)).to eq(rows)
     expect(body).to include("in #{groups.size} groups", "Page 1 of #{pages}", %(href="/review?page=2">Next))
     expect(body).not_to include("Previous")
-    expect(headings.(body)).to eq(2)
+    expect(headings.call(body)).to eq(2)
 
     get "/review", page: "2"
     expect(last_response.body).to include("Page 2 of #{pages}", %(href="/review?page=1">), %(name="page" value="2"))
-    expect(last_response.body).to include("#{groups[2].label} ·").and(satisfy { headings.(_1) == 2 })
+    expect(last_response.body).to include("#{groups[2].label} ·").and(satisfy { headings.call(_1) == 2 })
 
     # Saving a group stays on its page; the next groups move up into it.
     group = groups[2]

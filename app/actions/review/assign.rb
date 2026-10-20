@@ -10,13 +10,13 @@ module Tally
         def handle(request, response)
           params = request.params
           always = params[:always] == "1"
-          result = assign_category.(
-            ids: params[:ids].to_s.split(",").grep(/\A\d+\z/).map(&:to_i),
+          result = assign_category.call(ids: params[:ids].to_s.split(",").grep(/\A\d+\z/).map(&:to_i),
             category_id: params[:category_id].to_i,
             always:,
             counterparty_id: always ? params[:counterparty_id].to_s[/\A\d+\z/]&.to_i : nil,
-            pattern: always ? params[:pattern].to_s.then { _1.empty? ? nil : _1 } : nil
-          )
+            pattern: if always
+                       params[:pattern].to_s.then { _1.empty? ? nil : _1 }
+                     end)
           halt 422, t("errors.could_not_save", reason: result.failure) if result.failure?
 
           # Back to the same page: the groups after the saved one move up into it.

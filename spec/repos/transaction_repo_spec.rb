@@ -32,9 +32,9 @@ RSpec.describe Tally::Repos::TransactionRepo, :db do
     db[:transaction_adjustments].insert(transaction_id: canceled, kind: "canceled")
     descriptions = ->(kind) { repo.list(Tally::TransactionFilter.new(kind:)).map { _1[:description] } }
 
-    expect(descriptions.("spending")).to eq(["Hoje"])
-    expect(descriptions.("income")).to eq(["Um centavo"])
-    expect(descriptions.(nil)).to eq(["Amanhã", "Cancelada", "Um centavo", "Hoje"])
+    expect(descriptions.call("spending")).to eq(["Hoje"])
+    expect(descriptions.call("income")).to eq(["Um centavo"])
+    expect(descriptions.call(nil)).to eq(["Amanhã", "Cancelada", "Um centavo", "Hoje"])
     expect(repo.to_review.map { _1[:description] }).to contain_exactly("Hoje", "Amanhã", "Um centavo")
   end
 

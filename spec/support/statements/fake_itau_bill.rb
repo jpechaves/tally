@@ -33,7 +33,7 @@ class FakeItauBill
   LINE = 10.0
   PAGE_HEIGHT = 842
 
-  Row = Struct.new(:date, :description, :amount, :detail, keyword_init: true)
+  Row = Struct.new(:date, :description, :amount, :detail)
 
   # @param closing [String] "DD/MM/YYYY", printed as Postagem
   # @param due [String] "DD/MM/YYYY", printed as Vencimento
@@ -84,7 +84,7 @@ class FakeItauBill
   def payment_year
     month = @payments.first.date[3, 2].to_i
     year = @closing[6, 4].to_i
-    month > @closing[3, 2].to_i ? year - 1 : year
+    (month > @closing[3, 2].to_i) ? year - 1 : year
   end
 
   def cents(text) = (BigDecimal(text.delete(".").tr(",", ".")) * 100).to_i

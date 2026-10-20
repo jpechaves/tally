@@ -35,7 +35,7 @@ module Tally
           # Per currency, for showing: a payee paid in reais and in dollars (Conta Global)
           totals: members.group_by { _1.fetch(:currency, Money::DEFAULT_CURRENCY) }
             .transform_values { |rows| rows.sum { _1[:amount_cents] } },
-          suggested_category_id: suggestions.size == 1 ? suggestions.first : nil
+          suggested_category_id: (suggestions.size == 1) ? suggestions.first : nil
         )
       end.sort_by { [-_1.total_cents.abs, _1.label] }
     end

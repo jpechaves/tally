@@ -12,13 +12,13 @@ module Tally
           kind = request.params[:kind].to_s
           refund_id = request.params[:refund_id].to_s[/\A\d+\z/]&.to_i
           amount = request.params[:amount].to_s.strip
-          amount = amount.empty? || refund_id ? nil : parse_amount(amount)
+          amount = (amount.empty? || refund_id) ? nil : parse_amount(amount)
 
-          result = adjust_transaction.(id:, kind:, amount:, refund_id:, note: request.params[:note])
+          result = adjust_transaction.call(id:, kind:, amount:, refund_id:, note: request.params[:note])
           halt 404 if result.failure == :not_found
           back(request, response, id, result.failure)
         rescue Tally::Money::ParseError
-          back(request, response, id, kind == "reimbursed" ? :invalid_reimbursed_amount : :invalid_adjusted_amount)
+          back(request, response, id, (kind == "reimbursed") ? :invalid_reimbursed_amount : :invalid_adjusted_amount)
         end
 
         private

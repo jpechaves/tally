@@ -8,7 +8,7 @@ RSpec.describe "Savings plan and budgets", :db, type: :request do
   before do
     allow(Date).to receive(:today).and_return(Date.new(2026, 8, 15))
     %w[NU_12345678_01JUL2026_31JUL2026.csv Nubank_2026-07-09.csv Nubank_2026-08-09.csv].each do |name|
-      Hanami.app["operations.import_statement"].(file_name: name, content: fixture(name))
+      Hanami.app["operations.import_statement"].call(file_name: name, content: fixture(name))
     end
   end
 
@@ -198,13 +198,13 @@ RSpec.describe "Savings plan and budgets", :db, type: :request do
   it "projects next month from complete months only, not the partly imported current one" do
     post "/budgets", category_id: category_id("Delivery").to_s, month: "2026-09", amount: "10.00"
     projected = -> { get("/budgets", month: "2026-09") && last_response.body[%r{Projected<strong[^>]*>(.*?)</strong>}, 1] }
-    before = projected.()
+    before = projected.call
 
     row = db[:transactions].where(raw_description: "Compra no débito via NuPay - iFood").first
     db[:transactions].insert(row.except(:id).merge(occurred_on: "2026-08-10", amount_cents: -500_000,
       raw_description: "Loja exemplo", description: "Loja exemplo", category_id: nil, external_id: "partial-month"))
 
-    expect(projected.()).to eq(before)
+    expect(projected.call).to eq(before)
   end
 
   it "says there are no budgets before a plan" do
@@ -244,7 +244,7 @@ RSpec.describe "Savings plan and budgets", :db, type: :request do
     it "removes the budgets an accepted plan wrote, back to the limits from before, and nothing else" do
       post "/budgets", category_id: category_id("Delivery").to_s, month: "2026-08", amount: "30.00"
       counts = -> { [db[:transactions].count, db[:categories].count, db[:category_rules].count] }
-      before = counts.()
+      before = counts.call
       id = accept(proposed: {category_id("Delivery").to_s => "10.00"})
       expect(limits("2026-09")[category_id("Delivery")]).to eq(1_000)
 
@@ -256,7 +256,7 @@ RSpec.describe "Savings plan and budgets", :db, type: :request do
       expect(last_response.headers["Location"]).to end_with("notice=plan_deleted_with_budgets")
       expect(db[:savings_plans].count).to eq(0)
       expect(limits("2026-09")).to eq(category_id("Delivery") => 3_000)
-      expect(counts.()).to eq(before)
+      expect(counts.call).to eq(before)
     end
 
     it "keeps the budgets when asked, as if set by hand" do

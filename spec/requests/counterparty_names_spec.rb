@@ -9,7 +9,7 @@ RSpec.describe "Counterparty names", :db, type: :request do
   let(:energy) { db[:counterparties].where(name: "ENERGIA EXEMPLO S.A.").get(:id) }
   let(:row) { db[:transactions].where(counterparty_id: energy).get(:id) }
 
-  def import(content = fixture(file)) = Hanami.app["operations.import_statement"].(file_name: file, content:)
+  def import(content = fixture(file)) = Hanami.app["operations.import_statement"].call(file_name: file, content:)
 
   before do
     allow(Date).to receive(:today).and_return(Date.new(2026, 10, 15))
@@ -91,7 +91,7 @@ RSpec.describe "Counterparty names", :db, type: :request do
   it "keeps rules matching the bank's name" do
     name_it
     category = db[:categories].where(name: "Energia").get(:id)
-    Hanami.app["operations.save_rule"].(field: "counterparty_name", operator: "contains", pattern: "ENERGIA EXEMPLO", category_id: category)
+    Hanami.app["operations.save_rule"].call(field: "counterparty_name", operator: "contains", pattern: "ENERGIA EXEMPLO", category_id: category)
 
     expect(db[:transactions].where(id: row).get(:category_id)).to eq(category)
   end

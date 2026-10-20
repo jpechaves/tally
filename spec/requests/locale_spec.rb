@@ -9,7 +9,7 @@ RSpec.describe "Languages", :db, type: :request do
     clear_cookies
     allow(Date).to receive(:today).and_return(Date.new(2026, 8, 15))
     %w[NU_12345678_01JUL2026_31JUL2026.csv Nubank_2026-07-09.csv Nubank_2026-08-09.csv].each do |name|
-      Hanami.app["operations.import_statement"].(file_name: name, content: fixture(name))
+      Hanami.app["operations.import_statement"].call(file_name: name, content: fixture(name))
     end
   end
 
@@ -70,7 +70,7 @@ RSpec.describe "Languages", :db, type: :request do
   it "words cut suggestions in Portuguese" do
     allow(Date).to receive(:today).and_return(Date.new(2026, 10, 15))
     %w[itau_2026-10.pdf itau_2027-01_tight.pdf].each do |name|
-      Hanami.app["operations.import_statement"].(file_name: name, content: fixture(name))
+      Hanami.app["operations.import_statement"].call(file_name: name, content: fixture(name))
     end
 
     get "/cuts?month=2026-09"

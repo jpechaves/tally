@@ -8,7 +8,7 @@ RSpec.describe "Adjusting a transaction", :db, type: :request do
 
   before do
     allow(Date).to receive(:today).and_return(Date.new(2026, 10, 15))
-    files.each { Hanami.app["operations.import_statement"].(file_name: _1, content: fixture(_1)) }
+    files.each { Hanami.app["operations.import_statement"].call(file_name: _1, content: fixture(_1)) }
   end
 
   after { FileUtils.rm_rf(Hanami.app.root.join(Hanami.app["settings"].import_storage_dir)) }
@@ -90,7 +90,7 @@ RSpec.describe "Adjusting a transaction", :db, type: :request do
       .where { amount_cents < 0 }.exclude(kind: "transfer").order(:id).first
     post "/transactions/#{purchase[:id]}/adjustment", kind: "canceled"
 
-    again = Hanami.app["operations.import_statement"].(file_name: "again-#{name}", content: "#{fixture(name)}\n").value!
+    again = Hanami.app["operations.import_statement"].call(file_name: "again-#{name}", content: "#{fixture(name)}\n").value!
     expect(again.status).to eq("applied")
 
     expect(db[:transactions].where(id: purchase[:id]).get(:last_import_id)).to eq(again.id)

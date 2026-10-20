@@ -10,7 +10,7 @@ RSpec.describe "Categorization", :db do
 
   def op(name) = Hanami.app["operations.#{name}"]
 
-  def import(name) = op("import_statement").(file_name: name, content: fixture(name))
+  def import(name) = op("import_statement").call(file_name: name, content: fixture(name))
 
   def category_id(name) = db[:categories].where(name:).get(:id)
 
@@ -28,8 +28,8 @@ RSpec.describe "Categorization", :db do
 
   describe "seeding" do
     it "adds the categories and rules once, with nature and maximum cut" do
-      expect(op("seed_categories").().value!).to eq(categories: 52, rules: Tally::Categories::RULES.size)
-      expect(op("seed_categories").().value!).to eq(categories: 0, rules: 0)
+      expect(op("seed_categories").call.value!).to eq(categories: 52, rules: Tally::Categories::RULES.size)
+      expect(op("seed_categories").call.value!).to eq(categories: 0, rules: 0)
 
       expect(db[:categories].where(name: "Delivery").first).to include(kind: "expense", nature: "discretionary", max_cut_pct: 50)
       expect(db[:categories].where(name: "Supermercado").first).to include(nature: "essential", max_cut_pct: 15)
@@ -39,12 +39,12 @@ RSpec.describe "Categorization", :db do
     end
 
     it "never changes what you edited, nor brings back a rule you removed" do
-      op("seed_categories").()
+      op("seed_categories").call
       db[:categories].where(name: "Delivery").update(nature: "essential", max_cut_pct: 10)
       rule = db[:category_rules].where(pattern: "\\bifood\\b").get(:id)
-      op("disable_rule").(id: rule)
+      op("disable_rule").call(id: rule)
 
-      op("seed_categories").()
+      op("seed_categories").call
 
       expect(db[:categories].where(name: "Delivery").first).to include(nature: "essential", max_cut_pct: 10)
       expect(db[:category_rules].where(pattern: "\\bifood\\b").count).to eq(1)
@@ -52,7 +52,7 @@ RSpec.describe "Categorization", :db do
     end
 
     it "moves a starting rule a later version rewrote, keeping its rows' manual categories" do
-      op("seed_categories").()
+      op("seed_categories").call
       (field, operator, old), pattern = Tally::Categories::REVISED_RULES.first
       rule = db[:category_rules].where(field:, operator:, pattern:).get(:id)
       db[:category_rules].where(id: rule).update(pattern: old)
@@ -62,12 +62,12 @@ RSpec.describe "Categorization", :db do
           db[:transactions].insert(account_id: account, occurred_on: "2026-09-0#{index + 1}", amount_cents:,
             kind: "purchase", description:, raw_description: description, external_id: "x#{index}")
         end
-      op("categorize").()
+      op("categorize").call
       db[:transactions].where(id: manual).update(category_id: category_id("Eletrônicos"), category_source: "manual")
       expect(db[:transactions].where(id: store).get(:category_rule_id)).to eq(rule)
 
-      op("seed_categories").()
-      op("categorize").()
+      op("seed_categories").call
+      op("categorize").call
 
       expect(db[:category_rules].where(id: rule).get(:pattern)).to eq(pattern)
       expect(db[:category_rules].where(field:, operator:, pattern:).count).to eq(1)
@@ -77,28 +77,28 @@ RSpec.describe "Categorization", :db do
     end
 
     it "leaves a starting rule you edited as it is" do
-      op("seed_categories").()
+      op("seed_categories").call
       (field, operator, _), pattern = Tally::Categories::REVISED_RULES.first
       rule = db[:category_rules].where(field:, operator:, pattern:).get(:id)
       db[:category_rules].where(id: rule).update(pattern: "apple\\.com\\b")
 
-      op("seed_categories").()
+      op("seed_categories").call
 
       expect(db[:category_rules].where(id: rule).get(:pattern)).to eq("apple\\.com\\b")
     end
 
     it "names them in English for an English install, and never adds them twice across languages" do
-      expect(op("seed_categories").(locale: "en").value!).to eq(categories: 52, rules: Tally::Categories::RULES.size)
+      expect(op("seed_categories").call(locale: "en").value!).to eq(categories: 52, rules: Tally::Categories::RULES.size)
       expect(db[:categories].where(name: "Groceries").first).to include(nature: "essential", max_cut_pct: 15)
       expect(db[:categories].where(id: db[:categories].where(name: "Food delivery").get(:parent_id)).get(:name)).to eq("Food")
       expect(db[:categories].where(name: "Supermercado").count).to eq(0)
       expect(db[:category_rules].where(pattern: "\\bifood\\b").get(:category_id)).to eq(category_id("Food delivery"))
 
-      expect(op("seed_categories").(locale: "pt-BR").value!).to eq(categories: 0, rules: 0)
+      expect(op("seed_categories").call(locale: "pt-BR").value!).to eq(categories: 0, rules: 0)
     end
 
     it "suggests the bank's category under its English name too" do
-      op("seed_categories").(locale: "en")
+      op("seed_categories").call(locale: "en")
       import("itau_2026-10.pdf")
 
       expect(category_of("MERCADO EXEMPLOSAO PAUL")).to eq(["Groceries", "bank"])
@@ -117,7 +117,7 @@ RSpec.describe "Categorization", :db do
     end
 
     it "counts only the rows it changed, so running it again changes none" do
-      expect(op("categorize").().value!).to eq(0)
+      expect(op("categorize").call.value!).to eq(0)
     end
 
     it "uses the rules, then the bank's category as a suggestion" do
@@ -144,18 +144,18 @@ RSpec.describe "Categorization", :db do
       me = db[:counterparties].where(name: "MARIA E SOUZA").get(:id)
       expect(category_of("MARIA E SOUZA")).to eq(["Transferências (Pix)", "rule"])
 
-      op("mark_self").(counterparty_id: me, is_self: true)
+      op("mark_self").call(counterparty_id: me, is_self: true)
 
       expect(category_of("MARIA E SOUZA")).to eq([nil, "none"])
     end
 
     it "keeps a category you picked through re-imports and rule changes" do
-      op("assign_category").(ids: [row("iFood - NuPay", -4780)[:id]], category_id: category_id("Restaurantes"))
+      op("assign_category").call(ids: [row("iFood - NuPay", -4780)[:id]], category_id: category_id("Restaurantes"))
 
       # Different bytes, same rows: applied again, every row upserted.
-      result = op("import_statement").(file_name: "Nubank_2026-07-09.csv", content: "#{fixture("Nubank_2026-07-09.csv")}\n")
+      result = op("import_statement").call(file_name: "Nubank_2026-07-09.csv", content: "#{fixture("Nubank_2026-07-09.csv")}\n")
       expect(result.value!).to have_attributes(status: "applied", rows_unchanged: 14)
-      op("categorize").()
+      op("categorize").call
 
       expect(category_of("iFood - NuPay", -4780)).to eq(["Restaurantes", "manual"])
       expect(category_of("iFood - NuPay", 2150)).to eq(["Delivery", "rule"])
@@ -172,7 +172,7 @@ RSpec.describe "Categorization", :db do
       energy = db[:counterparties].where(name: "ENERGIA EXEMPLO S.A.").get(:id)
       ids = db[:transactions].where(counterparty_id: energy).select_map(:id)
 
-      result = op("assign_category").(ids:, category_id: category_id("Energia"), always: true, counterparty_id: energy)
+      result = op("assign_category").call(ids:, category_id: category_id("Energia"), always: true, counterparty_id: energy)
 
       expect(result).to be_success
       expect(db[:counterparties].where(id: energy).get(:default_category_id)).to eq(category_id("Energia"))
@@ -181,7 +181,7 @@ RSpec.describe "Categorization", :db do
 
     it "with always and no counterparty, learns a rule that covers the next bills too" do
       pattern = Tally::Review.pattern("PET EXEMPLO*PETL")
-      op("assign_category").(ids: [row("PET EXEMPLO*PETL")[:id]], category_id: category_id("Pet shop e veterinário"),
+      op("assign_category").call(ids: [row("PET EXEMPLO*PETL")[:id]], category_id: category_id("Pet shop e veterinário"),
         always: true, pattern:)
 
       rule = db[:category_rules].where(origin: "learned").first
@@ -192,13 +192,13 @@ RSpec.describe "Categorization", :db do
       later = row("PET EXEMPLO*PETL").merge(id: nil, external_id: "later", raw_description: "PET EXEMPLO*PETL 2",
         category_id: nil, category_source: "none", category_rule_id: nil)
       new_id = db[:transactions].insert(later.except(:id))
-      op("categorize").(ids: [new_id])
+      op("categorize").call(ids: [new_id])
       expect(category_of("PET EXEMPLO*PETL 2")).to eq(["Pet shop e veterinário", "rule"])
     end
 
     it "without always, sets only those rows, by hand" do
       ids = db[:transactions].where(raw_description: "ESTACIONAMENTO EXEMPLO").select_map(:id)
-      op("assign_category").(ids: ids.first(1), category_id: category_id("Lazer"))
+      op("assign_category").call(ids: ids.first(1), category_id: category_id("Lazer"))
 
       expect(db[:transactions].where(id: ids).order(:id).select_map(:category_source)).to eq(%w[manual rule])
       expect(db[:category_rules].where(origin: "learned").count).to eq(0)
@@ -209,13 +209,13 @@ RSpec.describe "Categorization", :db do
       ids = db[:transactions].where(counterparty_id: company).select_map(:id)
 
       # An expense category for money in: the default can't apply, the rows still get it.
-      op("assign_category").(ids:, category_id: category_id("Lazer"), always: true, counterparty_id: company)
+      op("assign_category").call(ids:, category_id: category_id("Lazer"), always: true, counterparty_id: company)
 
       expect(category_of("EMPRESA EXEMPLO LTDA")).to eq(["Lazer", "manual"])
     end
 
     it "refuses an unknown or archived category" do
-      expect(op("assign_category").(ids: [1], category_id: 999_999).failure).to eq(:category_not_found)
+      expect(op("assign_category").call(ids: [1], category_id: 999_999).failure).to eq(:category_not_found)
     end
   end
 
@@ -223,33 +223,33 @@ RSpec.describe "Categorization", :db do
     before { import("itau_2026-10.pdf") }
 
     it "re-categorizes past rows when you add or remove a rule" do
-      result = op("save_rule").(field: "bank_category", operator: "equals", pattern: "Outros",
+      result = op("save_rule").call(field: "bank_category", operator: "equals", pattern: "Outros",
         category_id: category_id("Compras online"), priority: 200)
       expect(result).to be_success
       expect(category_of("PET EXEMPLO*PETL")).to eq(["Compras online", "rule"])
 
-      op("disable_rule").(id: result.value!)
+      op("disable_rule").call(id: result.value!)
       expect(category_of("PET EXEMPLO*PETL")).to eq([nil, "none"])
     end
 
     it "refuses a broken regex" do
-      result = op("save_rule").(field: "description", operator: "regex", pattern: "(oops", category_id: category_id("Lazer"))
+      result = op("save_rule").call(field: "description", operator: "regex", pattern: "(oops", category_id: category_id("Lazer"))
 
       expect(result.failure).to eq(:invalid_pattern)
     end
 
     it "sends rows back to review when their category is archived" do
-      op("save_category").(id: category_id("Combustível"), name: "Combustível", nature: "essential", archived: true)
+      op("save_category").call(id: category_id("Combustível"), name: "Combustível", nature: "essential", archived: true)
 
       expect(category_of("POSTO EXEMPLO")).to eq([nil, "none"])
     end
 
     it "adds a category under a parent, taking its kind and the nature's maximum cut" do
-      result = op("save_category").(name: "Cuidador", parent_id: category_id("Saúde"), nature: "essential")
+      result = op("save_category").call(name: "Cuidador", parent_id: category_id("Saúde"), nature: "essential")
 
       expect(db[:categories].where(id: result.value!).first).to include(kind: "expense", max_cut_pct: 15)
-      expect(op("save_category").(name: "Cuidador", parent_id: category_id("Saúde")).failure).to eq(:name_taken)
-      expect(op("save_category").(name: "X", parent_id: category_id("Cuidador")).failure).to eq(:invalid_parent)
+      expect(op("save_category").call(name: "Cuidador", parent_id: category_id("Saúde")).failure).to eq(:name_taken)
+      expect(op("save_category").call(name: "X", parent_id: category_id("Cuidador")).failure).to eq(:invalid_parent)
     end
   end
 end

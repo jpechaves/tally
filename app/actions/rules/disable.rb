@@ -7,7 +7,7 @@ module Tally
         include Deps["routes", "operations.disable_rule"]
 
         def handle(request, response)
-          result = disable_rule.(id: request.params[:id].to_i)
+          result = disable_rule.call(id: request.params[:id].to_i)
           halt 404 if result.failure?
 
           response.redirect_to routes.path(:rules)

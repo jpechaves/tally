@@ -18,7 +18,11 @@ module Tally
       def over? = spent_cents > limit_cents
 
       # Spent so far against what the pace allows by today: 100 is on pace.
-      def pace_pct = expected_cents.zero? ? (spent_cents.positive? ? nil : 0) : (spent_cents * 100.0 / expected_cents).round
+      def pace_pct = if expected_cents.zero?
+                       spent_cents.positive? ? nil : 0
+                     else
+                       (spent_cents * 100.0 / expected_cents).round
+                     end
 
       def ahead_of_pace? = spent_cents * 100 > expected_cents * (100 + AHEAD_OF_PACE_PCT)
     end
@@ -70,8 +74,8 @@ module Tally
         in_category = ->(rows) { rows.select { _1[:category_id] == category_id } }
         category = @categories.fetch(category_id, {})
         Line.new(category_id:, name: category.fetch(:name, "##{category_id}"), parent_name: category[:parent_name],
-          limit_cents: limit, spent_cents: Insights.spent_cents(in_category.(@rows)),
-          expected_cents: (limit * elapsed).round, committed_cents: Insights.spent_cents(in_category.(@committed)))
+          limit_cents: limit, spent_cents: Insights.spent_cents(in_category.call(@rows)),
+          expected_cents: (limit * elapsed).round, committed_cents: Insights.spent_cents(in_category.call(@committed)))
       end.sort_by { [-_1.limit_cents, _1.name] }
     end
 

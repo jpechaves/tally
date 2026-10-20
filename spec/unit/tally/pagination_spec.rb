@@ -18,7 +18,7 @@ RSpec.describe Tally::Pagination do
 
   it "links to a page, keeping the filters that are set" do
     path = described_class.path("/transactions", account: 3, month: nil, q: "joão silva")
-    expect(path.(2)).to eq("/transactions?account=3&q=jo%C3%A3o+silva&page=2")
-    expect(described_class.path("/transactions", q: "").(2)).to eq("/transactions?page=2")
+    expect(path.call(2)).to eq("/transactions?account=3&q=jo%C3%A3o+silva&page=2")
+    expect(described_class.path("/transactions", q: "").call(2)).to eq("/transactions?page=2")
   end
 end

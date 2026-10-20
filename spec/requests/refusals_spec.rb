@@ -10,7 +10,7 @@ RSpec.describe "Refused requests", :db, type: :request do
   before do
     allow(Date).to receive(:today).and_return(Date.new(2026, 8, 15))
     name = "NU_12345678_01JUL2026_31JUL2026.csv"
-    Hanami.app["operations.import_statement"].(file_name: name, content: fixture(name))
+    Hanami.app["operations.import_statement"].call(file_name: name, content: fixture(name))
   end
 
   after { FileUtils.rm_rf(Hanami.app.root.join(Hanami.app["settings"].import_storage_dir)) }

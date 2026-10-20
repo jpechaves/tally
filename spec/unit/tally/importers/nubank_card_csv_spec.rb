@@ -119,7 +119,7 @@ RSpec.describe Tally::Importers::NubankCardCSV do
       expect(gym.size).to eq(2)
       # The bill prints charges as positive amounts, and the key keeps them that way.
       key = ->(k) { Tally::Importers.digest("nubank_card_csv", Date.new(2026, 7, 9), Date.new(2026, 6, 15), "Academia Exemplo", 18_990, k) }
-      expect(gym.map(&:external_id)).to eq([key.(0), key.(1)])
+      expect(gym.map(&:external_id)).to eq([key.call(0), key.call(1)])
     end
 
     it "derives the same keys every time" do

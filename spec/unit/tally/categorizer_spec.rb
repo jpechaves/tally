@@ -21,7 +21,7 @@ RSpec.describe Tally::Categorizer do
     {kind: "purchase", amount_cents: -1000, description: "X", raw_description: "X"}.merge(attributes)
   end
 
-  def decide(**attributes) = categorizer.(row(**attributes)).to_h
+  def decide(**attributes) = categorizer.call(row(**attributes)).to_h
 
   it "never categorizes a transfer" do
     expect(decide(kind: "transfer", description: "iFood")).to eq(category_id: nil, source: "none", rule_id: nil)
@@ -70,7 +70,7 @@ RSpec.describe Tally::Categorizer do
     ranged = {id: 1, field: "description", operator: "contains", pattern: "posto", category_id: food,
               amount_min_cents: -5_000, amount_max_cents: -1_000}
     categorizer = described_class.new(rules: [ranged], categories:)
-    decide = ->(cents) { categorizer.(row(description: "Posto", amount_cents: cents)).rule_id }
+    decide = ->(cents) { categorizer.call(row(description: "Posto", amount_cents: cents)).rule_id }
 
     expect([-5_001, -5_000, -3_000, -1_000, -999].map(&decide)).to eq([nil, 1, 1, 1, nil])
   end
@@ -78,7 +78,7 @@ RSpec.describe Tally::Categorizer do
   it "matches nothing with an operator it doesn't know" do
     odd = {id: 1, field: "description", operator: "ends_with", pattern: "X", category_id: food}
 
-    expect(described_class.new(rules: [odd], categories:).(row).source).to eq("none")
+    expect(described_class.new(rules: [odd], categories:).call(row).source).to eq("none")
   end
 
   it "falls back to the bank's category as a suggestion" do
@@ -88,14 +88,14 @@ RSpec.describe Tally::Categorizer do
   it "ignores rules pointing at categories it doesn't know (archived)" do
     categorizer = described_class.new(rules:, categories: categories.except(delivery))
 
-    expect(categorizer.(row(description: "iFood")).source).to eq("none")
+    expect(categorizer.call(row(description: "iFood")).source).to eq("none")
   end
 
   it "skips a rule with a broken regex instead of failing" do
     broken = {id: 1, field: "description", operator: "regex", pattern: "(unclosed", category_id: food}
     categorizer = described_class.new(rules: [broken] + rules, categories:)
 
-    expect(categorizer.(row(description: "iFood")).rule_id).to eq(10)
+    expect(categorizer.call(row(description: "iFood")).rule_id).to eq(10)
   end
 
   it "matches every seed rule against the merchants it names" do
@@ -106,27 +106,27 @@ RSpec.describe Tally::Categorizer do
         .then { |rule| rule.merge(priority: rule.fetch(:priority, 100)) }
     end.sort_by { [_1[:priority], _1[:id]] }
     categorizer = described_class.new(rules: seed_rules, categories: ids.values.to_h { [_1, "expense"] }.merge(ids["Restituição de IR"] => "income"))
-    category = ->(**attributes) { ids.key(categorizer.(row(**attributes)).category_id) }
+    category = ->(**attributes) { ids.key(categorizer.call(row(**attributes)).category_id) }
 
-    expect(category.(description: "UBER *TRIP")).to eq("Aplicativo")
-    expect(category.(description: "99 TECNOLOGIA LTDA")).to eq("Aplicativo")
-    expect(category.(description: "POSTO EXEMPLO")).to eq("Combustível")
-    expect(category.(description: "DROGASIL 1234")).to eq("Farmácia")
-    expect(category.(description: "NETFLIX.COM")).to eq("Streaming e apps")
-    expect(category.(description: "AMAZON PRIME CANAIS")).to eq("Streaming e apps")
-    expect(category.(description: "Apple.Com/Bill", amount_cents: -1_990)).to eq("Streaming e apps")
-    expect(category.(description: "Apple.Com/Us", amount_cents: -800_000)).to be_nil
-    expect(category.(description: "DISNEY PLUS")).to eq("Streaming e apps")
-    expect(category.(description: "DISNEY+")).to eq("Streaming e apps")
-    expect(category.(description: "DISNEY STORE EXEMPLO")).to be_nil
-    expect(category.(description: "AMAZON MARKETPLACE")).to eq("Compras online")
-    expect(category.(description: "MERCADOLIVRE*LOJA")).to eq("Compras online")
-    expect(category.(description: "IOF de \"Streaming Exemplo\"")).to eq("IOF")
-    expect(category.(kind: "fee", description: "Mensalidade - Plano do")).to eq("Tarifas bancárias")
-    expect(category.(kind: "fee", description: "Juros do rotativo")).to eq("Tarifas bancárias")
-    expect(category.(description: "Pix no Crédito - JOAO EXEMPLO")).to eq("Transferências (Pix)")
-    expect(category.(description: "Recarga de celular")).to eq("Internet e telefone")
-    expect(category.(description: "IOF de compra internacional")).to eq("IOF")
-    expect(category.(kind: "income", amount_cents: 120_000, description: "SECR. DA RECEITA FEDERAL")).to eq("Restituição de IR")
+    expect(category.call(description: "UBER *TRIP")).to eq("Aplicativo")
+    expect(category.call(description: "99 TECNOLOGIA LTDA")).to eq("Aplicativo")
+    expect(category.call(description: "POSTO EXEMPLO")).to eq("Combustível")
+    expect(category.call(description: "DROGASIL 1234")).to eq("Farmácia")
+    expect(category.call(description: "NETFLIX.COM")).to eq("Streaming e apps")
+    expect(category.call(description: "AMAZON PRIME CANAIS")).to eq("Streaming e apps")
+    expect(category.call(description: "Apple.Com/Bill", amount_cents: -1_990)).to eq("Streaming e apps")
+    expect(category.call(description: "Apple.Com/Us", amount_cents: -800_000)).to be_nil
+    expect(category.call(description: "DISNEY PLUS")).to eq("Streaming e apps")
+    expect(category.call(description: "DISNEY+")).to eq("Streaming e apps")
+    expect(category.call(description: "DISNEY STORE EXEMPLO")).to be_nil
+    expect(category.call(description: "AMAZON MARKETPLACE")).to eq("Compras online")
+    expect(category.call(description: "MERCADOLIVRE*LOJA")).to eq("Compras online")
+    expect(category.call(description: "IOF de \"Streaming Exemplo\"")).to eq("IOF")
+    expect(category.call(kind: "fee", description: "Mensalidade - Plano do")).to eq("Tarifas bancárias")
+    expect(category.call(kind: "fee", description: "Juros do rotativo")).to eq("Tarifas bancárias")
+    expect(category.call(description: "Pix no Crédito - JOAO EXEMPLO")).to eq("Transferências (Pix)")
+    expect(category.call(description: "Recarga de celular")).to eq("Internet e telefone")
+    expect(category.call(description: "IOF de compra internacional")).to eq("IOF")
+    expect(category.call(kind: "income", amount_cents: 120_000, description: "SECR. DA RECEITA FEDERAL")).to eq("Restituição de IR")
   end
 end

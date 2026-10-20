@@ -131,7 +131,7 @@ module Tally
 
     # A starting category's name in a locale: "Supermercado" -> "Groceries" in "en".
     def self.localized(name, locale)
-      locale.to_s == "en" ? ENGLISH.fetch(name) : name
+      (locale.to_s == "en") ? ENGLISH.fetch(name) : name
     end
 
     # Every name a starting category may have, to find it whichever locale seeded it.

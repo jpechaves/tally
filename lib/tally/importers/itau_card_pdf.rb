@@ -289,11 +289,11 @@ module Tally
         reprinted = reprinted!(current)
         cents = ->(section) { current.select { _1[:section] == section }.sum { Money.parse(_1[:amount]).cents } }
 
-        purchases = cents.(:purchases)
-        international = cents.(:international)
-        iof = cents.(:iof)
-        fees = cents.(:fees)
-        payments = cents.(:payments)
+        purchases = cents.call(:purchases)
+        international = cents.call(:international)
+        iof = cents.call(:iof)
+        fees = cents.call(:fees)
+        payments = cents.call(:payments)
         check!(figures, :purchases, purchases)
         check!(figures, :international, international + iof, optional: true)
         check!(figures, :fees, fees, optional: true)
@@ -303,7 +303,7 @@ module Tally
 
         warnings = []
         unless reprinted.empty?
-          reprint = cents.(:reprinted)
+          reprint = cents.call(:reprinted)
           raise Error.new(:financed_missing) unless figures[:financed]
 
           check!(figures, :total, figures[:financed] + figures[:current] + reprint, rows: reprinted.size)
@@ -363,7 +363,7 @@ module Tally
           (first + 1...purchases.size).each do |second|
             length = 0
             length += 1 while first + length < second && second + length < purchases.size &&
-              key.(first + length) == key.(second + length)
+                key.call(first + length) == key.call(second + length)
             next if length < REPRINT_MIN
 
             copy = purchases[second, length]
@@ -432,7 +432,7 @@ module Tally
       def row_date(entry, closing_on)
         day, month = DAY_MONTH.match(entry[:date]).captures.map(&:to_i)
         # No year on the rows: a month after the closing month belongs to the year before.
-        year = month > closing_on.month ? closing_on.year - 1 : closing_on.year
+        year = (month > closing_on.month) ? closing_on.year - 1 : closing_on.year
         Date.new(year, month, day)
       rescue Date::Error
         raise Error.new(:entry_not_a_date, date: entry[:date], text: entry[:description])

@@ -101,8 +101,8 @@ module Tally
           **(card_statement_id ? {card_statement_id:} : {period: statement.period_start..statement.period_end})
         )
         linked = counterparty_repo.link_merchants
-        pair_transfers.(touched_ids: ids)
-        categorize.(ids: ids | linked)
+        pair_transfers.call(touched_ids: ids)
+        categorize.call(ids: ids | linked)
 
         import_repo.update(import.id, rows_inserted: counts[:inserted], rows_updated: counts[:updated],
           rows_unchanged: counts[:unchanged], rows_missing: missing)
