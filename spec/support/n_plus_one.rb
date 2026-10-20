@@ -18,7 +18,9 @@ module NPlusOne
     "app/repos/counterparty_repo.rb#cut_short" => true,
     "app/repos/counterparty_repo.rb#find" => true,
     # Once per uploaded file: a request can carry many statements.
-    "app/repos/account_repo.rb#by_name" => true,
+    "app/repos/account_repo.rb#by_template" => true,
+    # Once per account a statement creates: whose it is decides its name.
+    "app/repos/person_repo.rb#first" => true,
     "app/repos/account_repo.rb#all" => true,
     "app/repos/import_repo.rb#find" => true
   }.freeze

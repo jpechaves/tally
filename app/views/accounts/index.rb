@@ -4,7 +4,7 @@ module Tally
   module Views
     module Accounts
       class Index < Tally::View
-        include Deps["settings", "repos.account_repo", "repos.bill_check_repo", "repos.import_repo"]
+        include Deps["settings", "repos.account_repo", "repos.bill_check_repo", "repos.import_repo", "repos.person_repo"]
 
         expose :accounts do
           account_repo.with_balances
@@ -16,6 +16,11 @@ module Tally
 
         expose :gaps do
           import_repo.gaps
+        end
+
+        # The household (issue #21): you first.
+        expose :people, decorate: false do
+          person_repo.all
         end
 
         expose :checks do

@@ -11,10 +11,11 @@ RSpec.describe Tally::Importers do
     expect { described_class.for("Date,Amount\n") }.to raise_error(Tally::Importers::Error, /unknown file format/)
   end
 
-  it "knows your Itaú account when a Pix goes to yourself there" do
-    expect(described_class.self_account_for(bank_code: "0341", bank_name: nil)).to eq("Itaú conta")
-    expect(described_class.self_account_for(bank_code: nil, bank_name: "ITAÚ UNIBANCO S.A.")).to eq("Itaú conta")
-    expect(described_class.self_account_for(bank_code: "0260", bank_name: "NU PAGAMENTOS - IP")).to be_nil
+  it "knows the account a Pix to someone of the household went to, from the bank its text names" do
+    expect(described_class.account_at("Pix - ANA - BANCO (0341) Agência: 1 Conta: 2")).to eq("Itaú conta")
+    expect(described_class.account_at("Pix - ANA - ITAÚ UNIBANCO S.A. Agência: 1 Conta: 2")).to eq("Itaú conta")
+    expect(described_class.account_at("Pix - ANA - NU PAGAMENTOS - IP (0260) Agência: 1 Conta: 2")).to eq("Nubank conta")
+    expect(described_class.account_at("Pix - ANA - PICPAY (0380) Agência: 1 Conta: 2")).to be_nil
   end
 
   it "keeps row keys the same from one version to the next, or a re-import would duplicate rows" do

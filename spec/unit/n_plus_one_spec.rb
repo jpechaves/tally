@@ -11,6 +11,6 @@ RSpec.describe NPlusOne, :db do
 
   it "lets a few repeats and the allowed ones through" do
     expect(described_class.check { 5.times { accounts.find(_1) } }).to eq(5)
-    expect(described_class.check { 6.times { accounts.by_name("Conta #{_1}") } }).to eq(6)
+    expect(described_class.check { 6.times { accounts.by_template("Conta #{_1}", 1) } }).to eq(6)
   end
 end

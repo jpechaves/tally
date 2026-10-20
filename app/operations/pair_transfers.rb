@@ -12,7 +12,9 @@ module Tally
     #   differ, and Tally::Exchange matches them through the printed rate.
     # - The other account has no statement (Itaú conta, Nubank RDB): a mirror row is
     #   written there, so that account's balance is right.
-    # - Otherwise the row stays a one-leg transfer: still never spending or income.
+    # - Otherwise the row stays a one-leg transfer: still never spending or income. A Pix
+    #   to someone of the household whose account wasn't imported yet finds it once it is
+    #   (issue #21).
     class PairTransfers < Tally::Operation
       include Deps["repos.account_repo", "repos.transaction_repo"]
 
@@ -21,6 +23,7 @@ module Tally
       # @return [Dry::Monads::Result] Success(number of transfers created)
       def call(touched_ids: [])
         currencies = account_repo.all.to_h { [_1.id, _1.currency] }
+        find_counter_accounts
         touched_ids.each_slice(500) { |ids| transaction_repo.rows(ids).each { reconcile(_1, currencies) } }
         pair_all(currencies)
       end
@@ -46,6 +49,16 @@ module Tally
           end
         elsif other && other[:amount_cents] != -row[:amount_cents]
           unlink(row[:transfer_id], legs)
+        end
+      end
+
+      def find_counter_accounts
+        ids = Hash.new do |known, (template, person_id, from)|
+          known[[template, person_id, from]] = account_repo.counter_account_id(template, person_id, from:)
+        end
+        transaction_repo.household_one_legs.each do |row|
+          id = ids[[Importers.account_at(row[:raw_description]), row[:person_id], row[:account_id]]]
+          transaction_repo.update(row[:id], counter_account_id: id) if id
         end
       end
 

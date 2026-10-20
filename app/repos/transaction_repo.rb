@@ -14,7 +14,8 @@ module Tally
 
       # The kinds behind each Tally::TransactionFilter kind; the counted ones match the report.
       KIND_FILTERS = {
-        "spending" => Tally::Insights::SPENDING_KINDS, "income" => Tally::Insights::INCOME_KINDS, "transfer" => %w[transfer]
+        "spending" => Tally::Insights::SPENDING_KINDS, "income" => Tally::Insights::INCOME_KINDS, "transfer" => %w[transfer],
+        "unmatched" => %w[transfer]
       }.freeze
       COUNTED = %w[spending income].freeze
 
@@ -215,6 +216,7 @@ module Tally
         scope = scope.where(Sequel.function(:substr, TRANSACTIONS[:occurred_on], 1, 7) => filter.month) if filter.month
         scope = scope.where(TRANSACTIONS[:category_id] => category_ids(filter.category)) if filter.category
         scope = scope.where(TRANSACTIONS[:kind] => KIND_FILTERS.fetch(filter.kind)) if filter.kind
+        scope = scope.where(TRANSACTIONS[:id] => unmatched_ids) if filter.kind == "unmatched"
         scope = scope.where(nature_condition(filter.nature)) if filter.nature
         scope = scope.where(payee_key => filter.payee) if filter.payee
         scope = scope.where(TRANSACTIONS[:id] => installment_series(filter.purchase).map { _1[:id] }) if filter.purchase
@@ -230,6 +232,18 @@ module Tally
         scope.where(TRANSACTIONS[:missing_since_import_id] => nil)
           .where(TRANSACTIONS[:occurred_on] <= Date.today.iso8601)
           .exclude(TRANSACTIONS[:id] => Tally::Adjustments.uncounted_ids(transactions.dataset))
+      end
+
+      # Transfers between two people of the household whose other side isn't imported
+      # (issue #21): the counterparty is someone else than the account's owner, and the row
+      # has no pair.
+      def unmatched_ids
+        transactions.dataset.unordered
+          .where(TRANSACTIONS[:kind] => "transfer", TRANSACTIONS[:transfer_id] => nil)
+          .join(:accounts, id: :account_id).join(:counterparties, id: TRANSACTIONS[:counterparty_id])
+          .exclude(COUNTERPARTIES[:person_id] => nil)
+          .exclude(COUNTERPARTIES[:person_id] => ACCOUNTS[:person_id])
+          .select(TRANSACTIONS[:id])
       end
 
       def trip_ids(id)

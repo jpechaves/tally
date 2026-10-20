@@ -109,6 +109,15 @@ module Tally
         row[:counterparty_name] if row[:counterparty_bank_name] && row[:counterparty_name] != row[:counterparty_bank_name]
       end
 
+      # " (you)" after a counterparty marked as you, " (Bruno)" after one marked as someone
+      # else of the household (issue #21), nothing for anyone else.
+      def person_label(party, people)
+        return "" unless party[:is_self] == 1
+
+        person = people.find { _1.id == party[:person_id] }
+        (person == people.first) ? " #{t("counterparties.index.you")}" : " (#{person.name})"
+      end
+
       # A link to the transactions behind a number (Tally::TransactionFilter), with the
       # way back to this page.
       def transactions_path(**filters) = with_back(Tally::TransactionFilter.new(**filters).path)

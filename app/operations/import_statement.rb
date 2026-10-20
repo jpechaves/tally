@@ -42,7 +42,8 @@ module Tally
 
       EXTENSIONS = {"itau_card_pdf" => "pdf"}.freeze
 
-      def call(file_name:, content:)
+      # @param person_id [Integer, nil] whose statement it is (issue #21); nil for yours
+      def call(file_name:, content:, person_id: nil)
         content = content.b
         file = {file_name: File.basename(file_name.to_s), file_sha256: Digest::SHA256.hexdigest(content),
                 file_size: content.bytesize}
@@ -59,15 +60,15 @@ module Tally
           step Failure(import_repo.create(**file, status: "rejected", source: source_of(content), error: e.notice))
         end
 
-        import = transaction { apply(statement, file) }
+        import = transaction { apply(statement, file, person_id) }
         store(content, file[:file_sha256], statement.source)
         import
       end
 
       private
 
-      def apply(statement, file)
-        account = account_repo.ensure(statement.account_name)
+      def apply(statement, file, person_id)
+        account = account_repo.ensure(statement.account_name, person_id:)
         import = import_repo.create(**file, status: "applied", source: statement.source, account_id: account.id,
           period_start: statement.period_start.iso8601, period_end: statement.period_end.iso8601,
           warnings: statement.warnings)
@@ -79,9 +80,14 @@ module Tally
 
         counts = Hash.new(0)
         known = transaction_repo.by_external_ids(account.id, statement.rows.map(&:external_id))
-        account_ids = Hash.new { |ids, name| ids[name] = account_repo.ensure(name).id }
+        # The same person's other accounts (the card a bill payment paid), and the accounts
+        # of the household a Pix went to, each looked up once.
+        account_ids = Hash.new { |ids, name| ids[name] = account_repo.ensure(name, person_id: account.person_id).id }
+        counter_ids = Hash.new do |ids, (template, person)|
+          ids[[template, person]] = account_repo.counter_account_id(template, person, from: account.id)
+        end
         ids = statement.rows.map do |row|
-          attributes = attributes(row, card_statement_id, account_ids)
+          attributes = attributes(row, card_statement_id, account_ids, counter_ids)
           existing = known[row.external_id]
 
           if existing.nil?
@@ -120,15 +126,17 @@ module Tally
       end
 
       # @param account_ids [Hash] account name => id, the account created the first time
-      def attributes(row, card_statement_id, account_ids)
+      # @param counter_ids [Hash] [account kind, person id] => the account a Pix to them went to
+      def attributes(row, card_statement_id, account_ids, counter_ids)
         counterparty = row.counterparty && counterparty_repo.upsert(**row.counterparty)
         kind = row.kind
-        counter_account = row.counter_account
+        counter_account_id = row.counter_account && account_ids[row.counter_account]
 
-        # A Pix between you and yourself at another bank is a transfer, not spending.
+        # A Pix between people of the household (you and yourself at another bank, or you
+        # and your partner) is a transfer, not spending.
         if counterparty&.is_self == 1 && %w[purchase income].include?(kind)
           kind = "transfer"
-          counter_account = Importers.self_account_for(counterparty)
+          counter_account_id = counter_ids[[Importers.account_at(row.raw_description), counterparty.person_id]]
         end
 
         {
@@ -144,7 +152,7 @@ module Tally
           installment_total: row.installment_total,
           purchase_key: row.purchase_key,
           counterparty_id: counterparty&.id,
-          counter_account_id: counter_account && account_ids[counter_account],
+          counter_account_id:,
           card_statement_id:,
           exchange_currency: row.exchange_currency,
           exchange_amount_cents: row.exchange_amount&.cents,

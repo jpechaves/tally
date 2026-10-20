@@ -15,6 +15,8 @@ module Tally
 
     get "/accounts", to: "accounts.index", as: :accounts
     get "/accounts/:id/report", to: "accounts.report", as: :account_report
+    post "/people", to: "people.create", as: :people
+    post "/people/:id", to: "people.update", as: :person
     get "/transactions", to: "transactions.index", as: :transactions
     post "/transactions/category", to: "transactions.recategorize", as: :recategorize
     get "/transactions/:id", to: "transactions.show", as: :transaction

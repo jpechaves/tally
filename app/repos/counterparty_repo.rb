@@ -95,8 +95,10 @@ module Tally
           .update(display_name: blank_to_nil.call(display_name), note: blank_to_nil.call(note), updated_at: Repos.now)
       end
 
-      def set_self(id, value)
-        counterparties.dataset.where(id:).update(is_self: value ? 1 : 0, updated_at: Repos.now)
+      # Who of the household the counterparty is (issue #21), or nil for no one. is_self
+      # says whether it is anyone, which imports and merchant matching read.
+      def set_person(id, person_id)
+        counterparties.dataset.where(id:).update(person_id:, is_self: person_id ? 1 : 0, updated_at: Repos.now)
       end
 
       private

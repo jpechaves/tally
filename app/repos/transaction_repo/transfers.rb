@@ -34,6 +34,15 @@ module Tally
             .order(:occurred_on, :id).all
         end
 
+        # Transfers to or from someone of the household that point at no account yet, with
+        # the counterparty's person (person_id).
+        def household_one_legs
+          transactions.dataset.where(kind: "transfer", transfer_id: nil, counter_account_id: nil)
+            .join(:counterparties, id: :counterparty_id).where(Sequel[:counterparties][:is_self] => 1)
+            .select_all(:transactions).select_append(Sequel[:counterparties][:person_id])
+            .order(Sequel[:transactions][:id]).all
+        end
+
         def transfer_legs(transfer_id) = transactions.dataset.where(transfer_id:).order(:id).all
 
         # The other leg of a transfer between two imported accounts: same amount with the

@@ -4,6 +4,12 @@
 
   <form action="/imports" method="post" enctype="multipart/form-data">
     <input type="file" name="files[]" multiple accept=".csv,.pdf" required>
+    <% unless people.one? %>
+      <label><%= t("imports.index.whose") %>
+        <select name="person">
+          <% people.each do |person| %><option value="<%= person.id %>"><%= person.name %></option><% end %>
+        </select></label>
+    <% end %>
     <button type="submit" class="primary"><%= t("imports.index.import") %></button>
   </form>
 
