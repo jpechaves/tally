@@ -80,4 +80,16 @@ RSpec.describe Tally::Views::Helpers do
 
     expect([helpers.upcoming?({occurred_on: "2026-09-16"}), helpers.upcoming?({occurred_on: "2026-09-15"})]).to eq([true, false])
   end
+
+  it "names the page a link came from, for the breadcrumb back to it" do
+    groceries = {id: 7, name: "Supermercado"}
+    expect(helpers.back_label("/")).to eq("Home")
+    expect(helpers.back_label("/review?page=2")).to eq("Review")
+    expect(helpers.back_label("/accounts/3/report")).to eq("Account report")
+    expect(helpers.back_label("/elsewhere/3")).to eq("Back")
+    expect(helpers.back_label("/transactions?page=3")).to eq("Transactions")
+    expect(helpers.back_label("/transactions?q=padaria&category=none&month=2026-09", [groceries])).to eq("Transactions (“padaria”, No category, Sep 2026)")
+    expect(helpers.back_label("/transactions?category=7", [groceries])).to eq("Transactions (Groceries)")
+    expect(helpers.back_label("/transactions?category=%zz")).to eq("Transactions")
+  end
 end

@@ -1,11 +1,12 @@
 <main>
+  <%= render "shared/breadcrumb", parents: [parent_crumb(back, [t("layout.nav.transactions"), "/transactions"], categories)], current: row[:description] %>
   <h1><%= row[:description] %></h1>
   <%= render "transactions/table", rows: [row], categories: nil %>
   <p class="note"><%= t("transactions.show.as_printed", text: row[:raw_description]) %></p>
   <% if row[:counterparty_id] %>
     <p><%= t("transactions.show.counterparty", name: row[:counterparty_name]) %><% if display_name(row) %> <span class="note">(<%= row[:counterparty_bank_name] %>)</span><% end %>
       <% if row[:counterparty_note] %> · <span class="note"><%= row[:counterparty_note] %></span><% end %>
-      · <a href="/counterparties/<%= row[:counterparty_id] %>?back=/transactions/<%= row[:id] %>"><%= t("counterparties.index.edit") %></a></p>
+      · <a href="<%= with_back("/counterparties/#{row[:counterparty_id]}") %>"><%= t("counterparties.index.edit") %></a></p>
   <% end %>
 
   <% unless trips.empty? || row[:kind] == "transfer" %>
@@ -13,7 +14,7 @@
       <%= t("transactions.show.trip") %> <select name="trip_id">
         <% trips.each do |trip| %><option value="<%= trip[:id] %>"><%= trip[:name] %></option><% end %>
       </select>
-      <input type="hidden" name="transaction_id" value="<%= row[:id] %>"><input type="hidden" name="back" value="/transactions/<%= row[:id] %>">
+      <input type="hidden" name="transaction_id" value="<%= row[:id] %>"><input type="hidden" name="back" value="<%= here %>">
       <button type="submit" name="included" value="1"><%= t("transactions.show.add_to_trip") %></button>
       <button type="submit" name="included" value="0"><%= t("transactions.show.take_out_of_trip") %></button>
     </form>
@@ -29,6 +30,7 @@
     <% end %>
   </p>
   <form action="/transactions/<%= row[:id] %>" method="post">
+    <%= render "transactions/back", back: {back:}.compact %>
     <p><%= render "categories/select", none: nil, name: "category_id", selected: row[:category_source] == "manual" ? row[:category_id] : nil,
           categories: categories, blank: t("transactions.show.automatic"), form: nil %></p>
     <p><label><%= t("transactions.show.memo") %><br><textarea name="memo" rows="2" cols="60"><%= row[:memo] %></textarea></label></p>
@@ -38,19 +40,20 @@
   <h2><%= t("transactions.adjustment.title") %></h2>
   <% if error_code %><%= render "shared/message", kind: :error, text: t("errors.#{error_code}", default: error_code.to_s) %><% end %>
   <% if row[:refunds_transaction_id] %>
-    <p class="note"><%= t("transactions.adjustment.refund_of") %> <a href="/transactions/<%= row[:refunds_transaction_id] %>"><%= t("transactions.adjustment.the_purchase") %></a></p>
+    <p class="note"><%= t("transactions.adjustment.refund_of") %> <a href="<%= transaction_path(row[:refunds_transaction_id]) %>"><%= t("transactions.adjustment.the_purchase") %></a></p>
   <% elsif row[:kind] == "transfer" %>
     <p class="note"><%= t("transactions.adjustment.transfer") %></p>
   <% else %>
     <% if row[:adjustment_kind] %>
       <p><%= t("transactions.adjustment.counts_as", amount: money(row[:counted_cents], row[:currency]), original: money(row[:amount_cents], row[:currency])) %>
-        <% if row[:refund_transaction_id] %><a href="/transactions/<%= row[:refund_transaction_id] %>"><%= t("transactions.adjustment.the_refund") %></a><% end %></p>
+        <% if row[:refund_transaction_id] %><a href="<%= transaction_path(row[:refund_transaction_id]) %>"><%= t("transactions.adjustment.the_refund") %></a><% end %></p>
       <% if row[:adjustment_note] %><p class="note"><%= row[:adjustment_note] %></p><% end %>
-      <form action="/transactions/<%= row[:id] %>/adjustment/remove" method="post"><button type="submit"><%= t("transactions.adjustment.remove") %></button></form>
+      <form action="/transactions/<%= row[:id] %>/adjustment/remove" method="post"><%= render "transactions/back", back: {back:}.compact %><button type="submit"><%= t("transactions.adjustment.remove") %></button></form>
     <% else %>
       <p class="note"><%= t("transactions.adjustment.intro") %></p>
     <% end %>
     <form action="/transactions/<%= row[:id] %>/adjustment" method="post">
+      <%= render "transactions/back", back: {back:}.compact %>
       <p>
         <% kinds = row[:amount_cents].negative? ? Tally::Adjustments::KINDS : Tally::Adjustments::KINDS - %w[reimbursed] %>
         <% kinds.each do |kind| %>

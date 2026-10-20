@@ -109,8 +109,49 @@ module Tally
         row[:counterparty_name] if row[:counterparty_bank_name] && row[:counterparty_name] != row[:counterparty_bank_name]
       end
 
-      # A link to the transactions behind a number (Tally::TransactionFilter).
-      def transactions_path(**filters) = Tally::TransactionFilter.new(**filters).path
+      # A link to the transactions behind a number (Tally::TransactionFilter), with the
+      # way back to this page.
+      def transactions_path(**filters) = with_back(Tally::TransactionFilter.new(**filters).path)
+
+      # A link to a row's page, with the way back to this page; on that page itself, the
+      # page as it is.
+      def transaction_path(id)
+        path = "/transactions/#{id}"
+        (_context.request.path == path) ? here : with_back(path)
+      end
+
+      # This page, with its filters and page, for a link or form to come back to (issue #87).
+      def here = _context.request.fullpath
+
+      # +path+ with this page as the way back from it (?back=, Tally::Action#back_param).
+      def with_back(path) = "#{path}#{path.include?("?") ? "&" : "?"}back=#{ERB::Util.url_encode(here)}"
+
+      # The breadcrumb's crumb for the page a link came from, or +fallback+ ([label, path])
+      # when it came from nowhere (shared/_breadcrumb).
+      def parent_crumb(back, fallback, categories = []) = back ? [back_label(back, categories), back] : fallback
+
+      # What the page at +back+ is called: its section ("Review"), a page below one
+      # ("Transaction"), or the transactions with the filters that say which list it was:
+      # "Transactions (Groceries, Sep 2026)". The filters' categories are named from
+      # +categories+.
+      def back_label(back, categories = [])
+        path, query = back.split("?", 2)
+        section, id = path.split("/").drop(1)
+        return t("breadcrumb.detail.#{section}", default: t("breadcrumb.back")) if id
+        return t("layout.nav.#{section || "home"}", default: t("breadcrumb.back")) unless section == "transactions"
+
+        words = filter_words(query, categories)
+        words.empty? ? t("layout.nav.transactions") : "#{t("layout.nav.transactions")} (#{words.join(", ")})"
+      end
+
+      # A transactions query's search, category and month, in words.
+      def filter_words(query, categories)
+        filter = Tally::TransactionFilter.parse(URI.decode_www_form(query.to_s).to_h { [_1.to_sym, _2] })
+        category = if filter.category == Tally::TransactionFilter::NONE then t("transactions.index.uncategorized")
+        else category_name(categories.find { _1[:id] == filter.category }&.[](:name))
+        end
+        [filter.q && "“#{filter.q}”", category, filter.month && month_label(filter.month)].compact
+      end
 
       # A card purchase's installments still to pay from `month` on: "7 × R$ 120,00 = R$ 840,00".
       def installments_left(purchase, month)

@@ -31,7 +31,7 @@ RSpec.describe "Subscriptions", :db, type: :request do
     expect(body).to include("R$ 143.90 a month", "R$ 1,726.80 a year")
     expect(body).to include("StreamFlix", "up R$ 5.00", "Academia Forte", "Nubank conta, Nubank cartão", "Jul 2026")
     expect(body).to include("MUSICAPP", %(<span class="badge">stopped</span>))
-    expect(body).to include(%(href="/transactions?kind=spending&amp;payee=counterparty%3A#{db[:counterparties].where(name: "StreamFlix").get(:id)}"))
+    expect(body).to include(%(href="/transactions?kind=spending&amp;payee=counterparty%3A#{db[:counterparties].where(name: "StreamFlix").get(:id)}&amp;back=%2Fsubscriptions"))
 
     get "/cuts"
     expect(last_response.body).to include(%(href="/subscriptions"))

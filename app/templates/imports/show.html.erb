@@ -1,5 +1,5 @@
 <main>
-  <p><a href="/imports">← <%= t("layout.nav.imports") %></a></p>
+  <%= render "shared/breadcrumb", parents: [[t("layout.nav.imports"), "/imports"]], current: import.file_name %>
   <h1><%= import.file_name %></h1>
 
   <div class="scroll"><table>

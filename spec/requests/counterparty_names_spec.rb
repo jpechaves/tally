@@ -47,7 +47,7 @@ RSpec.describe "Counterparty names", :db, type: :request do
 
     get "/counterparties"
     expect(last_response.body).to include(%(<span class="name">Conta de luz</span>), "ENERGIA EXEMPLO S.A.", "the flat&#39;s power bill")
-    expect(last_response.body).to include(%(href="/transactions?payee=counterparty%3A#{energy}"))
+    expect(last_response.body).to include(%(href="/transactions?payee=counterparty%3A#{energy}&amp;back=%2Fcounterparties"))
 
     get "/review"
     expect(last_response.body).to include("Conta de luz · 1 row")

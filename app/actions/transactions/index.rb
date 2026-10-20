@@ -10,6 +10,8 @@ module Tally
           # How many rows a change of category from the table just changed, and skipped.
           response[:changed] = request.params[:changed].to_s[/\A\d+\z/]&.to_i
           response[:skipped] = request.params[:skipped].to_s[/\A\d+\z/].to_i
+          # The page that sent you to this list, for the way back (issue #87).
+          response[:return_to] = back_param(request.params[:back])
         end
       end
     end

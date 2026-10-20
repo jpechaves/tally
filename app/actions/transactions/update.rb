@@ -25,7 +25,7 @@ module Tally
             categorize.(ids: [id])
           end
 
-          response.redirect_to routes.path(:transaction, id:)
+          response.redirect_to path_with(routes.path(:transaction, id:), back: back_param(request.params[:back]))
         end
       end
     end

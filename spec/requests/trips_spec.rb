@@ -49,7 +49,8 @@ RSpec.describe "Trips", :db, type: :request do
     get "/trips/#{trip[:id]}"
     body = last_response.body
     expect(body).to include("R$ 8,099.15", "US$ 800.00", "R$ 4,160.00", "IOF: R$ 39.15", "4 installments to come: R$ 2,000.00")
-    expect(body).to include(%(href="/transactions?account=#{global}&amp;trip=#{trip[:id]}"), %(href="/transactions?category=none&amp;trip=#{trip[:id]}"))
+    expect(body).to include(%(href="/transactions?account=#{global}&amp;trip=#{trip[:id]}&amp;back=%2Ftrips%2F#{trip[:id]}"),
+      %(href="/transactions?category=none&amp;trip=#{trip[:id]}&amp;back=%2Ftrips%2F#{trip[:id]}"))
     expect(body).not_to include("MERCADO EXEMPLO", "TOPUP EXEMPLO")
 
     get "/transactions", trip: trip[:id].to_s

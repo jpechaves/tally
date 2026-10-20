@@ -39,8 +39,9 @@ module Tally
 
     def path = any? ? "#{self.class::PATH}?#{URI.encode_www_form(query)}" : self.class::PATH
 
-    # Links to the other pages of the filtered list (Tally::Pagination).
-    def pages = Pagination.path(self.class::PATH, **query)
+    # Links to the other pages of the filtered list (Tally::Pagination), keeping the page
+    # it was reached from (+back+), if any.
+    def pages(back: nil) = Pagination.path(self.class::PATH, **query, back:)
 
     # Totals shown as spending (positive) instead of a net.
     def spending? = kind == "spending"
