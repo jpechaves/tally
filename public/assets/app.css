@@ -174,11 +174,15 @@ form.inline-category select { appearance: none; background: transparent; border-
 form.inline-category select:has(option[value=""]:checked) { color: var(--ink-subtle); }
 form.inline-category select:hover { border-color: var(--hairline-strong); background: var(--surface-2); }
 /* A searchable picker (public/assets/picker.js): a text box over a list; the <select> it
-   stands for stays in the form, out of sight. */
+   stands for stays in the form, out of sight. The list is fixed and anchored to its text box
+   (CSS anchor positioning), so a table's rounded, scrolling box can't clip it; with no room
+   below, it opens upward. */
 select.picker-native { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
-.picker { position: relative; display: inline-block; }
-.picker ul { position: absolute; z-index: 10; left: 0; top: calc(100% + 4px); min-width: 100%; width: max-content; max-width: 22em; max-height: 18em; overflow-y: auto;
-  margin: 0; padding: 4px; list-style: none; background: var(--surface-2); border: 1px solid var(--hairline-strong); border-radius: var(--radius-md); }
+.picker { position: relative; display: inline-block; anchor-scope: --picker; }
+.picker input { anchor-name: --picker; }
+.picker ul { position: fixed; position-anchor: --picker; top: anchor(bottom); left: anchor(left); position-try-fallbacks: flip-block;
+  z-index: 10; min-width: anchor-size(width); width: max-content; margin-block: 4px; max-width: 22em; max-height: 18em; overflow-y: auto;
+  padding: 4px; list-style: none; background: var(--surface-2); border: 1px solid var(--hairline-strong); border-radius: var(--radius-md); }
 .picker li { padding: 4px 8px; border-radius: var(--radius-sm); cursor: pointer; white-space: nowrap; }
 .picker li[aria-selected=true] { background: var(--surface-3); outline: 1px solid var(--accent); }
 .picker li.picker-group { color: var(--ink-subtle); font-size: 12px; cursor: default; padding-top: 8px; }
