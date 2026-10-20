@@ -8,23 +8,24 @@ module Tally
   # HTTP basic auth in front of the whole app.
   #
   # Credentials come from the basic_auth_username / basic_auth_password settings, unless
-  # given explicitly. Without them, requests pass through in development and test, and the
-  # app answers 503 in production, so a missing setting can never leave it open.
+  # given explicitly. It's an optional layer: with both blank, requests pass through in every
+  # environment (something else, like a VPN or Cloudflare Access, may guard the app), and
+  # production logs a warning at boot so an open app is never silent. Only one of the two
+  # set is a mistake, so the app answers 503 until both are.
   class BasicAuth
     REALM = "Tally"
+    OFF_WARNING = "basic auth is off: both BASIC_AUTH_* are empty"
 
-    def initialize(app, username: nil, password: nil, required: nil)
+    def initialize(app, username: nil, password: nil, production: Hanami.env?(:production), logger: nil)
       @app = app
       @explicit = [username, password] if username || password
-      @required = required
+      (logger || Hanami.app["logger"]).warn(OFF_WARNING) if production && off?
     end
 
     def call(env)
-      username, password = credentials
+      return @app.call(env) if off?
 
-      if blank?(username) && blank?(password)
-        return required? ? misconfigured("set BASIC_AUTH_USERNAME and BASIC_AUTH_PASSWORD") : @app.call(env)
-      end
+      username, password = credentials
       return misconfigured("set both BASIC_AUTH_USERNAME and BASIC_AUTH_PASSWORD") if blank?(username) || blank?(password)
 
       auth = Rack::Auth::Basic::Request.new(env)
@@ -44,8 +45,8 @@ module Tally
       end
     end
 
-    def required?
-      @required.nil? ? Hanami.env?(:production) : @required
+    def off?
+      credentials.all? { |value| blank?(value) }
     end
 
     # Compares digests so neither the length nor the content leaks through timing.

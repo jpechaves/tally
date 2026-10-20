@@ -54,7 +54,7 @@ Settings come from environment variables, loaded from `.env` files in developmen
 | Variable | Default | |
 |---|---|---|
 | `DATABASE_URL` | `sqlite://db/tally.sqlite` | Use a path under `data/` for the live database. |
-| `BASIC_AUTH_USERNAME`, `BASIC_AUTH_PASSWORD` | unset | Optional in development. In production the app answers 503 until both are set. |
+| `BASIC_AUTH_USERNAME`, `BASIC_AUTH_PASSWORD` | unset | Optional login, in every environment. Both empty: no login (production logs a warning at boot). Both set: the browser asks for them. Only one set: the app answers 503. |
 | `HANAMI_MAX_THREADS` | `2` | Puma threads; 2 suits the Pi Zero 2 W. |
 | `IMPORT_STORAGE_DIR` | `storage/imports` | Where each imported file is kept, named by its SHA-256. Gitignored. |
 | `PASS_THROUGH_TOLERANCE_CENTS` | `5000` | How far the Itaú account's balance may drift from zero before the Accounts page warns. |
