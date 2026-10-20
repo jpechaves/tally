@@ -310,7 +310,12 @@ RSpec.describe "Searching transactions", :db, type: :request do
     expect(row("Pagamento via conta")[:category_id]).to be_nil
 
     follow_redirect!
-    expect(last_response.body).to include("Changed the category of 2 rows. 1 transfer left as it was: transfers have no category.")
+    expect(last_response.body).to include(%(<p class="success" role="status">Changed the category of 2 rows. 1 transfer left as it was: transfers have no category.</p>))
+  end
+
+  it "says in red when a change of category reached no row" do
+    get "/transactions?q=pagamento&changed=0&skipped=1"
+    expect(last_response.body).to include(%(<p class="error" role="alert">Changed the category of 0 rows. 1 transfer left as it was))
   end
 
   it "refuses to change every row when nothing narrows them" do

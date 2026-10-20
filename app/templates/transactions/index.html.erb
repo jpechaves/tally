@@ -1,7 +1,8 @@
 <main>
   <h1><%= t("transactions.index.title") %></h1>
-  <% if changed %><p class="notice"><%= [t("transactions.index.changed", rows: t("common.row_count", count: changed)),
-    (t("transactions.index.skipped", count: skipped) if skipped.positive?)].compact.join(" ") %></p><% end %>
+  <% if changed %><%= render "shared/message", kind: changed.positive? ? :success : :error,
+    text: [t("transactions.index.changed", rows: t("common.row_count", count: changed)),
+      (t("transactions.index.skipped", count: skipped) if skipped.positive?)].compact.join(" ") %><% end %>
   <form action="<%= Tally::TransactionFilter::PATH %>" method="get" class="filters">
     <input type="search" name="q" value="<%= filter.q %>" placeholder="<%= t("transactions.index.search") %>" maxlength="<%= Tally::TransactionFilter::SEARCH_MAX %>">
     <select name="account" data-picker>

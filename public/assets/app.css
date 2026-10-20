@@ -144,9 +144,12 @@ td details summary { cursor: pointer; }
 .down, .status-applied, .check-ok { color: var(--good-ink); }
 .check-open { color: var(--ink-muted); }
 .suggested { color: var(--hint-ink); }
-p.error, p.warning, p.notice { padding: 10px 14px; border-radius: var(--radius-md); border: 1px solid var(--hairline); background: var(--surface-1); }
+p.error, p.warning, p.notice, p.success { padding: 10px 14px; border-radius: var(--radius-md); border: 1px solid var(--hairline); background: var(--surface-1); }
 p.error, p.warning { border-color: rgba(208, 59, 59, 0.45); }
 p.notice { color: var(--ink-muted); border-color: var(--hairline-strong); }
+/* What an action just did (shared/message): a tint of --good or --bad behind its ink. */
+p.success { color: var(--good-ink); border-color: rgba(39, 166, 68, 0.45); background: rgba(39, 166, 68, 0.1); }
+p.error[role=alert] { background: rgba(208, 59, 59, 0.1); }
 
 /* --- Forms ------------------------------------------------------------------------------ */
 

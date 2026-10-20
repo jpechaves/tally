@@ -1,6 +1,6 @@
 <main>
   <h1><%= t("rules.index.title") %></h1>
-  <% if error_code %><p class="error"><%= t("errors.#{error_code}", default: error_code.to_s) %></p><% end %>
+  <% if error_code %><%= render "shared/message", kind: :error, text: t("errors.#{error_code}", default: error_code.to_s) %><% end %>
   <p><%= t("rules.index.intro") %></p>
   <div class="scroll"><table class="rows">
     <thead><tr><th class="num"><%= t("rules.index.priority") %></th><th><%= t("rules.index.when") %></th><th><%= t("rules.index.amount") %></th><th><%= t("rules.index.category") %></th><th><%= t("rules.index.origin") %></th><th class="num"><%= t("common.rows") %></th><th></th></tr></thead>
