@@ -18,29 +18,34 @@ module Tally
         added = {categories: 0, rules: 0}
 
         transaction do
+          existing = category_repo.ids_by_name_and_parent
+
           Categories::EXPENSES.each do |parent, children|
-            parent_id = ensure_category(added, locale, name: parent, kind: "expense")
+            parent_id = ensure_category(added, existing, locale, name: parent, kind: "expense")
             children.each do |name, nature|
-              ensure_category(added, locale, name:, kind: "expense", parent_id:, nature:)
+              ensure_category(added, existing, locale, name:, kind: "expense", parent_id:, nature:)
             end
           end
 
           Categories::INCOME.each do |parent, children|
-            parent_id = ensure_category(added, locale, name: parent, kind: "income")
-            children.each { ensure_category(added, locale, name: _1, kind: "income", parent_id:) }
+            parent_id = ensure_category(added, existing, locale, name: parent, kind: "income")
+            children.each { ensure_category(added, existing, locale, name: _1, kind: "income", parent_id:) }
           end
 
+          rules = category_rule_repo.by_match
           Categories::REVISED_RULES.each do |(field, operator, old), pattern|
-            rule = category_rule_repo.find_by_match(field:, operator:, pattern: old)
-            next unless rule && rule[:origin] == "seed" && !category_rule_repo.find_by_match(field:, operator:, pattern:)
+            rule = rules[[field, operator, old]]
+            next unless rule && rule[:origin] == "seed" && !rules[[field, operator, pattern]]
 
             category_rule_repo.update(rule[:id], pattern:)
+            rules[[field, operator, pattern]] = rule
           end
 
+          ids = category_repo.ids_by_name(Categories::RULES.flat_map { Categories.names(_1[3]) })
           Categories::RULES.each do |field, operator, pattern, category, options = {}|
-            next if category_rule_repo.find_by_match(field:, operator:, pattern:)
+            next if rules[[field, operator, pattern]]
 
-            category_id = category_repo.id_by_name(Categories.names(category)) or raise ArgumentError, "no category #{category}"
+            category_id = Categories.names(category).filter_map { ids[_1] }.first or raise ArgumentError, "no category #{category}"
             category_rule_repo.create(field:, operator:, pattern:, category_id:, origin: "seed", **options)
             added[:rules] += 1
           end
@@ -51,9 +56,9 @@ module Tally
 
       private
 
-      def ensure_category(added, locale, name:, kind:, parent_id: nil, nature: nil)
-        existing = category_repo.find_by(name: Categories.names(name), parent_id:)
-        return existing[:id] if existing
+      def ensure_category(added, existing, locale, name:, kind:, parent_id: nil, nature: nil)
+        id = Categories.names(name).filter_map { existing[[_1, parent_id]] }.first
+        return id if id
 
         added[:categories] += 1
         category_repo.create(name: Categories.localized(name, locale), kind:, parent_id:, nature:)

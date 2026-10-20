@@ -25,6 +25,9 @@ module Tally
         category_rules.dataset.where(field:, operator:, pattern:).first
       end
 
+      # [field, operator, pattern] => rule, for every rule, switched off ones included.
+      def by_match = category_rules.dataset.to_hash(%i[field operator pattern])
+
       def create(**attributes) = category_rules.dataset.insert(**attributes)
 
       def update(id, **attributes)
