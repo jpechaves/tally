@@ -4,7 +4,7 @@ module Tally
   module Views
     module Transactions
       class Index < Tally::View
-        include Deps["repos.account_repo", "repos.category_repo", "repos.transaction_repo", "repos.trip_repo"]
+        include Deps["repos.account_repo", "repos.category_repo", "repos.person_repo", "repos.transaction_repo", "repos.trip_repo"]
 
         PER_PAGE = Tally::Pagination::PER_PAGE
 
@@ -56,6 +56,11 @@ module Tally
         end
 
         # The trip the trip filter shows.
+        # Whose accounts the person filter shows (issue #21).
+        expose :person_name, decorate: false do |filter|
+          person_repo.find(filter.person)&.name if filter.person
+        end
+
         expose :trip_name, decorate: false do |filter|
           trip_repo.find(filter.trip)&.fetch(:name) if filter.trip
         end

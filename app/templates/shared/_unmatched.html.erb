@@ -1,0 +1,4 @@
+<%# Transfers between two people of the household whose other side isn't imported (issue #21). %>
+<% if count.positive? %>
+  <p class="warning"><a href="<%= transactions_path(kind: "unmatched", person: nil) %>"><%= t("people.unmatched", count: count) %></a></p>
+<% end %>

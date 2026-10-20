@@ -5,6 +5,7 @@ module Tally
     module Budgets
       class Index < Tally::View
         include Deps["repos.plan_repo", "repos.insight_repo", "repos.category_repo"]
+        include PersonSwitch
 
         BASELINE_MONTHS = 3
 
@@ -42,12 +43,12 @@ module Tally
           end.reverse
         end
 
-        expose :budget_month, decorate: false do |month, plan, categories, today|
-          build(month, plan, categories, today)
+        expose :budget_month, decorate: false do |month, plan, categories, today, person|
+          build(month, plan, categories, today, person)
         end
 
         # The score of each complete month since the plan started, newest first.
-        expose :scores, decorate: false do |plan, categories, today|
+        expose :scores, decorate: false do |plan, categories, today, person|
           next [] unless plan
 
           current = today.strftime("%Y-%m")
@@ -55,7 +56,7 @@ module Tally
           next [] unless count.positive?
 
           months = [plan[:starts_month]] + Tally::Insights.next_months(plan[:starts_month], count - 1)
-          months.map { [_1, build(_1, plan, categories, today).score] }.reverse
+          months.map { [_1, build(_1, plan, categories, today, person).score] }.reverse
         end
 
         # How much the active plan's limits would save a month, when that is short of its
@@ -81,13 +82,16 @@ module Tally
         # The plan counts from its first month; before that there is no target. What a month
         # usually brings in, and spends outside its budgets, comes from the three months before
         # it that are over: the current month is usually only partly imported.
-        def build(month, plan, categories, today)
+        #
+        # Budgets are the household's (issue #21): one person's view holds their spending
+        # against the same limits, without the plan's target, which is the household's.
+        def build(month, plan, categories, today, person)
           names = categories.transform_values { {name: _1[:name], parent_name: _1[:parent_name]} }
           budgets = plan_repo.budgets_for(month)
-          plan = nil unless plan && plan[:starts_month] <= month
+          plan = nil unless plan && plan[:starts_month] <= month && person.nil?
           before = Tally::Insights.previous_months([month, today.strftime("%Y-%m")].min, BASELINE_MONTHS)
-          baseline = insight_repo.rows(from: before.first, to: before.last).group_by { Tally::Insights.month_of(_1) }.values
-          Tally::BudgetMonth.new(insight_repo.rows(from: month, to: month, through: nil), month:, budgets:, categories: names, today:,
+          baseline = insight_repo.rows(from: before.first, to: before.last, person: person&.id).group_by { Tally::Insights.month_of(_1) }.values
+          Tally::BudgetMonth.new(insight_repo.rows(from: month, to: month, through: nil, person: person&.id), month:, budgets:, categories: names, today:,
             target_cents: plan && plan[:target_cents],
             expected_income_cents: plan ? plan[:baseline_income_cents] : average(baseline) { Tally::Insights.income_cents(_1) },
             expected_unbudgeted_cents: average(baseline) { Tally::Insights.spent_cents(_1.reject { |row| budgets.key?(row[:category_id]) }) })

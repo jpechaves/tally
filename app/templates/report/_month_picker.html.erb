@@ -4,5 +4,6 @@
       <option value="<%= value %>"<%= " selected" if value == month %>><%= month_label(value) %></option>
     <% end %>
   </select>
+  <% if person %><input type="hidden" name="person" value="<%= person.id %>"><% end %>
   <button type="submit"><%= t("common.show") %></button>
 </form>

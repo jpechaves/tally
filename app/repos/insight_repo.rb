@@ -20,10 +20,14 @@ module Tally
       # @param account_id [Integer, nil] one account's rows instead, in its own currency (the
       #   account's report)
       # @param without [Array<Integer>] ids of rows to leave out (the report hiding trips)
-      def rows(from:, to:, through: Date.today, account_id: nil, without: [])
+      # @param person [Integer, nil] one person's accounts only (issue #21); nil for the
+      #   whole household
+      def rows(from:, to:, through: Date.today, account_id: nil, without: [], person: nil)
         last = ["#{to}-31", through&.iso8601].compact.min
-        scope(account_id).where(Sequel[:transactions][:occurred_on] => "#{from}-01"..last)
-          .exclude(Sequel[:transactions][:id] => without).all
+        dataset = scope(account_id).where(Sequel[:transactions][:occurred_on] => "#{from}-01"..last)
+          .exclude(Sequel[:transactions][:id] => without)
+        dataset = dataset.where(Sequel[:accounts][:person_id] => person) if person
+        dataset.all
       end
 
       # A trip's rows (Tally::Trip), in every currency: bought between its dates (the purchase

@@ -59,6 +59,10 @@ module Tally
     # The record whose id is in the path, from the repo; a 404 when there is none.
     def found(repo, request) = repo.find(request.params[:id].to_i) || halt(404)
 
+    # The id of someone of the household from a param, for the pages with a person switch
+    # (Views::PersonSwitch), or nil for the whole household.
+    def person_param(value) = value.to_s[/\A\d{1,9}\z/]&.to_i
+
     # A "YYYY-MM" month from a param, or nil.
     def month_param(value) = value.to_s[Tally::Insights::MONTH]
 

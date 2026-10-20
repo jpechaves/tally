@@ -1,0 +1,8 @@
+<%# Whose money the page adds up (issue #21): the whole household, or one person. Only with more than one person. %>
+<% if people.size > 1 %>
+  <nav class="switch" aria-label="<%= t("people.switch") %>">
+    <% [nil, *people].each do |choice| %>
+      <a href="<%= path_with_query(path, month: month, person: choice&.id) %>"<%= ' aria-current="page"'.html_safe if choice == person %>><%= choice ? choice.name : t("people.household") %></a>
+    <% end %>
+  </nav>
+<% end %>

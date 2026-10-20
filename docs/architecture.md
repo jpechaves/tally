@@ -307,6 +307,7 @@ Tally keeps a second person's statements beside yours (issue #21). The accounts 
 
 - **Marking people.** The counterparties page marks a name as someone of the household: "This is me" with one person, a choice of who with more (`counterparties.person_id`). A Pix to or from them becomes a transfer, as a Pix to yourself always has. Its other side is that person's account at the bank the row names (`Importers.account_at`: Itaú or Nubank), when it is imported; an Itaú conta has no statement, so it is created and mirrored, as yours is (`AccountRepo#counter_account_id`).
 - **Pairing.** Both sides imported, the Pix pairs like a card payment (`PairTransfers`), whatever order the files and marks came in: a transfer that pointed at no account finds it once the other person's statement is in. A transfer between two people with no pair is **unmatched** (`/transactions?kind=unmatched`): the other person's statement for that month is missing, or their account isn't imported. It still never counts as spending.
+- **The person switch.** Home, Report, Cuts and Budgets add up the whole household by default, and a switch above them (`shared/_person_switch`, shown with more than one person) narrows them to one person's accounts (`?person=`, `InsightRepo#rows(person:)`). Every link from those pages to the rows behind a number keeps the person (`TransactionFilter#person`). Transfers between the two count in no view, so the household's figures are the sum of each person's, and a shared payee (both pay the same supermarket) is one line in the household view, as counterparties are shared. Budgets and the plan are the household's: one person's view shows their spending against the same limits, without the plan's target. Home and Report warn while any transfer between people is unmatched.
 - **The default until then.** Until you add someone and mark their name, a Pix to your partner is a Pix to a person: spending, in Transferências (Pix), as before. Marking them is the switch: from then on it is a transfer in every view, yours included, so your own spending no longer has money you only moved to them (in the issue's example, your view shows R$ 3.800, not R$ 4.000).
 
 ## 7. Import and categorization flow
@@ -613,7 +614,7 @@ Only after version 1 is correct and in daily use. Each one only **suggests**; no
 - **Subscriptions** (issue #74): done. See §8.7.
 - **Trips** (issue #75): done. See §8.8.
 - **Home bills** (issue #113): done. See §8.9.
-- **Household** (issue #21): people, accounts by owner, and Pix between people paired or shown as unmatched (§6.1).
+- **Household** (issue #21): people, accounts by owner, Pix between people paired or shown as unmatched, and the household / person switch (§6.1).
 - **Next, milestone 8 (Pi deployment)**, postponed while the app is tried by hand.
 
 ## 17. Public repository: keeping personal data out

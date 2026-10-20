@@ -411,6 +411,7 @@ en:
       carried:
         nature: "Nature: %{value}"
         payee: "Payee: %{value}"
+        person: "Person: %{value}"
         purchase: "Purchase: %{value}"
         trip: "Trip: %{value}"
       ask: "Change the category of %{rows} to %{category}?"
@@ -741,6 +742,12 @@ en:
       title: Installments
     left: "%{count} × %{each} = %{total}"
 
+  people:
+    household: Household
+    switch: Whose money
+    unmatched:
+      one: "1 transfer between people of the household has no other side: a statement is probably missing."
+      other: "%{count} transfers between people of the household have no other side: a statement is probably missing."
   plans:
     flow:
       accept: Review the limits, change any, and accept. They become your budgets from the month you picked.

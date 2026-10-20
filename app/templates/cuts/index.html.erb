@@ -1,10 +1,11 @@
 <main>
   <h1><%= t("cuts.index.title") %></h1>
+  <%= render "shared/person_switch", path: "/cuts", people: people, person: person, month: month %>
   <p class="note"><%= t("cuts.index.subscriptions_html") %></p>
   <% if month.nil? %>
     <p><%= t("common.nothing_imported_html") %></p>
   <% else %>
-    <%= render "report/month_picker", path: "/cuts", months: months, month: month %>
+    <%= render "report/month_picker", path: "/cuts", months: months, month: month, person: person %>
     <% if suggestions.empty? %>
       <p><%= t("cuts.index.empty", month: month_label(month)) %></p>
     <% else %>

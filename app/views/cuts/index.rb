@@ -5,6 +5,7 @@ module Tally
     module Cuts
       class Index < Tally::View
         include Deps["repos.insight_repo", "repos.transaction_repo"]
+        include PersonSwitch
 
         expose :months do
           transaction_repo.months
@@ -14,11 +15,11 @@ module Tally
           requested_month || Tally::Insights.default_month(months)
         end
 
-        expose :suggestions do |month|
+        expose :suggestions do |month, person|
           next [] unless month
 
           from = Tally::Insights.previous_months(month, 3).first
-          Tally::Cuts.new(insight_repo.rows(from:, to: month), month:, dismissed: insight_repo.dismissed_keys).suggestions
+          Tally::Cuts.new(insight_repo.rows(from:, to: month, person: person&.id), month:, dismissed: insight_repo.dismissed_keys).suggestions
         end
 
         expose :total_cents do |suggestions|

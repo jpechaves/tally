@@ -58,4 +58,56 @@ RSpec.describe "The household", :db, type: :request do
     post "/counterparties/#{jose}/self", person: ""
     expect(db[:counterparties].where(id: jose).get(%i[is_self person_id])).to eq([0, nil])
   end
+
+  describe "the person switch" do
+    let(:bruno) { db[:people].where(name: "Bruno").get(:id) }
+
+    before do
+      upload("NU_12345678_01JUL2026_31JUL2026.csv")
+      post "/people", name: "Bruno"
+      upload("NU_87654321_01JUL2026_31JUL2026.csv", person: bruno.to_s)
+      post "/counterparties/#{party("JOSE DA SILVA EXEMPLO")}/self", person: bruno.to_s
+      post "/counterparties/#{party("MARIA E SOUZA")}/self", person: me_id.to_s
+    end
+
+    def spending = last_response.body[%r{Spending<strong>([^<]+)</strong>}, 1]
+
+    it "adds up the household, or one person, leaving out the Pix between them" do
+      get "/report", month: "2026-07"
+      expect(spending).to eq("R$ 1,236.72")
+      expect(last_response.body).to include(%(<a href="/report?month=2026-07" aria-current="page">Household</a>),
+        %(<a href="/report?month=2026-07&amp;person=#{bruno}">Bruno</a>), "1 transfer between people of the household has no other side")
+
+      get "/report", month: "2026-07", person: me_id.to_s
+      expect(spending).to eq("R$ 954.22")
+      expect(last_response.body).to include(%(<input type="hidden" name="person" value="#{me_id}">))
+
+      get "/report", month: "2026-07", person: bruno.to_s
+      expect(spending).to eq("R$ 282.50")
+      expect(last_response.body).to include("/transactions?person=#{bruno}&amp;month=2026-07&amp;kind=spending")
+
+      get "/transactions", person: bruno.to_s, month: "2026-07", kind: "spending"
+      expect(last_response.body).to include("Person: Bruno", "SUPERMERCADO EXEMPLO")
+      expect(last_response.body).not_to include("ENERGIA EXEMPLO")
+      get "/transactions", person: "999"
+      expect(last_response.body).to include("Person: 999", "No transactions match these filters.")
+    end
+
+    it "switches Home, Cuts and Budgets too, with the household's budgets and only its plan's target" do
+      get "/", person: bruno.to_s
+      expect(last_response.body).to include(%(aria-current="page">Bruno</a>), "/report?month=2026-07&amp;person=#{bruno}")
+
+      get "/cuts", month: "2026-07", person: bruno.to_s
+      expect(last_response.body).to include(%(aria-current="page">Bruno</a>))
+
+      db[:savings_plans].insert(target_cents: 50_000, baseline_from: "2026-04", baseline_to: "2026-06", baseline_income_cents: 900_000,
+        baseline_spending_cents: 100_000, starts_month: "2026-09", status: "active")
+      db[:budgets].insert(category_id: db[:categories].insert(name: "Mercado", kind: "expense"), month: "2026-09", amount_cents: 60_000)
+      get "/budgets", month: "2026-09"
+      expect(last_response.body).to include("Target<strong>R$ 500.00</strong>")
+      get "/budgets", month: "2026-09", person: bruno.to_s
+      expect(last_response.body).to include(%(aria-current="page">Bruno</a>))
+      expect(last_response.body).not_to include("Target<strong>")
+    end
+  end
 end

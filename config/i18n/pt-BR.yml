@@ -422,6 +422,7 @@ pt-BR:
       carried:
         nature: "Natureza: %{value}"
         payee: "Favorecido: %{value}"
+        person: "Pessoa: %{value}"
         purchase: "Compra: %{value}"
         trip: "Viagem: %{value}"
       ask: "Mudar a categoria de %{rows} para %{category}?"
@@ -754,6 +755,12 @@ pt-BR:
       title: Parcelas
     left: "%{count} × %{each} = %{total}"
 
+  people:
+    household: Casa
+    switch: De quem é o dinheiro
+    unmatched:
+      one: "1 transferência entre pessoas da casa não tem o outro lado: provavelmente falta um extrato."
+      other: "%{count} transferências entre pessoas da casa não têm o outro lado: provavelmente falta um extrato."
   plans:
     flow:
       accept: Revise os limites, mude o que quiser e aceite. Eles viram seus orçamentos a partir do mês escolhido.
