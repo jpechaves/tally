@@ -1,6 +1,9 @@
 <main>
   <h1><%= t("transactions.index.title") %></h1>
+  <% if changed %><p class="notice"><%= [t("transactions.index.changed", rows: t("common.row_count", count: changed)),
+    (t("transactions.index.skipped", count: skipped) if skipped.positive?)].compact.join(" ") %></p><% end %>
   <form action="<%= Tally::TransactionFilter::PATH %>" method="get" class="filters">
+    <input type="search" name="q" value="<%= filter.q %>" placeholder="<%= t("transactions.index.search") %>" maxlength="<%= Tally::TransactionFilter::SEARCH_MAX %>">
     <select name="account" data-picker>
       <option value=""><%= t("transactions.index.all_accounts") %></option>
       <% accounts.each do |account| %>
@@ -41,14 +44,17 @@
   <% end %>
 
   <% if rows.empty? %>
-    <p><%= t("transactions.index.empty") %></p>
+    <p><%= filter.any? ? t("transactions.index.no_match") : t("transactions.index.empty") %></p>
   <% else %>
     <% count = t("common.row_count", count: totals[:rows]) %>
-    <p><%= filter.spending? ? t("transactions.index.summary_spent", rows: count, spent: money_each(totals[:net].transform_values(&:-@))) : t("transactions.index.summary", rows: count, net: money_each(totals[:net])) %></p>
+    <p><%= filter.spending? ? t("transactions.index.summary_spent", rows: count, spent: money_each(totals[:net].transform_values(&:-@))) : t("transactions.index.summary", rows: count, net: money_each(totals[:net])) %><% if filter.q %>
+      <a href="<%= filter.with(q: nil).path %>"><%= t("transactions.index.clear_search") %></a><% end %></p>
     <%= render "shared/pages", page: pagination, path: filter.pages %>
-    <form action="/transactions/category" method="post" id="recategorize" class="filters">
+    <form action="/transactions/category" method="post" id="recategorize" class="filters" data-total="<%= totals[:rows] %>"
+      data-ask="<%= t("transactions.index.ask", rows: "%{rows}", category: "%{category}") %>" data-one="<%= t("common.row_count", count: 1) %>" data-other="<%= t("common.row_count")[:other] %>">
       <%= t("transactions.index.recategorize") %>
       <%= render "categories/select", name: "category_id", selected: nil, categories: categories, blank: nil, none: nil, form: nil %>
+      <% if filter.any? %><label><input type="checkbox" name="all" value="1" data-check-all="recategorize"> <%= t("transactions.index.select_all", count: totals[:rows]) %></label><% end %>
       <%= render "transactions/back", back: back %>
       <button type="submit"><%= t("transactions.index.change_category") %></button>
     </form>

@@ -99,7 +99,7 @@ RSpec.describe "Trips", :db, type: :request do
     get "/trips/999"
     expect(last_response.status).to eq(404)
     get "/transactions", trip: "999"
-    expect(last_response.body).to include("Trip: 999", "No transactions.")
+    expect(last_response.body).to include("Trip: 999", "No transactions match these filters.")
     post "/trips/999/delete"
     expect(last_response.status).to eq(404)
     post "/trips/rows", trip_id: 999, transaction_id: car, included: "1"

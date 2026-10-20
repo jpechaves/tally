@@ -17,6 +17,29 @@ module Tally
       text&.unicode_normalize(:nfkd)&.gsub(/\p{Mn}/, "")&.upcase&.gsub(/[^A-Z0-9]+/, " ")&.strip
     end
 
+    # A condition that the column, folded, holds this folded text. Folded text is only
+    # letters, digits and spaces, so there is nothing in it for LIKE to escape.
+    def like(column, folded) = Sequel.like(Sequel.function(FUNCTION, column), "%#{folded}%")
+
+    # A search read as an amount, when all of it is one: "45,90", "45.90", "1.234,56",
+    # "R$ 45,90", "-45,90" (decimal comma or point, an optional R$ or US$). The sign is -1
+    # or 1 only when typed, nil for either.
+    # @return [Array(Integer, Integer), nil] [sign, cents], nil when it isn't an amount
+    def amount(text)
+      match = /\A(?<sign>[+-]?)(?:US\$|R\$)?(?<number>[\d.,]+)\z/.match(text.to_s.gsub(/[[:space:]]+/, ""))
+      return unless match
+
+      cents = Money::SEPARATORS.keys.lazy.filter_map { |decimal| parse_cents(match[:number], decimal) }.first
+      [{"-" => -1, "+" => 1}[match[:sign]], cents] if cents
+    end
+
+    def parse_cents(number, decimal)
+      Money.parse(number, decimal:).cents
+    rescue Money::ParseError
+      nil
+    end
+    private_class_method :parse_cents
+
     # Adds FUNCTION to a new SQLite connection (config/providers/db.rb).
     def register(connection)
       connection.create_function(FUNCTION, 1) { |function, text| function.result = fold(text) }

@@ -106,8 +106,7 @@ module Tally
         folded = Tally::Search.fold(search.to_s)
         return scope if folded.empty?
 
-        pattern = "%#{scope.escape_like(folded)}%"
-        matches = ->(column) { Sequel.like(Sequel.function(Tally::Search::FUNCTION, Sequel[:counterparties][column]), pattern) }
+        matches = ->(column) { Tally::Search.like(Sequel[:counterparties][column], folded) }
         scope.where(Sequel.|(matches.(:name), matches.(:display_name)))
       end
 
