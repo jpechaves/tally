@@ -361,6 +361,8 @@ en:
       fee: "fee %{amount}"
       kind: Kind
       one_leg: (one leg)
+      select: Tick this row
+      select_all: Tick every row on this page
       upcoming: not charged yet
     index:
       all_accounts: All accounts
@@ -372,6 +374,7 @@ en:
         payee: "Payee: %{value}"
         purchase: "Purchase: %{value}"
         trip: "Trip: %{value}"
+      change_category: Change category
       clear: Clear filters
       drop: Remove this filter
       empty: No transactions.
@@ -381,6 +384,7 @@ en:
         transfer: Transfers
       purchase_done: "Installments %{paid}: nothing left to pay, the last one was in %{ends}."
       purchase_left: "Installments %{paid}. Left to pay from %{month}: %{left}, the last one in %{ends}."
+      recategorize: "For the ticked rows:"
       summary: "%{rows}, net %{net}."
       summary_spent: "%{rows}, spent %{spent}."
       title: Transactions

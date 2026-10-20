@@ -372,6 +372,8 @@ pt-BR:
       fee: "tarifa %{amount}"
       kind: Tipo
       one_leg: (só um lado)
+      select: Marcar esta linha
+      select_all: Marcar todas as linhas desta página
       upcoming: ainda não cobrado
     index:
       all_accounts: Todas as contas
@@ -383,6 +385,7 @@ pt-BR:
         payee: "Favorecido: %{value}"
         purchase: "Compra: %{value}"
         trip: "Viagem: %{value}"
+      change_category: Mudar categoria
       clear: Limpar filtros
       drop: Tirar este filtro
       empty: Nenhum lançamento.
@@ -392,6 +395,7 @@ pt-BR:
         transfer: Transferências
       purchase_done: "Parcelas %{paid}: nada a pagar, a última foi em %{ends}."
       purchase_left: "Parcelas %{paid}. Falta pagar a partir de %{month}: %{left}, a última em %{ends}."
+      recategorize: "Para as linhas marcadas:"
       summary: "%{rows}, saldo %{net}."
       summary_spent: "%{rows}, gasto %{spent}."
       title: Lançamentos

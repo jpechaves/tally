@@ -25,7 +25,7 @@
         </form>
         <details>
           <summary class="note"><%= t("common.rows") %></summary>
-          <%= render "transactions/table", rows: group.rows %>
+          <%= render "transactions/table", rows: group.rows, categories: nil %>
         </details>
       </section>
     <% end %>

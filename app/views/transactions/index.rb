@@ -31,6 +31,11 @@ module Tally
           Tally::Pagination.page(page, total: totals[:rows], per_page: PER_PAGE)
         end
 
+        # Where a change of category from the table comes back to: these filters and page.
+        expose :back, decorate: false do |filter, pagination|
+          filter.query.merge(page: pagination.number)
+        end
+
         expose :rows do |filter, pagination|
           transaction_repo.list(filter, limit: pagination.limit, offset: pagination.offset)
         end

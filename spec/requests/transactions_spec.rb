@@ -171,3 +171,56 @@ RSpec.describe "Installments link to their purchase", :db, type: :request do
     expect(last_response.body).to include("Installments 2/6: nothing left to pay, the last one was in Nov 2026.")
   end
 end
+
+RSpec.describe "Changing categories from the transactions table", :db, type: :request do
+  let(:db) { Hanami.app["db.gateway"].connection }
+
+  before do
+    %w[Nubank_2026-08-09.csv itau_2026-10.pdf].each do |name|
+      Hanami.app["operations.import_statement"].(file_name: name, content: fixture(name))
+    end
+  end
+
+  after { FileUtils.rm_rf(Hanami.app.root.join(Hanami.app["settings"].import_storage_dir)) }
+
+  def category_id(name) = db[:categories].where(name:).get(:id)
+
+  def row(description) = db[:transactions].where(description:).first
+
+  it "shows each row's category as a picker, and a box to pick it for a change of many" do
+    market = row("MERCADO EXEMPLO")
+    get "/transactions", month: "2026-09", page: "1"
+
+    body = last_response.body
+    cell = body.scan(%r{<form action="/transactions/category" method="post" class="inline-category">.*?</form>}m)
+      .find { _1.include?(%(name="ids[]" value="#{market[:id]}")) }
+    expect(cell).to include(%(<input type="hidden" name="month" value="2026-09">), %(<input type="hidden" name="page" value="1">))
+    expect(cell).to include(%(<option value="#{market[:category_id]}" selected>Groceries</option>))
+    expect(body).to include(%(<input type="checkbox" name="ids[]" value="#{market[:id]}" form="recategorize"))
+    expect(body).to match(%r{<form action="/transactions/category" method="post" id="recategorize".*?Change category}m)
+    expect(body).to include(%(<script src="/assets/table.js"></script>))
+
+    get "/assets/table.js"
+    expect(last_response.body).to include("inline-category", "checkAll")
+  end
+
+  it "gives the chosen rows a category of your own, back on the same filters and page" do
+    ids = [row("MERCADO EXEMPLO"), row("CAFE EXEMPLO")].map { _1[:id].to_s }
+    post "/transactions/category", "ids" => ids, "category_id" => category_id("Restaurantes").to_s,
+      "month" => "2026-09", "page" => "2"
+
+    expect(last_response.status).to eq(302)
+    expect(last_response.location).to eq("/transactions?month=2026-09&page=2")
+    changed = db[:transactions].where(id: ids.map(&:to_i)).select_map(%i[category_id category_source])
+    expect(changed).to all(eq([category_id("Restaurantes"), "manual"]))
+    expect(row("SUPERMARKET EX")[:category_id]).to eq(category_id("Supermercado"))
+  end
+
+  it "refuses a change with no row or no category" do
+    post "/transactions/category", "category_id" => category_id("Restaurantes").to_s
+    expect(last_response.status).to eq(422)
+
+    post "/transactions/category", "ids" => [row("CAFE EXEMPLO")[:id].to_s, "x"]
+    expect(last_response.status).to eq(422)
+  end
+end

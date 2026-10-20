@@ -80,11 +80,11 @@ RSpec.describe "Languages", :db, type: :request do
 
   it "translates starting category names, but not the ones you named" do
     get "/transactions?month=2026-07"
-    expect(last_response.body).to include("<td>Delivery</td>")
+    expect(last_response.body).to include(%(" selected>Delivery</option>))
 
     set_cookie "locale=en"
     get "/transactions?month=2026-07"
-    expect(last_response.body).to include("<td>Food delivery</td>")
+    expect(last_response.body).to include(%(" selected>Food delivery</option>))
 
     delivery = db[:categories].where(name: "Delivery").get(:id)
     post "/categories/#{delivery}", name: "Food delivery", nature: "discretionary"
@@ -92,9 +92,9 @@ RSpec.describe "Languages", :db, type: :request do
 
     post "/categories/#{delivery}", name: "Comida pedida", nature: "discretionary"
     get "/transactions?month=2026-07"
-    expect(last_response.body).to include("<td>Comida pedida</td>")
+    expect(last_response.body).to include(%(" selected>Comida pedida</option>))
     clear_cookies
     get "/transactions?month=2026-07"
-    expect(last_response.body).to include("<td>Comida pedida</td>")
+    expect(last_response.body).to include(%(" selected>Comida pedida</option>))
   end
 end
