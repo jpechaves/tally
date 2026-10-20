@@ -49,6 +49,19 @@ RSpec.describe "Filtering transactions", :db, type: :request do
     expect(last_response.body).to match(%r{>Food</a></td>\s*<td class="num">R\$ 339\.14</td>})
   end
 
+  it "makes the account, month and category filters searchable, not the kind" do
+    get "/transactions"
+
+    body = last_response.body
+    expect(body).to include(%(<select name="account" data-picker>), %(<select name="month" data-picker="values">),
+      %(<select name="category" data-picker>), %(<select name="kind">), %(<select name="category_id" data-picker required>))
+    expect(body).to include(%(<body data-picker-empty="No matches">), %(<script src="/assets/picker.js" defer></script>))
+
+    get "/assets/picker.js"
+    expect(last_response.headers["Content-Type"]).to start_with("text/javascript")
+    expect(last_response.body).to include("data-picker", "combobox")
+  end
+
   it "keeps the filters across pages" do
     stub_const("Tally::Views::Transactions::Index::PER_PAGE", 1)
     get "/transactions", category: category_id("Supermercado").to_s, month: "2026-09"

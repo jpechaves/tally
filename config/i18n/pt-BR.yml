@@ -23,6 +23,7 @@ pt-BR:
     add: Adicionar
     dismiss: Dispensar
     net: Saldo
+    no_match: Nada encontrado
     none: Nenhuma.
     nothing_imported_html: Nada importado ainda. Comece <a href="/imports">importando seus extratos</a>.
     pages:

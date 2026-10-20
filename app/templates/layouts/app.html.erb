@@ -7,8 +7,9 @@
     <title>Tally</title>
     <link rel="stylesheet" href="/assets/app.css">
     <script src="/assets/confirm.js" defer></script>
+    <script src="/assets/picker.js" defer></script>
   </head>
-  <body>
+  <body data-picker-empty="<%= t("common.no_match") %>">
     <div class="shell">
       <aside class="sidebar">
         <a class="brand" href="/"><span class="brand-mark" aria-hidden="true">T</span>Tally</a>

@@ -163,6 +163,20 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
 form.inline-category select { appearance: none; background: transparent; border-color: transparent; color: inherit; padding: 2px 6px; min-height: 0; max-width: 16em; cursor: pointer; }
 form.inline-category select:has(option[value=""]:checked) { color: var(--ink-subtle); }
 form.inline-category select:hover { border-color: var(--hairline-strong); background: var(--surface-2); }
+/* A searchable picker (public/assets/picker.js): a text box over a list; the <select> it
+   stands for stays in the form, out of sight. */
+select.picker-native { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.picker { position: relative; display: inline-block; }
+.picker ul { position: absolute; z-index: 10; left: 0; top: calc(100% + 4px); min-width: 100%; width: max-content; max-width: 22em; max-height: 18em; overflow-y: auto;
+  margin: 0; padding: 4px; list-style: none; background: var(--surface-2); border: 1px solid var(--hairline-strong); border-radius: var(--radius-md); }
+.picker li { padding: 4px 8px; border-radius: var(--radius-sm); cursor: pointer; white-space: nowrap; }
+.picker li[aria-selected=true] { background: var(--surface-3); outline: 1px solid var(--accent); }
+.picker li.picker-group { color: var(--ink-subtle); font-size: 12px; cursor: default; padding-top: 8px; }
+.picker li.picker-group ~ li[role=option] { padding-left: 16px; }
+.picker li.picker-empty { color: var(--ink-subtle); cursor: default; }
+/* (as specific as the general input rule above, to read as text like the <select> did) */
+form.inline-category .picker input[type=text][role=combobox]:not([hidden]) { background: transparent; border-color: transparent; padding: 2px 6px; min-height: 0; width: 14em; }
+form.inline-category .picker input[type=text][role=combobox]:not([hidden]):hover { border-color: var(--hairline-strong); background: var(--surface-2); }
 input.amount { width: 8.5em; text-align: right; font-variant-numeric: tabular-nums; }
 button, input[type=file]::file-selector-button {
   background: var(--surface-2); color: var(--ink); border: 1px solid var(--hairline-strong); border-radius: var(--radius-md);

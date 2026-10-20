@@ -1,13 +1,13 @@
 <main>
   <h1><%= t("transactions.index.title") %></h1>
   <form action="<%= Tally::TransactionFilter::PATH %>" method="get" class="filters">
-    <select name="account">
+    <select name="account" data-picker>
       <option value=""><%= t("transactions.index.all_accounts") %></option>
       <% accounts.each do |account| %>
         <option value="<%= account.id %>"<%= " selected" if account.id == filter.account %>><%= account.name %></option>
       <% end %>
     </select>
-    <select name="month">
+    <select name="month" data-picker="values">
       <option value=""><%= t("transactions.index.all_months") %></option>
       <% months.each do |value| %>
         <option value="<%= value %>"<%= " selected" if value == filter.month %>><%= month_label(value) %></option>
