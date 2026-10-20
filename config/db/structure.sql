@@ -11,6 +11,8 @@ CREATE TABLE `accounts`(
   `created_at` text DEFAULT((strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))) NOT NULL,
   `updated_at` text DEFAULT((strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))) NOT NULL,
   `mirror_transfers` integer DEFAULT(0) NOT NULL,
+  `person_id` integer REFERENCES `people`,
+  `template` text,
   CONSTRAINT `accounts_kind` CHECK(kind IN('checking', 'credit_card', 'investment', 'cash')),
   CONSTRAINT `accounts_currency` CHECK(currency GLOB '[A-Z][A-Z][A-Z]')
 ) STRICT;
@@ -30,6 +32,7 @@ CREATE TABLE `counterparties`(
   `default_category_id` integer REFERENCES `categories`,
   display_name text,
   note text,
+  `person_id` integer REFERENCES `people`,
   CONSTRAINT `counterparties_document_kind` CHECK(document_kind IN('cnpj', 'cpf_masked')),
   CONSTRAINT `counterparties_is_self` CHECK(is_self IN(0, 1))
 ) STRICT;
@@ -303,6 +306,11 @@ CREATE INDEX `home_bill_receipts_home_bill_id_month_index` ON `home_bill_receipt
   `home_bill_id`,
   `month`
 );
+CREATE TABLE `people`(
+  `id` integer NOT NULL PRIMARY KEY AUTOINCREMENT,
+  `name` text NOT NULL UNIQUE,
+  `created_at` text DEFAULT((strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))) NOT NULL
+) STRICT;
 INSERT INTO schema_migrations (filename) VALUES
 ('20261015000000_create_accounts.rb'),
 ('20261015100000_create_import_tables.rb'),
@@ -315,4 +323,5 @@ INSERT INTO schema_migrations (filename) VALUES
 ('20261022000000_create_transaction_adjustments.rb'),
 ('20261023000000_create_subscription_marks.rb'),
 ('20261024000000_create_trips.rb'),
-('20261025000000_create_home_bills.rb');
+('20261025000000_create_home_bills.rb'),
+('20261026000000_create_people.rb');

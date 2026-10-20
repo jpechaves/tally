@@ -136,14 +136,17 @@ module Tally
       end
     end
 
-    # A Pix to or from a counterparty marked as you is a transfer. When the bank is one
-    # Tally knows, this names your account there.
+    # A Pix to or from someone of the household is a transfer (issue #21). When its text
+    # names a bank Tally knows, this is the kind of account they have there.
     #
-    # @param counterparty [#[]] with :bank_code and :bank_name
+    # @param raw_description [String] the statement's text for the row, with the other
+    #   side's bank: "... - ITAÚ UNIBANCO S.A. (0341) Agência: ..."
     # @return [String, nil] one of {ACCOUNTS}, or nil for a one-leg transfer
-    def self.self_account_for(counterparty)
-      if counterparty[:bank_code].to_s.rjust(4, "0") == "0341" || counterparty[:bank_name].to_s.match?(/\bITA[UÚ]\b/i)
+    def self.account_at(raw_description)
+      if raw_description.match?(/\(0341\)|\bITA[UÚ]\b/i)
         "Itaú conta"
+      elsif raw_description.match?(/\(0260\)|\bNU PAGAMENTOS\b/i)
+        "Nubank conta"
       end
     end
 

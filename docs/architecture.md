@@ -155,7 +155,9 @@ All tables: `id INTEGER PRIMARY KEY`, `created_at` / `updated_at` as ISO-8601 UT
 
 ```
 accounts                        -- created in milestone 1
-  name                  TEXT NOT NULL UNIQUE      -- "Nubank conta", "Nubank cartão", "Itaú cartão", "Nubank RDB", "Itaú conta"
+  name                  TEXT NOT NULL UNIQUE      -- "Nubank conta", "Nubank cartão", "Itaú cartão", "Nubank RDB", "Itaú conta"; someone else's: "Nubank conta (Bruno)"
+  template              TEXT NULL      -- its kind among Importers::ACCOUNTS ("Nubank conta"), what the importers look it up by (issue #21)
+  person_id             INTEGER NULL REFERENCES people(id)   -- whose account it is (§6.1); the app always sets it
   kind                  TEXT NOT NULL  -- checking | credit_card | investment | cash
   institution           TEXT NULL      -- nubank | itau
   external_ref          TEXT NULL      -- account or card number as the bank prints it (e.g. "12345678", last 4 digits)
@@ -178,7 +180,8 @@ counterparties                  -- who the money went to / came from
   document        TEXT NULL     -- full CNPJ, or masked CPF "•••.123.456-••"
   document_kind   TEXT NULL     -- cnpj | cpf_masked
   bank_name, bank_code, branch, account_number  TEXT NULL
-  is_self         INTEGER NOT NULL DEFAULT 0     -- you, at another bank → transfer
+  is_self         INTEGER NOT NULL DEFAULT 0     -- someone of the household (you at another bank, your partner) → transfer
+  person_id       INTEGER NULL REFERENCES people(id)   -- who of the household, when is_self is 1 (§6.1)
   match_key       TEXT NOT NULL UNIQUE           -- "document|NAME": UNIQUE(document, name) would let NULL documents repeat
   default_category_id INTEGER NULL REFERENCES categories(id)
   display_name    TEXT NULL     -- your name for it, shown instead of `name` (COALESCE in the repos); imports never write it
@@ -279,6 +282,9 @@ transaction_adjustments         -- what you know about a row that its statement 
   refund_transaction_id  INTEGER NULL UNIQUE REFERENCES transactions(id)   -- reimbursed by an imported row (a Pix back, a card refund)
   note                   TEXT NULL
 
+people                          -- the household (issue #21): the first is you, named "Eu" until you rename yourself
+  name            TEXT NOT NULL UNIQUE
+
 subscription_marks              -- payees you said are or aren't subscriptions, by payee key (issue #74)
 trips, trip_accounts, trip_rows -- a trip's dates, accounts and the rows you added or took out (issue #75)
 home_bills                      -- a household bill: name, category, expected amount, due day, payee by match key (issue #113)
@@ -294,6 +300,14 @@ Design choices:
 - **Your corrections live beside the imported row, never in it.** A row canceled, reimbursed or charged another amount keeps its statement amount; its `transaction_adjustments` row says what it counts as (`Tally::Adjustments.counted_amount`). Re-imports update the row by `(account, external_id)` and never touch the adjustment. The report, cuts, budgets, planner, installment calendar and the spending and income filters on the transactions page count rows that way: a canceled or fully reimbursed row counts as nothing, and a refund row linked to a purchase counts inside it, not on its own. The transactions list shows a badge, the statement's amount struck through, and what the row counts as. Category and counterparty totals still show the statement amounts.
 - **Balances and monthly totals are `SUM` queries**, not stored values, so nothing can drift. At household scale (a few thousand rows a year) these take milliseconds even on the Pi.
 - **Transfers are recognized even with one side.** The Itaú account and the RDB have no statements, so their transfers have one imported leg (the Pix to your Itaú account and the card's "Pagamento via conta"; the RDB moves). It is still marked `transfer` and never counted as spending or income. The RDB legs are mirrored into the RDB account so its balance is right.
+
+### 6.1 The household
+
+Tally keeps a second person's statements beside yours (issue #21). The accounts page lists the `people` of the household and adds one; the import form (and `rake 'tally:import[files,Name]'`) asks whose statements a file holds, and that person's accounts are their own rows in `accounts`, named after them ("Nubank conta (Bruno)") and found by `(template, person_id)`. Your accounts keep their plain names, so nothing changes for a household of one.
+
+- **Marking people.** The counterparties page marks a name as someone of the household: "This is me" with one person, a choice of who with more (`counterparties.person_id`). A Pix to or from them becomes a transfer, as a Pix to yourself always has. Its other side is that person's account at the bank the row names (`Importers.account_at`: Itaú or Nubank), when it is imported; an Itaú conta has no statement, so it is created and mirrored, as yours is (`AccountRepo#counter_account_id`).
+- **Pairing.** Both sides imported, the Pix pairs like a card payment (`PairTransfers`), whatever order the files and marks came in: a transfer that pointed at no account finds it once the other person's statement is in. A transfer between two people with no pair is **unmatched** (`/transactions?kind=unmatched`): the other person's statement for that month is missing, or their account isn't imported. It still never counts as spending.
+- **The default until then.** Until you add someone and mark their name, a Pix to your partner is a Pix to a person: spending, in Transferências (Pix), as before. Marking them is the switch: from then on it is a transfer in every view, yours included, so your own spending no longer has money you only moved to them (in the issue's example, your view shows R$ 3.800, not R$ 4.000).
 
 ## 7. Import and categorization flow
 
@@ -599,6 +613,7 @@ Only after version 1 is correct and in daily use. Each one only **suggests**; no
 - **Subscriptions** (issue #74): done. See §8.7.
 - **Trips** (issue #75): done. See §8.8.
 - **Home bills** (issue #113): done. See §8.9.
+- **Household** (issue #21): people, accounts by owner, and Pix between people paired or shown as unmatched (§6.1).
 - **Next, milestone 8 (Pi deployment)**, postponed while the app is tried by hand.
 
 ## 17. Public repository: keeping personal data out

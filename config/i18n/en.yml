@@ -89,6 +89,7 @@ en:
     invalid_nature: Pick fixed, essential or discretionary.
     invalid_parent: "Categories go one level deep: pick a top-level parent."
     invalid_pattern: That is not a valid regular expression.
+    invalid_person: A person needs a name no one else in the household has.
     invalid_refund: That row cannot pay this purchase back.
     invalid_reimbursed_amount: Enter what came back, more than zero and up to the purchase, like 30.00.
     invalid_payment: Enter the day it was paid and the amount, like 182.40.
@@ -246,6 +247,7 @@ en:
         Importing a file again updates its rows instead of duplicating them.
       title: Import statements
       when: When
+      whose: "Whose statements:"
     show:
       counts_html: "<strong>%{new}</strong> new, <strong>%{updated}</strong> updated, <strong>%{unchanged}</strong> unchanged, <strong>%{missing}</strong> missing."
       duplicate_file: This exact file was already imported, so nothing changed.
@@ -274,6 +276,7 @@ en:
   accounts:
     index:
       account: Account
+      add_person: Add
       balance: Balance
       bill: Bill
       bill_total: Bill total
@@ -294,9 +297,17 @@ en:
       paid: Paid
       paid_by: Paid by
       pass_through: The Pix sent to this account and the bills it paid differ by more than %{tolerance}.
+      people: People of the household
+      people_intro: >-
+        Add the person whose statements you import too, and pick them when you import. Their
+        accounts carry their name, and a Pix between the two of you is a transfer once you
+        mark their name in Counterparties.
+      person_name: Name
+      rename: Rename
       report: report
       result: Result
       title: Accounts
+      you: (you)
     report:
       average_cost: "Your top-ups so far cost R$ %{rate} per %{currency} on average, IOF and spread included."
       by_category: Spending by category
@@ -332,10 +343,12 @@ en:
         accounts then counts as a transfer, never as spending or income.
       name: Name
       no_match: "No one's name contains “%{search}”."
+      no_one: No one of the household
       not_me: Not me
       search: Search a name
       this_is_me: This is me
       title: Counterparties
+      who: Who of the household is this
       you: (you)
     label:
       display_name: Your name for it
@@ -412,6 +425,7 @@ en:
         income: Income
         spending: Spending
         transfer: Transfers
+        unmatched: Transfers between you with no other side
       purchase_done: "Installments %{paid}: nothing left to pay, the last one was in %{ends}."
       purchase_left: "Installments %{paid}. Left to pay from %{month}: %{left}, the last one in %{ends}."
       recategorize: "For the ticked rows:"
@@ -506,6 +520,7 @@ en:
       title: Rules
       up_to: "up to %{amount}"
       when: When
+      whose: "Whose statements:"
 
   report:
     show:

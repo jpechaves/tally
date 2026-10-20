@@ -101,6 +101,7 @@ pt-BR:
     invalid_nature: Escolha fixa, essencial ou supérflua.
     invalid_parent: "Categorias têm um nível só: escolha uma categoria principal."
     invalid_pattern: Essa não é uma expressão regular válida.
+    invalid_person: Uma pessoa precisa de um nome que ninguém mais da casa tenha.
     invalid_refund: Esse lançamento não pode devolver esta compra.
     invalid_reimbursed_amount: Digite quanto voltou, mais que zero e até o valor da compra, como 30,00.
     invalid_payment: Informe o dia do pagamento e o valor, como 182,40.
@@ -257,6 +258,7 @@ pt-BR:
         (em dólares) ou PDF da fatura do cartão Itaú. Importar um arquivo de novo atualiza os lançamentos em vez de duplicá-los.
       title: Importar extratos
       when: Quando
+      whose: "De quem são os extratos:"
     show:
       counts_html: "<strong>%{new}</strong> novos, <strong>%{updated}</strong> atualizados, <strong>%{unchanged}</strong> iguais, <strong>%{missing}</strong> sumiram."
       duplicate_file: Este mesmo arquivo já foi importado, então nada mudou.
@@ -285,6 +287,7 @@ pt-BR:
   accounts:
     index:
       account: Conta
+      add_person: Adicionar
       balance: Saldo
       bill: Fatura
       bill_total: Total da fatura
@@ -305,9 +308,17 @@ pt-BR:
       paid: Pago
       paid_by: Pago por
       pass_through: Os Pix enviados para esta conta e as faturas que ela pagou diferem em mais de %{tolerance}.
+      people: Pessoas da casa
+      people_intro: >-
+        Adicione a pessoa cujos extratos você também importa, e escolha essa pessoa ao importar. As
+        contas dela levam o nome dela, e um Pix entre vocês dois vira transferência quando você
+        marca o nome dela em Contrapartes.
+      person_name: Nome
+      rename: Renomear
       report: relatório
       result: Resultado
       title: Contas
+      you: (você)
     report:
       average_cost: "Suas recargas até aqui custaram em média R$ %{rate} por %{currency}, com IOF e spread."
       by_category: Gastos por categoria
@@ -343,10 +354,12 @@ pt-BR:
         próprias contas conta como transferência, nunca como gasto ou receita.
       name: Nome
       no_match: "Nenhum nome contém “%{search}”."
+      no_one: Ninguém da casa
       not_me: Não sou eu
       search: Buscar um nome
       this_is_me: Sou eu
       title: Contrapartes
+      who: Quem da casa é
       you: (você)
     label:
       display_name: Seu nome para ela
@@ -423,6 +436,7 @@ pt-BR:
         income: Receitas
         spending: Gastos
         transfer: Transferências
+        unmatched: Transferências entre vocês sem o outro lado
       purchase_done: "Parcelas %{paid}: nada a pagar, a última foi em %{ends}."
       purchase_left: "Parcelas %{paid}. Falta pagar a partir de %{month}: %{left}, a última em %{ends}."
       recategorize: "Para as linhas marcadas:"
@@ -518,6 +532,7 @@ pt-BR:
       title: Regras
       up_to: "até %{amount}"
       when: Quando
+      whose: "De quem são os extratos:"
 
   report:
     show:

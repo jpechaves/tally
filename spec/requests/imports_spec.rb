@@ -136,7 +136,7 @@ RSpec.describe "Importing statements", :db, type: :request do
     get "/counterparties"
     expect(last_response.body).to include(%(action="/counterparties/#{me}/self"), "This is me")
 
-    post "/counterparties/#{me}/self", is_self: "1"
+    post "/counterparties/#{me}/self", person: me_id
     expect(last_response.status).to eq(302)
     expect(db[:transactions].where(counterparty_id: me).get(:kind)).to eq("transfer")
 
@@ -158,7 +158,7 @@ RSpec.describe "Importing statements", :db, type: :request do
     get "/imports/999"
     expect(last_response.status).to eq(404)
 
-    post "/counterparties/999/self", is_self: "1"
+    post "/counterparties/999/self", person: me_id
     expect(last_response.status).to eq(404)
   end
 end

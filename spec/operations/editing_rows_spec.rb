@@ -88,17 +88,17 @@ RSpec.describe "Editing imported rows", :db do
     it "turns its rows into transfers and back into what the statement said" do
       ana = party("ANA EXEMPLO")
 
-      op("mark_self").call(counterparty_id: ana, is_self: true)
+      op("mark_self").call(counterparty_id: ana, person_id: me_id)
       expect(row("ANA EXEMPLO")).to include(kind: "transfer", counter_account_id: nil)
 
-      op("mark_self").call(counterparty_id: ana, is_self: false)
+      op("mark_self").call(counterparty_id: ana, person_id: nil)
       expect(row("ANA EXEMPLO")).to include(kind: "income", counter_account_id: nil)
     end
 
     it "leaves purchases and income alone when the counterparty isn't you" do
       ana = party("ANA EXEMPLO")
 
-      op("mark_self").call(counterparty_id: ana, is_self: false)
+      op("mark_self").call(counterparty_id: ana, person_id: nil)
       expect(row("ANA EXEMPLO")).to include(kind: "income", counter_account_id: nil)
     end
 
@@ -106,12 +106,12 @@ RSpec.describe "Editing imported rows", :db do
       leg = row("SECRETARIA EXEMPLO")
       expect(leg).to include(kind: "transfer", counter_account_id: leg[:account_id])
 
-      op("mark_self").call(counterparty_id: party("SECRETARIA EXEMPLO"), is_self: false)
+      op("mark_self").call(counterparty_id: party("SECRETARIA EXEMPLO"), person_id: nil)
       expect(row("SECRETARIA EXEMPLO")).to include(kind: "transfer", counter_account_id: leg[:account_id])
     end
 
     it "needs a counterparty that exists" do
-      expect(op("mark_self").call(counterparty_id: 999_999, is_self: true).failure).to eq(:not_found)
+      expect(op("mark_self").call(counterparty_id: 999_999, person_id: me_id).failure).to eq(:not_found)
     end
   end
 end

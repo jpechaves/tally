@@ -17,7 +17,7 @@
       <tbody>
         <% counterparties.each do |party| %>
           <tr>
-            <td><span class="name"><%= party[:display_name] || party[:name] %></span><%= party[:is_self] == 1 ? " #{t("counterparties.index.you")}" : "" %>
+            <td><span class="name"><%= party[:display_name] || party[:name] %></span><%= person_label(party, people) %>
               <% if party[:display_name] %><br><span class="note" title="<%= t("counterparties.index.bank_name") %>"><%= party[:name] %></span><% end %>
               <% if party[:note] %><br><span class="note"><%= party[:note] %></span><% end %>
               <details>
@@ -33,8 +33,18 @@
                 <form action="/counterparties/<%= party[:id] %>/self" method="post">
                   <input type="hidden" name="q" value="<%= search %>">
                   <input type="hidden" name="page" value="<%= pagination.number %>">
-                  <input type="hidden" name="is_self" value="<%= party[:is_self] == 1 ? "0" : "1" %>">
-                  <button type="submit"><%= party[:is_self] == 1 ? t("counterparties.index.not_me") : t("counterparties.index.this_is_me") %></button>
+                  <% if people.one? %>
+                    <input type="hidden" name="person" value="<%= party[:is_self] == 1 ? "" : people.first.id %>">
+                    <button type="submit"><%= party[:is_self] == 1 ? t("counterparties.index.not_me") : t("counterparties.index.this_is_me") %></button>
+                  <% else %>
+                    <select name="person" aria-label="<%= t("counterparties.index.who") %>">
+                      <option value=""><%= t("counterparties.index.no_one") %></option>
+                      <% people.each do |person| %>
+                        <option value="<%= person.id %>"<%= " selected" if person.id == party[:person_id] %>><%= person.name %></option>
+                      <% end %>
+                    </select>
+                    <button type="submit"><%= t("common.save") %></button>
+                  <% end %>
                 </form>
               <% end %>
             </td>

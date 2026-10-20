@@ -11,7 +11,7 @@
           <td class="num"><%= entry[:rows] %></td>
           <td class="num"><%= money(entry[:balance_cents], account.currency) %></td>
           <td>
-            <% if account.name == "Itaú conta" && entry[:balance_cents].abs > tolerance_cents %>
+            <% if account.template == "Itaú conta" && entry[:balance_cents].abs > tolerance_cents %>
               <span class="warning"><%= t("accounts.index.pass_through", tolerance: money(tolerance_cents)) %></span>
             <% end %>
             <% gaps.fetch(account.id, []).each do |gap| %>
@@ -23,6 +23,24 @@
     </tbody>
   </table></div>
   <p class="note"><%= t("accounts.index.note") %></p>
+
+  <h2 id="people"><%= t("accounts.index.people") %></h2>
+  <p><%= t("accounts.index.people_intro") %></p>
+  <ul class="people">
+    <% people.each do |person| %>
+      <li>
+        <form action="/people/<%= person.id %>" method="post" class="filters">
+          <input type="text" name="name" value="<%= person.name %>" maxlength="100" required aria-label="<%= t("accounts.index.person_name") %>">
+          <button type="submit"><%= t("accounts.index.rename") %></button>
+          <% if person == people.first %><span class="note"><%= t("accounts.index.you") %></span><% end %>
+        </form>
+      </li>
+    <% end %>
+  </ul>
+  <form action="/people" method="post" class="filters">
+    <input type="text" name="name" maxlength="100" required placeholder="<%= t("accounts.index.person_name") %>" aria-label="<%= t("accounts.index.person_name") %>">
+    <button type="submit"><%= t("accounts.index.add_person") %></button>
+  </form>
 
   <h2><%= t("accounts.index.checks") %></h2>
   <% if checks.empty? %>

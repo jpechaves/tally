@@ -144,7 +144,7 @@ RSpec.describe "Categorization", :db do
       me = db[:counterparties].where(name: "MARIA E SOUZA").get(:id)
       expect(category_of("MARIA E SOUZA")).to eq(["Transferências (Pix)", "rule"])
 
-      op("mark_self").call(counterparty_id: me, is_self: true)
+      op("mark_self").call(counterparty_id: me, person_id: me_id)
 
       expect(category_of("MARIA E SOUZA")).to eq([nil, "none"])
     end

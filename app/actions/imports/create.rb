@@ -5,7 +5,7 @@ module Tally
     module Imports
       # Receives one or more statement files from the upload form and imports each one.
       class Create < Tally::Action
-        include Deps["routes", "operations.import_statement"]
+        include Deps["routes", "repos.person_repo", "operations.import_statement"]
 
         def handle(request, response)
           uploads = Array(request.params[:files]).select { _1.is_a?(Hash) && _1[:tempfile] }
@@ -16,8 +16,10 @@ module Tally
             # simplecov:enable line
           end
 
+          # Whose statements they are (issue #21); yours unless you picked someone else.
+          person_id = person_repo.find(request.params[:person].to_i)&.id
           imports = uploads.map do |upload|
-            result = import_statement.call(file_name: upload[:filename].to_s, content: upload[:tempfile].read)
+            result = import_statement.call(file_name: upload[:filename].to_s, content: upload[:tempfile].read, person_id:)
             result.value_or { result.failure }
           end
 

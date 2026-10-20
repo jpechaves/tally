@@ -17,7 +17,9 @@ module Tally
   #   month     "YYYY-MM"
   #   category  a category id, which takes in its children when it is a parent, or NONE
   #   kind      one of KINDS: "spending" and "income" are the rows the report counts as
-  #             such, so their totals match it; "transfer" is the transfers
+  #             such, so their totals match it; "transfer" is the transfers, and
+  #             "unmatched" the transfers between two people of the household whose other
+  #             side isn't imported (issue #21)
   #   nature    a category nature, or UNSET for rows whose category has none (or no category)
   #   payee     who was paid, as Tally::Review.key groups rows: "counterparty:12", or
   #             "description:padaria exemplo" for rows without a counterparty
@@ -53,7 +55,7 @@ module Tally
     # The category filter for rows with no category.
     NONE = "none"
 
-    KINDS = %w[spending income transfer].freeze
+    KINDS = %w[spending income transfer unmatched].freeze
 
     # The nature filter for rows whose category has no nature, as the report calls them.
     UNSET = "unset"
