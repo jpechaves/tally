@@ -18,10 +18,11 @@ module Tally
       # @return [Integer] how many rows changed
       def call(ids: nil)
         seed_categories.() if category_repo.empty?
+        hint_ids = category_repo.ids_by_name(Categories::BANK_HINTS.values.flat_map { Categories.names(_1) })
         categorizer = Categorizer.new(
           rules: category_rule_repo.active,
           categories: category_repo.kinds,
-          bank_hints: Categories::BANK_HINTS.transform_values { category_repo.id_by_name(Categories.names(_1)) }.compact
+          bank_hints: Categories::BANK_HINTS.transform_values { |name| Categories.names(name).filter_map { hint_ids[_1] }.first }.compact
         )
 
         transaction do

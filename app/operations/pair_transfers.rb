@@ -57,10 +57,10 @@ module Tally
       def pair_all(currencies)
         mirrored = account_repo.all.select { _1.mirror_transfers == 1 }.map(&:id)
         created = 0
+        partners = Set.new # rows that became the partner of an earlier row in this loop
 
         transaction_repo.unpaired_transfers.each do |row|
-          row = transaction_repo.row(row[:id])
-          next if row[:transfer_id] # became the partner of an earlier row in this loop
+          next if partners.include?(row[:id])
 
           if mirrored.include?(row[:counter_account_id])
             mirror_id = mirror(row)
@@ -69,6 +69,7 @@ module Tally
           elsif (partner = partner(row, currencies))
             occurred_on = [row[:occurred_on], partner[:occurred_on]].min
             transaction_repo.create_transfer(occurred_on:, leg_ids: [row[:id], partner[:id]])
+            partners << partner[:id]
             created += 1
           end
         end

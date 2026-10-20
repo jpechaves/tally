@@ -3,8 +3,9 @@
 require "rack/test"
 
 RSpec.shared_context "with Rack::Test" do
-  # Define the app for Rack::Test requests
-  let(:app) { Hanami.app }
+  # Define the app for Rack::Test requests; each request fails on an N+1 query
+  # (spec/support/n_plus_one.rb).
+  let(:app) { ->(env) { NPlusOne.check { Hanami.app.call(env) } } }
 end
 
 RSpec.configure do |config|
