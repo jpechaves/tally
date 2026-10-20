@@ -638,6 +638,7 @@ pt-BR:
       paid_by: Quem pagou
       paid_on: Paga em
       pick: Pagamento do extrato
+      pick_row: Escolha o lançamento
       receipts: Comprovantes
       see_row: Ver o lançamento
       unpay: Não foi paga

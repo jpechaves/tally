@@ -626,6 +626,7 @@ en:
       paid_by: Who paid
       paid_on: Paid on
       pick: Payment from a statement
+      pick_row: Pick the row
       receipts: Receipts
       see_row: See the row
       unpay: Not paid

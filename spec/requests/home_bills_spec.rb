@@ -67,6 +67,7 @@ RSpec.describe "Home bills", :db, type: :request do
     body = last_response.body
     expect(body).to include("Energia Exemplo", "late since Oct 10, 2026")
     expect(body).to include(%(<option value="#{october}" selected>), %(<option value="#{september}" selected>), "MERCADO EXEMPLO")
+    expect(body).not_to include("Pick the row")
 
     post "/home-bills/#{energy[:id]}/payments", month: "2026-10", transaction_id: october.to_s
     expect(last_response.location).to end_with("/home-bills/#{energy[:id]}")
@@ -88,6 +89,9 @@ RSpec.describe "Home bills", :db, type: :request do
 
   it "marks a month paid by hand, with who paid" do
     energy = create_bill
+    pay("2026-10-09", 5_000, "MERCADO EXEMPLO")
+    get "/home-bills/#{energy[:id]}"
+    expect(last_response.body).to include(%(<option value="" disabled selected>Pick the row</option>))
     post "/home-bills/#{energy[:id]}/payments", month: "2026-09", paid_on: "2026-09-10", amount: "190.00", paid_by: "Bruno"
     get "/home-bills/#{energy[:id]}"
     expect(last_response.body).to include("paid on Sep 10, 2026 · R$ 190.00 · Bruno")

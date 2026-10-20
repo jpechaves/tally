@@ -23,7 +23,8 @@
           <% suggested = Tally::HomeBills.suggest(bill, entry.month, rows) %>
           <form action="/home-bills/<%= bill[:id] %>/payments" method="post">
             <input type="hidden" name="month" value="<%= entry.month %>">
-            <p><label><%= t("home_bills.show.pick") %><br><select name="transaction_id" data-picker>
+            <p><label><%= t("home_bills.show.pick") %><br><select name="transaction_id" data-picker required>
+              <% unless suggested %><option value="" disabled selected><%= t("home_bills.show.pick_row") %></option><% end %>
               <% candidates.each do |row| %>
                 <option value="<%= row[:id] %>"<%= " selected" if row.equal?(suggested) %>><%= [date(row[:occurred_on]), Tally::Insights.payee_label(row), money(-row[:amount_cents]), row[:account_name]].join(" · ") %></option>
               <% end %>
@@ -66,7 +67,7 @@
     </section>
   <% end %>
 
-  <form action="/home-bills/<%= bill[:id] %>/delete" method="post" data-confirm="<%= t("home_bills.show.confirm_delete") %>">
+  <form class="delete-home-bill" action="/home-bills/<%= bill[:id] %>/delete" method="post" data-confirm="<%= t("home_bills.show.confirm_delete") %>">
     <button type="submit"><%= t("home_bills.show.delete") %></button>
   </form>
 </main>
