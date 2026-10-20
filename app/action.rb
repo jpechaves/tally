@@ -31,7 +31,7 @@ module Tally
     def refusal_text(status, text)
       return text unless text == Hanami::Http::Status.message_for(status)
 
-      status == 404 ? t("errors.not_found") : t("errors.refused")
+      (status == 404) ? t("errors.not_found") : t("errors.refused")
     end
 
     def set_locale(request, _response)
