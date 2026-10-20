@@ -43,6 +43,7 @@ RSpec.describe "Languages", :db, type: :request do
   it "refuses an unknown language, and only goes back to a page on this site" do
     post "/locale", locale: "fr"
     expect(last_response.status).to eq(422)
+    expect(last_response.body).to include(%(<p class="error" role="alert">Esse pedido não pôde ser feito.</p>), %(<a href="/">))
 
     post "/locale", locale: "en", back: "//evil.example/x"
     expect(last_response.headers["Location"]).to end_with("/")

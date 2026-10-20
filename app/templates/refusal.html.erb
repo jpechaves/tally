@@ -1,0 +1,5 @@
+<main>
+  <h1><%= t("errors.title") %></h1>
+  <%= render "shared/message", kind: :error, text: message %>
+  <p><a href="<%= back %>"><%= t("errors.back") %></a></p>
+</main>

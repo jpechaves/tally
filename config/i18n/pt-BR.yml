@@ -69,6 +69,7 @@ pt-BR:
     thousands: "%{n} mil"
 
   errors:
+    back: "← Voltar"
     category_not_found: Escolha uma categoria.
     could_not_save: "Não foi possível salvar: %{reason}"
     empty_name: A categoria precisa de um nome.
@@ -96,6 +97,8 @@ pt-BR:
     not_adjustable: Este lançamento não pode ser ajustado.
     not_found: Isso não existe mais.
     not_reimbursable: Só dinheiro que saiu pode ser reembolsado.
+    refused: Esse pedido não pôde ser feito.
+    title: Não deu certo
 
   kinds:
     bill_payment: pagamento de fatura
