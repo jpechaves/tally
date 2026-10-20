@@ -67,7 +67,24 @@
         group.hidden = !entries.some((entry) => entry.heading === group && !entry.item.hidden);
       });
       empty.hidden = shown().length > 0;
+      place();
       activate(shown()[0] || null);
+    };
+    // The list floats over the page (position: fixed), so a table's rounded, scrolling box
+    // can't clip it. It drops below the box, or opens upward when there's more room there.
+    const place = () => {
+      if (list.hidden) return;
+      const rect = input.getBoundingClientRect();
+      const below = window.innerHeight - rect.bottom - 8;
+      const above = rect.top - 8;
+      list.style.maxHeight = "";
+      const wanted = Math.min(list.scrollHeight, parseFloat(getComputedStyle(list).maxHeight));
+      const up = below < wanted && above > below;
+      list.style.minWidth = `${rect.width}px`;
+      list.style.left = `${Math.max(Math.min(rect.left, window.innerWidth - list.offsetWidth - 8), 8)}px`;
+      list.style.top = up ? "" : `${rect.bottom + 4}px`;
+      list.style.bottom = up ? `${window.innerHeight - rect.top + 4}px` : "";
+      list.style.maxHeight = `${Math.min(wanted, up ? above : below)}px`;
     };
     const open = () => {
       list.hidden = false;
@@ -120,6 +137,10 @@
       const entry = entries.find((candidate) => candidate.item === event.target);
       if (entry) pick(entry);
     });
+
+    // Scrolling (the page or a table's box) or resizing moves the box; the list follows.
+    window.addEventListener("scroll", (event) => { if (event.target !== list) place(); }, true);
+    window.addEventListener("resize", place);
 
     // A required picker with nothing picked: the browser can't point at the hidden
     // <select>, so the box takes the focus instead.

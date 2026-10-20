@@ -174,10 +174,11 @@ form.inline-category select { appearance: none; background: transparent; border-
 form.inline-category select:has(option[value=""]:checked) { color: var(--ink-subtle); }
 form.inline-category select:hover { border-color: var(--hairline-strong); background: var(--surface-2); }
 /* A searchable picker (public/assets/picker.js): a text box over a list; the <select> it
-   stands for stays in the form, out of sight. */
+   stands for stays in the form, out of sight. The script places the list (fixed, so tables
+   don't clip it). */
 select.picker-native { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 .picker { position: relative; display: inline-block; }
-.picker ul { position: absolute; z-index: 10; left: 0; top: calc(100% + 4px); min-width: 100%; width: max-content; max-width: 22em; max-height: 18em; overflow-y: auto;
+.picker ul { position: fixed; z-index: 10; width: max-content; max-width: 22em; max-height: 18em; overflow-y: auto;
   margin: 0; padding: 4px; list-style: none; background: var(--surface-2); border: 1px solid var(--hairline-strong); border-radius: var(--radius-md); }
 .picker li { padding: 4px 8px; border-radius: var(--radius-sm); cursor: pointer; white-space: nowrap; }
 .picker li[aria-selected=true] { background: var(--surface-3); outline: 1px solid var(--accent); }
