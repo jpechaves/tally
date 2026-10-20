@@ -482,7 +482,7 @@ Plus a **nightly backup** (`sqlite3 … ".backup"`, 30 copies kept, copied off t
 - **Packages**: `sqlite3`, `poppler-utils`.
 - **Memory**: target under ~150 MB. Puma single mode, 2 threads, YJIT off, `MALLOC_ARENA_MAX=2`.
 - **Service**: systemd unit, restart on failure, start on boot.
-- **Access**: LAN only, HTTP basic auth (`BASIC_AUTH_USERNAME` / `BASIC_AUTH_PASSWORD`; in production the app answers 503 until both are set).
+- **Access**: LAN only, optional HTTP basic auth (`BASIC_AUTH_USERNAME` / `BASIC_AUTH_PASSWORD`; both empty means no login in any environment, with a warning logged at boot in production, and only one set answers 503).
 
 ## 11. Code layout
 

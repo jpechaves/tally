@@ -17,7 +17,7 @@ RSpec.describe Tally::BasicAuth do
   end
 
   context "with credentials configured" do
-    subject(:middleware) { described_class.new(inner, username: username, password: password, required: true) }
+    subject(:middleware) { described_class.new(inner, username: username, password: password) }
 
     it "lets the right credentials through" do
       expect(request(middleware, username: username, password: password).status).to eq(200)
@@ -37,35 +37,34 @@ RSpec.describe Tally::BasicAuth do
   end
 
   context "without credentials" do
-    it "passes requests through when auth isn't required (development, test)" do
-      middleware = described_class.new(inner, required: false)
+    let(:logger) { instance_double(Logger, warn: nil) }
 
-      expect(request(middleware).status).to eq(200)
-    end
+    it "passes requests through in every environment, warning once at boot in production" do
+      production = described_class.new(inner, username: "", password: " ", production: true, logger:)
+      development = described_class.new(inner, production: false, logger:)
 
-    it "refuses to serve when auth is required (production)" do
-      middleware = described_class.new(inner, username: "", password: "", required: true)
-      response = request(middleware)
-
-      expect(response.status).to eq(503)
-      expect(response.body).to include("BASIC_AUTH_USERNAME")
+      expect(request(production).status).to eq(200)
+      expect(request(development).status).to eq(200)
+      expect(logger).to have_received(:warn).once.with("basic auth is off: both BASIC_AUTH_* are empty")
     end
   end
 
   it "takes the credentials from the settings when none are given, a blank one counting as unset" do
     settings = Hanami.app["settings"]
     allow(settings).to receive_messages(basic_auth_username: username, basic_auth_password: "  ")
-    expect(request(described_class.new(inner, required: false), username:, password: "").status).to eq(503)
+    expect(request(described_class.new(inner), username:, password: "").status).to eq(503)
 
     allow(settings).to receive(:basic_auth_password).and_return(password)
-    middleware = described_class.new(inner, required: true)
+    middleware = described_class.new(inner)
     expect(request(middleware, username:, password:).status).to eq(200)
     expect(request(middleware).status).to eq(401)
   end
 
   it "refuses to serve when only one of the two settings is set" do
-    middleware = described_class.new(inner, username: username, required: false)
+    middleware = described_class.new(inner, username: username, production: true)
+    response = request(middleware, username: username, password: "")
 
-    expect(request(middleware, username: username, password: "").status).to eq(503)
+    expect(response.status).to eq(503)
+    expect(response.body).to include("set both BASIC_AUTH_USERNAME and BASIC_AUTH_PASSWORD")
   end
 end
