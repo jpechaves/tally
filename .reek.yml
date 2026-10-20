@@ -1,0 +1,28 @@
+# Reek settings for RubyCritic (`bundle exec rubycritic app lib`). Only the
+# smells that fight the Hanami/dry-rb style are turned off or relaxed, so the
+# score reflects real problems.
+detectors:
+  # Classes are documented in docs/ and the specs, not with a comment each.
+  IrresponsibleModule:
+    enabled: false
+  # Actions, repos and operations are stateless objects called with their input.
+  UtilityFunction:
+    enabled: false
+  # Reading a request param or a struct attribute twice is cheap and clearer.
+  DuplicateMethodCall:
+    max_calls: 2
+  # Conventional short names: rescued errors, indexes, sort/compare pairs.
+  UncommunicativeVariableName:
+    accept: ["_", "e", "i", "a", "b", "k", "v"]
+  UncommunicativeParameterName:
+    accept: ["_", "a", "b"]
+
+directories:
+  # An action's #handle and an operation's #call read the input, run the steps
+  # and respond, so they run longer than a helper method.
+  "app/actions":
+    TooManyStatements:
+      max_statements: 10
+  "app/operations":
+    TooManyStatements:
+      max_statements: 10

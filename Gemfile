@@ -29,6 +29,10 @@ group :development, :test do
   gem "dotenv"
   # Linter and formatter: `bundle exec standardrb` (`--fix` to autocorrect)
   gem "standard", require: false
+  # Code analysis (Flay, Flog, Reek): `bundle exec rubycritic app lib`
+  gem "rubycritic", require: false
+  # Known advisories in Gemfile.lock: `bundle exec bundler-audit check --update`
+  gem "bundler-audit", require: false
   # Syntax highlighting SQL logs
   gem "rouge"
 end
