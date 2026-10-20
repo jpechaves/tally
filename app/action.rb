@@ -15,6 +15,25 @@ module Tally
 
     private
 
+    # A refused request (halt with a 4xx status) is a page of the app, not bare text: the
+    # reason given to halt, or a translated one, in red (Views::Refusal).
+    def finish(request, response, halted)
+      status, text = halted
+      if status && (400..499).cover?(status)
+        response.status = status
+        response.render(Hanami.app["views.refusal"], message: refusal_text(status, text),
+          back: back_param(request.referer.to_s.sub(%r{\Ahttps?://[^/]+}, "")) || "/")
+        halted = nil
+      end
+      super
+    end
+
+    def refusal_text(status, text)
+      return text unless text == Hanami::Http::Status.message_for(status)
+
+      status == 404 ? t("errors.not_found") : t("errors.refused")
+    end
+
     def set_locale(request, _response)
       i18n.locale = Tally::Locales.pick(request.cookies[Tally::Locales::COOKIE], default: Hanami.app["settings"].default_locale)
     end

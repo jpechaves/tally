@@ -31,6 +31,16 @@ RSpec.describe "Refused requests", :db, type: :request do
       public_send(verb, path, params || {})
       expect(last_response.status).to eq(404), "#{verb} #{path} answered #{last_response.status}"
     end
+    expect(last_response.body).to include(%(<p class="error" role="alert">That is no longer there.</p>), %(<nav class="nav-group"))
+  end
+
+  it "shows a refusal as a page of the app, in red, with a way back" do
+    header "Referer", "http://example.org/trips?page=2"
+    post "/trips", name: "Feira", starts_on: "2026-08-10", ends_on: "2026-08-01"
+
+    expect(last_response.status).to eq(422)
+    expect(last_response.body).to include(%(<p class="error" role="alert">A trip needs a name, and a first day on or before its last.</p>),
+      %(<a href="/trips?page=2">), %(<nav class="nav-group"))
   end
 
   describe "budgets" do

@@ -56,7 +56,7 @@ RSpec.describe "Importing statements", :db, type: :request do
     post "/imports", "files" => [Rack::Test::UploadedFile.new(StringIO.new("Date,Amount\n"), "text/csv", original_filename: "x.csv")]
     follow_redirect!
 
-    expect(last_response.body).to include("Rejected, nothing was written: unknown file format")
+    expect(last_response.body).to include(%(<p class="error" role="alert">Rejected, nothing was written: unknown file format:))
   end
 
   it "words the importer's errors and warnings in the reader's language" do

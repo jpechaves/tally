@@ -68,6 +68,7 @@ en:
     thousands: "%{n}K"
 
   errors:
+    back: "← Back"
     category_not_found: Pick a category.
     could_not_save: "Could not save: %{reason}"
     empty_name: A category needs a name.
@@ -95,6 +96,8 @@ en:
     not_adjustable: This row cannot be adjusted.
     not_found: That is no longer there.
     not_reimbursable: Only money that left can be reimbursed.
+    refused: That request couldn't be done.
+    title: That didn't work
 
   kinds:
     bill_payment: bill payment
