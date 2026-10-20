@@ -6,6 +6,8 @@ module Tally
     get "/assets/:name", to: "assets.show", as: :asset, constraints: {name: /[a-z]+\.(css|js)/}
 
     post "/locale", to: "locale.update", as: :locale
+    post "/theme", to: "theme.update", as: :theme
+    get "/debug", to: "debug.show", as: :debug
 
     get "/imports", to: "imports.index", as: :imports
     post "/imports", to: "imports.create"

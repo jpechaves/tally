@@ -28,11 +28,14 @@ en:
     show: Show
 
   layout:
+    dark: Dark theme
+    debug: Debug info
     groups:
       data: Data
       organize: Organize
       overview: Overview
       planning: Planning
+    light: Light theme
     nav:
       accounts: Accounts
       budgets: Budgets
@@ -141,18 +144,22 @@ en:
       manual: manual
       seed: seed
 
-  home:
+  debug:
     show:
-      all_categories: All categories
       busy_timeout: Busy timeout
       database: Database
       foreign_keys: Foreign keys
-      intro_html: Household spending, budgets and savings. Start by <a href="/imports">importing your statements</a>.
       journal_mode: Journal mode
-      month_note: "Showing %{month}, the latest complete month."
-      open_report: Open the report
       sqlite_version: SQLite version
       synchronous: Synchronous
+      title: Debug info
+
+  home:
+    show:
+      all_categories: All categories
+      intro_html: Household spending, budgets and savings. Start by <a href="/imports">importing your statements</a>.
+      month_note: "Showing %{month}, the latest complete month."
+      open_report: Open the report
       title: Overview
       top_categories: "Where the money went in %{month}"
       trend: Income and spending by month

@@ -1,37 +1,39 @@
-/* Tally's look: a dark product UI after Linear's (docs/design.md). Near-black canvas, a
-   ladder of charcoal surfaces with hairline borders instead of shadows, light gray ink,
-   and one lavender accent kept for the current page, focus rings and primary buttons.
-   Charts use two validated data colors; red and green only mean bad and good. */
+/* Tally's look: a product UI after Linear's (docs/design.md). A near-black canvas (or, in
+   the light theme, a near-white one), a ladder of surfaces with hairline borders instead of
+   shadows, ink in four steps, and one lavender accent kept for the current page, focus rings
+   and primary buttons. Charts use two validated data colors; red and green only mean bad
+   and good. Every color is light-dark(light, dark): the system's setting picks one, unless
+   the theme switch set <html data-theme>. */
 
 :root {
-  color-scheme: dark;
+  color-scheme: light dark;
 
-  --canvas: #010102;
-  --surface-1: #0f1011;
-  --surface-2: #141516;
-  --surface-3: #18191a;
-  --hairline: #23252a;
-  --hairline-strong: #34343a;
+  --canvas: light-dark(#fbfbfc, #010102);
+  --surface-1: light-dark(#ffffff, #0f1011);
+  --surface-2: light-dark(#f4f5f7, #141516);
+  --surface-3: light-dark(#ebecf0, #18191a);
+  --hairline: light-dark(#e4e5e9, #23252a);
+  --hairline-strong: light-dark(#d0d2d8, #34343a);
 
-  --ink: #f7f8f8;
-  --ink-muted: #d0d6e0;
-  --ink-subtle: #8a8f98;
-  --ink-tertiary: #62666d;
+  --ink: light-dark(#0f1011, #f7f8f8);
+  --ink-muted: light-dark(#3c4149, #d0d6e0);
+  --ink-subtle: light-dark(#62666d, #8a8f98);
+  --ink-tertiary: light-dark(#8a8f98, #62666d);
 
   --accent: #5e6ad2;
-  --accent-hover: #828fff;
+  --accent-hover: light-dark(#4b56be, #828fff);
   --focus: rgba(94, 105, 209, 0.5);
 
   --good: #27a644;
-  --good-ink: #4cc366;
+  --good-ink: light-dark(#1d7f35, #4cc366);
   --bad: #d03b3b;
-  --bad-ink: #f07070;
-  --hint-ink: #d9a84a;
+  --bad-ink: light-dark(#c03030, #f07070);
+  --hint-ink: light-dark(#946200, #d9a84a);
 
-  /* Chart data colors, validated against --surface-1 (dark, 2 slots: both pass). */
+  /* Chart data colors, validated against --surface-1 in both themes (2 slots: both pass). */
   --series-spending: #5e6ad2;
   --series-income: #199e70;
-  --grid: #23252a;
+  --grid: light-dark(#e4e5e9, #23252a);
 
   --radius-sm: 6px;
   --radius-md: 8px;
@@ -40,6 +42,9 @@
   --font: Inter, "SF Pro Text", "SF Pro Display", -apple-system, system-ui, "Segoe UI", Roboto, sans-serif;
   --mono: "JetBrains Mono", "SF Mono", ui-monospace, Menlo, monospace;
 }
+
+:root[data-theme="light"] { color-scheme: light; }
+:root[data-theme="dark"] { color-scheme: dark; }
 
 * { box-sizing: border-box; }
 
@@ -69,23 +74,40 @@ code { font: 400 12.5px/1.5 var(--mono); color: var(--ink-muted); background: va
 }
 .brand { display: flex; align-items: center; gap: 10px; padding: 4px 8px; color: var(--ink); text-decoration: none; font-weight: 600; font-size: 15px; letter-spacing: -0.02em; }
 .brand-mark { width: 20px; height: 20px; border-radius: 6px; background: var(--accent); display: grid; place-items: center; color: #fff; font-size: 12px; font-weight: 700; }
-.nav-group { display: flex; flex-direction: column; gap: 1px; }
-.nav-group h2 { margin: 0 0 4px; padding: 0 8px; font-size: 11.5px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-tertiary); }
-.nav-group a { display: block; padding: 5px 8px; border-radius: var(--radius-sm); color: var(--ink-subtle); text-decoration: none; font-weight: 500; }
-.nav-group a:hover { background: var(--surface-2); color: var(--ink); }
-.nav-group a[aria-current="page"] { background: var(--surface-3); color: var(--ink); box-shadow: inset 2px 0 0 var(--accent); }
-.sidebar form { margin-top: auto; padding: 0 8px; }
-.sidebar form button { background: none; border: 0; padding: 0; color: var(--ink-subtle); font: inherit; cursor: pointer; }
-.sidebar form button:hover { color: var(--ink); }
+.nav-group summary { list-style: none; display: flex; align-items: center; gap: 6px; margin: 0 0 4px; padding: 2px 8px; border-radius: var(--radius-sm);
+  font-size: 11.5px; font-weight: 500; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-tertiary); cursor: pointer; }
+.nav-group summary::-webkit-details-marker { display: none; }
+.nav-group summary::after { content: ""; width: 5px; height: 5px; margin-left: auto; border: solid currentColor; border-width: 0 1.5px 1.5px 0; transform: rotate(45deg) translate(-1px, -1px); }
+.nav-group:not([open]) summary::after { transform: rotate(-45deg); }
+.nav-group summary:hover { color: var(--ink-subtle); }
+.nav-group nav { display: flex; flex-direction: column; gap: 1px; }
+.nav-group a, .sidebar-foot a { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-radius: var(--radius-sm); color: var(--ink-subtle); text-decoration: none; font-weight: 500; }
+.nav-group a:hover, .sidebar-foot a:hover { background: var(--surface-2); color: var(--ink); }
+.nav-group a[aria-current="page"], .sidebar-foot a[aria-current="page"] { background: var(--surface-3); color: var(--ink); box-shadow: inset 2px 0 0 var(--accent); }
+/* Debug info, language and theme: small links at the foot of the sidebar, each with an icon. */
+.sidebar-foot { margin-top: auto; display: flex; flex-direction: column; gap: 1px; font-size: 12.5px; }
+.sidebar-foot button { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 0; padding: 5px 8px; background: none; border: 0; border-radius: var(--radius-sm); color: var(--ink-subtle); font: inherit; font-weight: 500; cursor: pointer; }
+.sidebar-foot button:hover { background: var(--surface-2); color: var(--ink); }
+.icon { flex: none; width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
+/* The theme switch offers the theme not in effect: the system's, unless one was picked. */
+.to-dark { display: none !important; }
+:root[data-theme="light"] .to-light { display: none !important; }
+:root[data-theme="light"] .to-dark { display: flex !important; }
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) .to-light { display: none !important; }
+  :root:not([data-theme="dark"]) .to-dark { display: flex !important; }
+}
 
 main { padding: 32px 40px 64px; max-width: 1160px; width: 100%; min-width: 0; }
 
 @media (max-width: 860px) {
   .shell { grid-template-columns: 1fr; }
   .sidebar { position: static; height: auto; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 8px 16px; border-right: 0; border-bottom: 1px solid var(--hairline); }
-  .nav-group { flex-direction: row; flex-wrap: wrap; }
-  .nav-group h2 { display: none; }
-  .sidebar form { margin-top: 0; margin-left: auto; }
+  .brand { flex-basis: 100%; }
+  .nav-group { flex-basis: 100%; }
+  .nav-group nav { flex-direction: row; flex-wrap: wrap; }
+  .sidebar-foot { flex-basis: 100%; flex-direction: row; flex-wrap: wrap; margin-top: 0; }
+  .sidebar-foot button { width: auto; }
   main { padding: 20px 16px 48px; }
 }
 

@@ -1,0 +1,9 @@
+<main>
+  <h1><%= t("debug.show.title") %></h1>
+  <h2><%= t("debug.show.database") %></h2>
+  <div class="scroll"><table class="rows">
+    <% database.each do |key, value| %>
+      <tr><th scope="row"><%= t("debug.show.#{key}") %></th><td><%= value %></td></tr>
+    <% end %>
+  </table></div>
+</main>

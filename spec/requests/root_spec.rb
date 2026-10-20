@@ -3,23 +3,14 @@
 require "fileutils"
 
 RSpec.describe "Home page", type: :request do
-  it "shows the app and the SQLite settings in effect" do
+  it "shows the app, with its sidebar sections open and the SQLite settings left to the debug page" do
     get "/"
 
     expect(last_response.status).to eq(200)
     expect(last_response.body).to include("<h1>Overview</h1>", %(<link rel="stylesheet" href="/assets/app.css">))
-    expect(last_response.body).to include(%(<a href="/" aria-current="page">Home</a>))
-    expect(last_response.body).to include("<th scope=\"row\">Journal mode</th><td>wal</td>")
-    expect(last_response.body).to include("<th scope=\"row\">Foreign keys</th><td>on</td>")
-  end
-
-  it "says when foreign keys are off" do
-    db = Hanami.app["db.gateway"].connection
-    allow(db).to receive(:fetch).and_call_original
-    allow(db).to receive(:fetch).with("PRAGMA foreign_keys").and_return(instance_double(Sequel::Dataset, single_value: 0))
-
-    get "/"
-    expect(last_response.body).to include("<th scope=\"row\">Foreign keys</th><td>off</td>")
+    expect(last_response.body).to include(%(<details class="nav-group" data-group="overview" open>), %(<summary>Overview</summary>))
+    expect(last_response.body).to include(%(<a href="/" aria-current="page">Home</a>), %(<a href="/debug">))
+    expect(last_response.body).not_to include("Journal mode")
   end
 
   it "serves the stylesheet, and nothing else from the assets folder by name" do
@@ -27,6 +18,9 @@ RSpec.describe "Home page", type: :request do
     expect(last_response.status).to eq(200)
     expect(last_response.headers["Content-Type"]).to start_with("text/css")
     expect(last_response.body).to include("--accent: #5e6ad2")
+
+    get "/assets/sidebar.js"
+    expect(last_response.headers["Content-Type"]).to start_with("text/javascript")
 
     get "/assets/other.css"
     expect(last_response.status).to eq(404)

@@ -6,7 +6,7 @@ module Tally
       # The dashboard: the latest complete month at a glance, the last year's income
       # against spending, and where the money went.
       class Show < Tally::View
-        include Deps["db.gateway", "repos.insight_repo", "repos.transaction_repo"]
+        include Deps["repos.insight_repo", "repos.transaction_repo"]
 
         TREND_MONTHS = 12
         TOP_CATEGORIES = 6
@@ -33,21 +33,6 @@ module Tally
 
         expose :top_categories, decorate: false do |report|
           report ? report.categories.first(TOP_CATEGORIES) : []
-        end
-
-        # The SQLite settings actually in effect, so a fresh install (e.g. on the Pi) can be
-        # checked at a glance.
-        expose :database do
-          db = gateway.connection
-          pragma = ->(name) { db.fetch("PRAGMA #{name}").single_value }
-
-          {
-            sqlite_version: db.fetch("SELECT sqlite_version()").single_value,
-            journal_mode: pragma.call("journal_mode"),
-            foreign_keys: (pragma.call("foreign_keys") == 1) ? "on" : "off",
-            synchronous: {0 => "off", 1 => "normal", 2 => "full", 3 => "extra"}.fetch(pragma.call("synchronous")),
-            busy_timeout: "#{pragma.call("busy_timeout")} ms"
-          }
         end
       end
     end

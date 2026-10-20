@@ -18,11 +18,4 @@
       <p class="note"><a href="/report?month=<%= month %>"><%= t("home.show.all_categories") %></a> · <a href="/cuts?month=<%= month %>"><%= t("home.show.what_to_cut") %></a></p>
     </section>
   <% end %>
-
-  <h2><%= t("home.show.database") %></h2>
-  <div class="scroll"><table class="rows">
-    <% database.each do |key, value| %>
-      <tr><th scope="row"><%= t("home.show.#{key}") %></th><td><%= value %></td></tr>
-    <% end %>
-  </table></div>
 </main>

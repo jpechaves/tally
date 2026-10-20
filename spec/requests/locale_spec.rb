@@ -18,9 +18,9 @@ RSpec.describe "Languages", :db, type: :request do
   it "speaks Portuguese by default, with Brazilian amounts, dates and months" do
     get "/report?month=2026-07"
     body = last_response.body
-    expect(body).to include('<html lang="pt-BR">', "<h1>Para onde foi o dinheiro</h1>", "Receitas<strong>R$ 8.920,00</strong>")
+    expect(body).to include('<html lang="pt-BR" ', "<h1>Para onde foi o dinheiro</h1>", "Receitas<strong>R$ 8.920,00</strong>")
     expect(body).to include(%(<option value="2026-07" selected>jul/2026</option>), "Médias de jun/2026.")
-    expect(body).to include(%(<button type="submit" name="locale" value="en" lang="en">English</button>))
+    expect(body).to include(%(<button type="submit" name="locale" value="en" lang="en">), "English</button>")
 
     get "/transactions?month=2026-07"
     expect(last_response.body).to match(%r{<td>\d\d/07/2026</td>}).and include("<td>compra</td>")
@@ -33,7 +33,7 @@ RSpec.describe "Languages", :db, type: :request do
     expect(last_response.headers["Set-Cookie"]).to include("locale=en", "samesite=lax")
 
     follow_redirect!
-    expect(last_response.body).to include('<html lang="en">', "<h1>Where the money went</h1>", "Income<strong>R$ 8,920.00</strong>")
+    expect(last_response.body).to include('<html lang="en" ', "<h1>Where the money went</h1>", "Income<strong>R$ 8,920.00</strong>")
 
     post "/locale", locale: "pt-BR", back: "/cuts"
     follow_redirect!
