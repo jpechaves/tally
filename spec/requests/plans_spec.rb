@@ -235,7 +235,7 @@ RSpec.describe "Savings plan and budgets", :db, type: :request do
       expect(db[:savings_plans].count).to eq(0)
       expect(db[:savings_plan_lines].count).to eq(0)
       follow_redirect!
-      expect(last_response.body).to include("The plan was deleted.")
+      expect(last_response.body).to include(%(<p class="success" role="status">The plan was deleted.</p>))
 
       post "/plan/#{id}/delete"
       expect(last_response.status).to eq(404)

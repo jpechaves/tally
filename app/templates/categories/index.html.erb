@@ -1,6 +1,6 @@
 <main>
   <h1><%= t("categories.index.title") %></h1>
-  <% if error_code %><p class="error"><%= t("errors.#{error_code}", default: error_code.to_s) %></p><% end %>
+  <% if error_code %><%= render "shared/message", kind: :error, text: t("errors.#{error_code}", default: error_code.to_s) %><% end %>
   <p><%= t("categories.index.intro") %></p>
   <div class="scroll"><table class="rows">
     <thead><tr><th><%= t("categories.index.category") %></th><th><%= t("categories.index.nature") %></th><th class="num"><%= t("categories.index.max_cut") %></th><th class="num"><%= t("common.rows") %></th><th class="num"><%= t("common.net") %></th><th><%= t("categories.index.archived") %></th><th></th></tr></thead>

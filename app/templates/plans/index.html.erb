@@ -1,7 +1,7 @@
 <main>
   <h1><%= t("plans.index.title") %></h1>
-  <% if error_code %><p class="error"><%= t("errors.#{error_code}", default: error_code.to_s) %></p><% end %>
-  <% if notice_code %><p class="notice"><%= t("plans.index.notices.#{notice_code}", default: "") %></p><% end %>
+  <% if error_code %><%= render "shared/message", kind: :error, text: t("errors.#{error_code}", default: error_code.to_s) %><% end %>
+  <% if notice_code %><%= render "shared/message", kind: :success, text: t("plans.index.notices.#{notice_code}", default: "") %><% end %>
   <p><%= t("plans.index.what") %></p>
   <%= render "plans/flow", step: step %>
 

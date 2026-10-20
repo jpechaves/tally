@@ -62,7 +62,7 @@ RSpec.describe "Categorizing", :db, type: :request do
     post "/review", ids: group.ids.join(","), category_id: category_id("Lazer").to_s, page: "2"
     expect(last_response.headers["Location"]).to end_with("/review?page=2&saved=1")
     follow_redirect!
-    expect(last_response.body).to include("Page 2 of", "#{groups[4].label} ·", %(<p class="notice">Saved 1 row.</p>))
+    expect(last_response.body).to include("Page 2 of", "#{groups[4].label} ·", %(<p class="success" role="status">Saved 1 row.</p>))
     expect(last_response.body).not_to include("#{group.label} ·")
 
     last = groups.size / 2 # one group fewer now

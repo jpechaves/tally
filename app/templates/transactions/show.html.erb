@@ -36,7 +36,7 @@
   </form>
 
   <h2><%= t("transactions.adjustment.title") %></h2>
-  <% if error_code %><p class="error"><%= t("errors.#{error_code}", default: error_code.to_s) %></p><% end %>
+  <% if error_code %><%= render "shared/message", kind: :error, text: t("errors.#{error_code}", default: error_code.to_s) %><% end %>
   <% if row[:refunds_transaction_id] %>
     <p class="note"><%= t("transactions.adjustment.refund_of") %> <a href="/transactions/<%= row[:refunds_transaction_id] %>"><%= t("transactions.adjustment.the_purchase") %></a></p>
   <% elsif row[:kind] == "transfer" %>
