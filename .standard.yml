@@ -1,0 +1,3 @@
+# Lowest Ruby that CI runs (.github/workflows/ci.yml); otherwise Standard targets
+# the Ruby it runs on and asks for syntax 3.3 lacks, such as the `it` block parameter.
+ruby_version: 3.3
