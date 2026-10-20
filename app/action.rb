@@ -53,6 +53,12 @@ module Tally
       params.empty? ? path : "#{path}?#{URI.encode_www_form(params)}"
     end
 
+    # A message key from a param ("not_found"), or nil.
+    def code_param(value) = value.to_s[/\A[a-z_]+\z/]
+
+    # The record whose id is in the path, from the repo; a 404 when there is none.
+    def found(repo, request) = repo.find(request.params[:id].to_i) || halt(404)
+
     # A "YYYY-MM" month from a param, or nil.
     def month_param(value) = value.to_s[Tally::Insights::MONTH]
 

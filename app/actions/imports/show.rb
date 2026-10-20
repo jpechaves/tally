@@ -7,10 +7,7 @@ module Tally
         include Deps["repos.import_repo"]
 
         def handle(request, response)
-          import = import_repo.find(request.params[:id].to_i)
-          halt 404 unless import
-
-          response[:import] = import
+          response[:import] = found(import_repo, request)
         end
       end
     end

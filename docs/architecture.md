@@ -491,12 +491,13 @@ app/
   actions/      accounts/, transactions/, imports/, review/, reports/, insights/, plans/, budgets/
   operations/   import_statement.rb, categorize.rb, create_rule.rb, pair_transfers.rb,
                 build_savings_plan.rb, accept_savings_plan.rb, set_budget.rb
-  repos/        account_repo.rb, transaction_repo.rb, import_repo.rb, rule_repo.rb, budget_repo.rb
+  repos/        account_repo.rb, transaction_repo.rb (+ transaction_repo/ writing.rb, transfers.rb), import_repo.rb, rule_repo.rb, budget_repo.rb
   relations/ structs/ views/ templates/
 lib/tally/
   money.rb
   basic_auth.rb
-  importers/    nubank_account_csv.rb, nubank_card_csv.rb, itau_card_pdf.rb
+  importers/    nubank_account_csv.rb, nubank_card_csv.rb, conta_global_csv.rb,
+                itau_card_pdf.rb + itau_card_pdf/ (layout.rb, reader.rb, bill.rb)
   categorizer.rb
   insights/     baseline.rb, cut_signals.rb, recurring.rb, planner.rb   (pure: data in, numbers out)
   locales.rb    the languages Tally speaks

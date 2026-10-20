@@ -2,11 +2,13 @@
 
 module Tally
   module Repos
-    # Transactions, plus the rows that hang off them on import: card statements and
-    # transfers. Works on plain hashes from the Sequel datasets, because the import
-    # compares and updates column by column.
+    # Transactions, plus the rows that hang off them on import: card statements
+    # (Writing) and transfers (Transfers). Works on plain hashes from the Sequel datasets,
+    # because the import compares and updates column by column.
     class TransactionRepo < Tally::DB::Repo
       include Deps["repos.trip_repo"]
+      include Writing
+      include Transfers
 
       MIRROR_PREFIX = "mirror:"
 
@@ -15,6 +17,11 @@ module Tally
         "spending" => Tally::Insights::SPENDING_KINDS, "income" => Tally::Insights::INCOME_KINDS, "transfer" => %w[transfer]
       }.freeze
       COUNTED = %w[spending income].freeze
+
+      TRANSACTIONS = Sequel[:transactions]
+      ACCOUNTS = Sequel[:accounts]
+      COUNTERPARTIES = Sequel[:counterparties]
+      NEWEST_FIRST = [Sequel.desc(TRANSACTIONS[:occurred_on]), Sequel.desc(TRANSACTIONS[:id])].freeze
 
       # --- Reading --------------------------------------------------------------------
 
@@ -35,28 +42,14 @@ module Tally
       # each counts as after your adjustment (Tally::Adjustments.columns).
       # @param filter [Tally::TransactionFilter]
       def list(filter = Tally::TransactionFilter.new, import_id: nil, missing: false, id: nil, limit: 500, offset: 0)
-        scope = transactions.dataset
-          .join(:accounts, id: :account_id)
-          .left_join(:counterparties, id: Sequel[:transactions][:counterparty_id])
-          .left_join(Sequel[:accounts].as(:counter_accounts), id: Sequel[:transactions][:counter_account_id])
-          .left_join(:categories, id: Sequel[:transactions][:category_id])
+        scope = named(transactions.dataset)
+          .left_join(ACCOUNTS.as(:counter_accounts), id: TRANSACTIONS[:counter_account_id])
           .then { Tally::Adjustments.join(_1) }
-          .select_all(:transactions)
-          .select_append(
-            Sequel[:accounts][:name].as(:account_name),
-            Sequel[:accounts][:currency],
-            *Tally::DB::Repo.counterparty_columns,
-            Sequel[:counterparties][:document].as(:counterparty_document),
-            Sequel[:counter_accounts][:name].as(:counter_account_name),
-            Sequel[:categories][:name].as(:category_name),
-            *Tally::Adjustments.columns
-          )
-        scope = scope.where(Sequel[:transactions][:id] => id) if id
+          .select_append(Sequel[:counter_accounts][:name].as(:counter_account_name), *Tally::Adjustments.columns)
+        scope = scope.where(TRANSACTIONS[:id] => id) if id
         scope = filtered(scope, filter)
-        scope = scope.where(Sequel[:transactions][:missing_since_import_id] => import_id) if missing && import_id
-        scope = scope.where(Sequel[:transactions][:last_import_id] => import_id) if import_id && !missing
-        scope.order(Sequel.desc(Sequel[:transactions][:occurred_on]), Sequel.desc(Sequel[:transactions][:id]))
-          .limit(limit, offset).all
+        scope = scope.where(TRANSACTIONS[missing ? :missing_since_import_id : :last_import_id] => import_id) if import_id
+        scope.order(*NEWEST_FIRST).limit(limit, offset).all
       end
 
       # How many rows match the filter, and their net in each currency, across all pages, as
@@ -64,9 +57,9 @@ module Tally
       # @return [Hash] rows:, net: {"BRL" => cents, "USD" => cents}, reais first
       def totals(filter = Tally::TransactionFilter.new)
         scope = filtered(transactions.dataset.unordered, filter)
-        net = Tally::Adjustments.join(scope.join(:accounts, id: Sequel[:transactions][:account_id]))
-          .group(Sequel[:accounts][:currency])
-          .select(Sequel[:accounts][:currency], Sequel.function(:sum, Tally::Adjustments.counted_amount).as(:cents))
+        net = Tally::Adjustments.join(scope.join(:accounts, id: TRANSACTIONS[:account_id]))
+          .group(ACCOUNTS[:currency])
+          .select(ACCOUNTS[:currency], Sequel.function(:sum, Tally::Adjustments.counted_amount).as(:cents))
           .to_h { [_1[:currency], _1[:cents]] }
         {rows: scope.count, net: net.sort_by { |currency, _| (currency == Tally::Money::DEFAULT_CURRENCY) ? "" : currency }.to_h}
       end
@@ -87,20 +80,20 @@ module Tally
         return [] unless row
 
         rows = transactions.dataset
-          .where(Sequel[:transactions][:account_id] => row[:account_id], Sequel[:transactions][:installment_total] => row[:installment_total],
-            Sequel[:transactions][:missing_since_import_id] => nil)
-          .exclude(Sequel[:transactions][:kind] => "transfer")
-          .join(:accounts, id: Sequel[:transactions][:account_id])
-          .left_join(:card_statements, id: Sequel[:transactions][:card_statement_id])
+          .where(TRANSACTIONS[:account_id] => row[:account_id], TRANSACTIONS[:installment_total] => row[:installment_total],
+            TRANSACTIONS[:missing_since_import_id] => nil)
+          .exclude(TRANSACTIONS[:kind] => "transfer")
+          .join(:accounts, id: TRANSACTIONS[:account_id])
+          .left_join(:card_statements, id: TRANSACTIONS[:card_statement_id])
           .select_all(:transactions)
-          .select_append(Sequel[:accounts][:name].as(:account_name), Sequel[:card_statements][:due_on].as(:bill_due_on))
+          .select_append(ACCOUNTS[:name].as(:account_name), Sequel[:card_statements][:due_on].as(:bill_due_on))
           .all
         Tally::InstallmentCalendar.series_of(rows, id)
       end
 
       # The ids and kinds of every row the filter matches, on every page.
       def matching(filter)
-        filtered(transactions.dataset.unordered, filter).select(Sequel[:transactions][:id], Sequel[:transactions][:kind]).all
+        filtered(transactions.dataset.unordered, filter).select(TRANSACTIONS[:id], TRANSACTIONS[:kind]).all
       end
 
       def ids_for_counterparty(counterparty_id)
@@ -117,16 +110,16 @@ module Tally
       # match the counterparty's name as the bank wrote it, never your display name.
       # @param ids [Array<Integer>, nil] nil for every row
       def for_categorizing(ids: nil)
-        scope = transactions.dataset.exclude(Sequel[:transactions][:category_source] => "manual")
+        scope = transactions.dataset.exclude(TRANSACTIONS[:category_source] => "manual")
           .left_join(:counterparties, id: :counterparty_id)
-          .select(*CATEGORIZER_COLUMNS.map { Sequel[:transactions][_1] })
+          .select(*CATEGORIZER_COLUMNS.map { TRANSACTIONS[_1] })
           .select_append(
-            Sequel[:counterparties][:name].as(:counterparty_name),
-            Sequel[:counterparties][:document].as(:counterparty_document),
-            Sequel[:counterparties][:default_category_id]
+            COUNTERPARTIES[:name].as(:counterparty_name),
+            COUNTERPARTIES[:document].as(:counterparty_document),
+            COUNTERPARTIES[:default_category_id]
           )
-        scope = scope.where(Sequel[:transactions][:id] => ids) if ids
-        scope.order(Sequel[:transactions][:id]).all
+        scope = scope.where(TRANSACTIONS[:id] => ids) if ids
+        scope.order(TRANSACTIONS[:id]).all
       end
 
       def set_category(ids, category_id:, category_source:, category_rule_id: nil)
@@ -138,79 +131,11 @@ module Tally
       # category yet, or only the bank's suggestion. Rows a re-import flagged as missing
       # are left out, and so are rows your adjustment says count as nothing.
       def to_review
-        transactions.dataset
-          .exclude(Sequel[:transactions][:kind] => "transfer")
-          .exclude(Sequel[:transactions][:id] => Tally::Adjustments.uncounted_ids(transactions.dataset))
-          .where(Sequel[:transactions][:category_source] => %w[none bank], :missing_since_import_id => nil)
-          .join(:accounts, id: :account_id)
-          .left_join(:counterparties, id: Sequel[:transactions][:counterparty_id])
-          .left_join(:categories, id: Sequel[:transactions][:category_id])
-          .select_all(:transactions)
-          .select_append(
-            Sequel[:accounts][:name].as(:account_name),
-            Sequel[:accounts][:currency],
-            *Tally::DB::Repo.counterparty_columns,
-            Sequel[:counterparties][:document].as(:counterparty_document),
-            Sequel[:categories][:name].as(:category_name)
-          )
-          .order(Sequel.desc(Sequel[:transactions][:occurred_on]), Sequel.desc(Sequel[:transactions][:id]))
-          .all
-      end
-
-      # --- Writing --------------------------------------------------------------------
-
-      def insert(attributes) = transactions.dataset.insert(attributes)
-
-      def update(id, attributes)
-        transactions.dataset.where(id:).update(**attributes, updated_at: Repos.now)
-      end
-
-      # Flags rows of this account that the new file no longer has (statement-import.md,
-      # section 4, step 5). They are kept, never deleted.
-      #
-      # @param scope [Hash] {card_statement_id:} for a card bill, or {period: Range} for an
-      #   account statement
-      # @return [Integer] how many rows are now flagged
-      def flag_missing(account_id:, import_id:, keep_ids:, card_statement_id: nil, period: nil)
-        scope = transactions.dataset.where(account_id:, missing_since_import_id: nil)
-          .exclude(id: keep_ids)
-          .exclude(Sequel.like(:external_id, "#{MIRROR_PREFIX}%"))
-        scope = if card_statement_id
-          scope.where(card_statement_id:)
-        else
-          scope.where(card_statement_id: nil, occurred_on: period.begin.iso8601..period.end.iso8601)
-        end
-
-        scope.update(missing_since_import_id: import_id, updated_at: Repos.now)
-      end
-
-      # @return [Integer] the card statement's id
-      def upsert_card_statement(account_id:, import_id:, figures:)
-        attributes = figures.transform_values { _1.is_a?(Date) ? _1.iso8601 : _1 }.merge(import_id:)
-        statements = card_statements.dataset
-        existing = statements.where(account_id:, due_on: attributes[:due_on]).first
-
-        if existing
-          statements.where(id: existing[:id]).update(**attributes, updated_at: Repos.now)
-          existing[:id]
-        else
-          statements.insert(account_id:, **attributes)
-        end
-      end
-
-      def card_statements_for(account_id) = card_statements.dataset.where(account_id:).order(:due_on).all
-
-      def card_statement(id) = card_statements.dataset.where(id:).first
-
-      # Each card's latest bill, with what the bank says is already committed to the next
-      # ones (Itaú prints it; Nubank's CSV doesn't).
-      def card_statements_with_account
-        latest = card_statements.dataset.unordered.group(:account_id).select { max(:due_on).as(:due_on) }.select_append(:account_id)
-        card_statements.dataset
-          .join(latest.as(:latest), account_id: :account_id, due_on: :due_on)
-          .join(:accounts, id: Sequel[:card_statements][:account_id])
-          .select_all(:card_statements).select_append(Sequel[:accounts][:name].as(:account_name))
-          .order(Sequel[:accounts][:name]).all
+        scope = transactions.dataset
+          .exclude(TRANSACTIONS[:kind] => "transfer")
+          .exclude(TRANSACTIONS[:id] => Tally::Adjustments.uncounted_ids(transactions.dataset))
+          .where(TRANSACTIONS[:category_source] => %w[none bank], :missing_since_import_id => nil)
+        named(scope).order(*NEWEST_FIRST).all
       end
 
       # --- Adjustments (Tally::Adjustments) --------------------------------------------
@@ -236,158 +161,75 @@ module Tally
       # date first.
       # @param row [Hash] a row from #list
       def refund_candidates(row, limit: 20)
-        column = ->(name) { Sequel[:transactions][name] }
-        date = Date.iso8601(row[:occurred_on])
-        window = Tally::Adjustments::REFUND_WINDOW
         adjustments = transaction_adjustments.dataset
         linked = adjustments.exclude(refund_transaction_id: nil).exclude(transaction_id: row[:id]).select(:refund_transaction_id)
+        amount = TRANSACTIONS[:amount_cents]
         transactions.dataset
           .join(:accounts, id: :account_id)
-          .where(Sequel[:accounts][:currency] => row[:currency], column.call(:missing_since_import_id) => nil,
-            column.call(:kind) => Tally::Insights::SPENDING_KINDS + Tally::Insights::INCOME_KINDS,
-            column.call(:occurred_on) => (date + window.begin).iso8601..(date + window.end).iso8601)
-          .where { (column.call(:amount_cents) > 0) & (column.call(:amount_cents) <= row[:amount_cents].abs) }
-          .exclude(column.call(:id) => linked)
-          .exclude(column.call(:id) => adjustments.select(:transaction_id))
-          .select_all(:transactions).select_append(Sequel[:accounts][:name].as(:account_name))
-          .order(Sequel.function(:abs, Sequel.function(:julianday, column.call(:occurred_on)) - Sequel.function(:julianday, row[:occurred_on])), column.call(:id))
+          .where(ACCOUNTS[:currency] => row[:currency], TRANSACTIONS[:missing_since_import_id] => nil,
+            TRANSACTIONS[:kind] => Tally::Insights::SPENDING_KINDS + Tally::Insights::INCOME_KINDS,
+            TRANSACTIONS[:occurred_on] => around(row, Tally::Adjustments::REFUND_WINDOW))
+          .where((amount > 0) & (amount <= row[:amount_cents].abs))
+          .exclude(TRANSACTIONS[:id] => linked)
+          .exclude(TRANSACTIONS[:id] => adjustments.select(:transaction_id))
+          .select_all(:transactions).select_append(ACCOUNTS[:name].as(:account_name))
+          .order(closest_to(row, TRANSACTIONS[:occurred_on]), TRANSACTIONS[:id])
           .limit(limit)
           .all
       end
 
-      # --- Transfers ------------------------------------------------------------------
+      private
 
-      # Money moved into an account from your other accounts, oldest first, with what the
-      # other leg paid in its own account's currency when the two are paired: a Conta Global
-      # top-up is US$ 178,74 here and R$ 1.000,00 (other_cents, other_currency) in Nubank conta.
-      #
-      # @param through [String] the last day included, "YYYY-MM-DD"
-      def top_ups(account_id, through:)
-        legs = Sequel[:transactions].as(:other_legs)
-        transactions.dataset
-          .where(Sequel[:transactions][:account_id] => account_id, Sequel[:transactions][:kind] => "transfer")
-          .where { (Sequel[:transactions][:amount_cents] > 0) & (Sequel[:transactions][:occurred_on] <= through) }
-          .left_join(legs, Sequel.&({Sequel[:other_legs][:transfer_id] => Sequel[:transactions][:transfer_id]},
-            Sequel.~(Sequel[:other_legs][:id] => Sequel[:transactions][:id])))
-          .left_join(Sequel[:accounts].as(:other_accounts), id: Sequel[:other_legs][:account_id])
+      # Rows with their account's name and currency, their counterparty's names and their
+      # category's name.
+      def named(scope)
+        scope
+          .join(:accounts, id: TRANSACTIONS[:account_id])
+          .left_join(:counterparties, id: TRANSACTIONS[:counterparty_id])
+          .left_join(:categories, id: TRANSACTIONS[:category_id])
           .select_all(:transactions)
           .select_append(
-            Sequel[:other_legs][:amount_cents].as(:other_cents),
-            Sequel[:other_accounts][:currency].as(:other_currency),
-            Sequel[:other_accounts][:name].as(:other_account_name)
+            ACCOUNTS[:name].as(:account_name),
+            ACCOUNTS[:currency],
+            *Tally::DB::Repo.counterparty_columns,
+            COUNTERPARTIES[:document].as(:counterparty_document),
+            Sequel[:categories][:name].as(:category_name)
           )
-          .order(Sequel[:transactions][:occurred_on], Sequel[:transactions][:id])
-          .all
       end
 
-      def unpaired_transfers
-        transactions.dataset.where(kind: "transfer", transfer_id: nil).exclude(counter_account_id: nil)
-          .order(:occurred_on, :id).all
-      end
-
-      def transfer_legs(transfer_id) = transactions.dataset.where(transfer_id:).order(:id).all
-
-      # The other leg of a transfer between two imported accounts: same amount with the
-      # opposite sign, pointing back at this account, within a few days.
-      def find_partner(row, days: 5)
+      # The dates (as stored, "YYYY-MM-DD") this many days around the row's.
+      # @param days [Range<Integer>]
+      def around(row, days)
         date = Date.iso8601(row[:occurred_on])
-        transactions.dataset
-          .where(account_id: row[:counter_account_id], counter_account_id: row[:account_id],
-            kind: "transfer", transfer_id: nil, amount_cents: -row[:amount_cents])
-          .where(occurred_on: (date - days).iso8601..(date + days).iso8601)
-          .exclude(id: row[:id])
-          .order(Sequel.function(:abs, Sequel.function(:julianday, :occurred_on) - Sequel.function(:julianday, row[:occurred_on])), :id)
-          .first
+        (date + days.begin).iso8601..(date + days.end).iso8601
       end
 
-      # Candidates for the other leg of a transfer between accounts in different currencies:
-      # unpaired transfers in the other account, pointing back, with the opposite sign,
-      # closest date first. Tally::Exchange decides which one it is.
-      def exchange_partners(row, days: 3)
-        date = Date.iso8601(row[:occurred_on])
-        sign = row[:amount_cents].negative? ? Sequel.lit("amount_cents > 0") : Sequel.lit("amount_cents < 0")
-        transactions.dataset
-          .where(account_id: row[:counter_account_id], counter_account_id: row[:account_id], kind: "transfer", transfer_id: nil)
-          .where(sign)
-          .where(occurred_on: (date - days).iso8601..(date + days).iso8601)
-          .exclude(id: row[:id])
-          .order(Sequel.function(:abs, Sequel.function(:julianday, :occurred_on) - Sequel.function(:julianday, row[:occurred_on])), :id)
-          .all
+      # Days between the column's date and the row's, for ordering by the closest.
+      def closest_to(row, column = :occurred_on)
+        Sequel.function(:abs, Sequel.function(:julianday, column) - Sequel.function(:julianday, row[:occurred_on]))
       end
-
-      def create_transfer(occurred_on:, leg_ids:)
-        id = transfers.dataset.insert(occurred_on:)
-        transactions.dataset.where(id: leg_ids).update(transfer_id: id, updated_at: Repos.now)
-        id
-      end
-
-      def delete_transfer(transfer_id)
-        transactions.dataset.where(transfer_id:).update(transfer_id: nil, updated_at: Repos.now)
-        transfers.dataset.where(id: transfer_id).delete
-      end
-
-      def delete_mirror(id)
-        transactions.dataset.where(id:).where(Sequel.like(:external_id, "#{MIRROR_PREFIX}%")).delete
-      end
-
-      def mirror?(row) = row[:external_id].start_with?(MIRROR_PREFIX)
-
-      def mirror_external_id(source_id) = "#{MIRROR_PREFIX}#{source_id}"
-
-      private
 
       # Narrows a transactions dataset to a Tally::TransactionFilter.
       def filtered(scope, filter)
-        column = ->(name) { Sequel[:transactions][name] }
-        scope = scope.where(column.call(:account_id) => filter.account) if filter.account
-        scope = scope.where(Sequel.function(:substr, column.call(:occurred_on), 1, 7) => filter.month) if filter.month
-        scope = scope.where(column.call(:category_id) => category_ids(filter.category)) if filter.category
-        scope = scope.where(column.call(:kind) => KIND_FILTERS.fetch(filter.kind)) if filter.kind
+        scope = scope.where(TRANSACTIONS[:account_id] => filter.account) if filter.account
+        scope = scope.where(Sequel.function(:substr, TRANSACTIONS[:occurred_on], 1, 7) => filter.month) if filter.month
+        scope = scope.where(TRANSACTIONS[:category_id] => category_ids(filter.category)) if filter.category
+        scope = scope.where(TRANSACTIONS[:kind] => KIND_FILTERS.fetch(filter.kind)) if filter.kind
         scope = scope.where(nature_condition(filter.nature)) if filter.nature
         scope = scope.where(payee_key => filter.payee) if filter.payee
-        scope = scope.where(column.call(:id) => installment_series(filter.purchase).map { _1[:id] }) if filter.purchase
-        scope = scope.where(column.call(:id) => trip_ids(filter.trip)) if filter.trip
-        scope = scope.where(search(filter.q)) if filter.q
-        # Spending and income as the report counts them, which leaves out rows a
-        # re-import flagged as missing, rows dated after today and rows your adjustment
-        # says count as nothing (InsightRepo).
-        if COUNTED.include?(filter.kind)
-          scope = scope.where(column.call(:missing_since_import_id) => nil)
-            .where { column.call(:occurred_on) <= Date.today.iso8601 }
-            .exclude(column.call(:id) => Tally::Adjustments.uncounted_ids(transactions.dataset))
-        end
-        scope
+        scope = scope.where(TRANSACTIONS[:id] => installment_series(filter.purchase).map { _1[:id] }) if filter.purchase
+        scope = scope.where(TRANSACTIONS[:id] => trip_ids(filter.trip)) if filter.trip
+        scope = scope.where(Tally::TransactionSearch.condition(filter.q, transactions.dataset)) if filter.q
+        COUNTED.include?(filter.kind) ? counted(scope) : scope
       end
 
-      # Rows whose amount is the search, as imported or as adjusted, of either sign unless
-      # one is typed; or whose texts (theirs, their adjustment's note, their counterparty's
-      # names and note) hold every word of it. A search that is neither matches nothing.
-      def search(query)
-        sign, cents = Tally::Search.amount(query)
-        words = Tally::Search.fold(query).split
-        conditions = []
-        conditions << {Sequel[:transactions][:id] => amount_ids(sign, cents)} if cents
-        conditions << Sequel.&(*words.map { search_word(_1) }) unless words.empty?
-        conditions.empty? ? false : Sequel.|(*conditions)
-      end
-
-      def amount_ids(sign, cents)
-        amount = Sequel[:transactions][:amount_cents]
-        scope = Tally::Adjustments.join(transactions.dataset.unordered)
-          .where(Sequel.|({Sequel.function(:abs, amount) => cents}, {Sequel.function(:abs, Tally::Adjustments.counted_amount) => cents}))
-        scope = scope.where(sign.negative? ? (amount < 0) : (amount > 0)) if sign
-        scope.select(Sequel[:transactions][:id])
-      end
-
-      def search_word(word)
-        like = ->(table, column) { Tally::Search.like(Sequel[table][column], word) }
-        db = transactions.dataset.db
-        Sequel.|(
-          *%i[description raw_description memo].map { like.call(:transactions, _1) },
-          {Sequel[:transactions][:counterparty_id] => db[:counterparties]
-            .where(Sequel.|(*%i[name display_name note].map { like.call(:counterparties, _1) })).select(:id)},
-          {Sequel[:transactions][:id] => db[:transaction_adjustments].where(like.call(:transaction_adjustments, :note)).select(:transaction_id)}
-        )
+      # Spending and income as the report counts them, which leaves out rows a re-import
+      # flagged as missing, rows dated after today and rows your adjustment says count as
+      # nothing (InsightRepo).
+      def counted(scope)
+        scope.where(TRANSACTIONS[:missing_since_import_id] => nil)
+          .where(TRANSACTIONS[:occurred_on] <= Date.today.iso8601)
+          .exclude(TRANSACTIONS[:id] => Tally::Adjustments.uncounted_ids(transactions.dataset))
       end
 
       def trip_ids(id)
@@ -404,13 +246,13 @@ module Tally
 
       # Who a row paid, grouped like the review list and the report (Tally::Review.key).
       def payee_key
-        Sequel.function(Tally::Review::KEY_FUNCTION, Sequel[:transactions][:counterparty_id], Sequel[:transactions][:description])
+        Sequel.function(Tally::Review::KEY_FUNCTION, TRANSACTIONS[:counterparty_id], TRANSACTIONS[:description])
       end
 
       # Rows whose own category has this nature. UNSET is rows whose category has none and
       # rows with no category, as the report groups them.
       def nature_condition(nature)
-        category_id = Sequel[:transactions][:category_id]
+        category_id = TRANSACTIONS[:category_id]
         return {category_id => categories.dataset.unordered.where(nature:).select(:id)} unless nature == Tally::TransactionFilter::UNSET
 
         Sequel.|({category_id => nil}, {category_id => categories.dataset.unordered.where(nature: nil).select(:id)})

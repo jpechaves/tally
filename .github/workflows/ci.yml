@@ -30,9 +30,10 @@ jobs:
         with:
           ruby-version: "3.3"
           bundler-cache: true
-      # Score was 83.56 when this gate was added; raise the minimum as it improves.
+      # Score was 83.56 when this gate was added and 85.04 after the first cleanup; raise the
+      # minimum as it improves.
       - name: Analyse the code (RubyCritic)
-        run: bundle exec rubycritic app lib --no-browser --format html --format console --minimum-score 83
+        run: bundle exec rubycritic app lib --no-browser --format html --format console --minimum-score 84.5
       - name: Upload the RubyCritic report
         if: always()
         uses: actions/upload-artifact@v4

@@ -7,10 +7,7 @@ module Tally
         include Deps["repos.plan_repo"]
 
         def handle(request, response)
-          plan = plan_repo.find(request.params[:id].to_i)
-          halt 404 unless plan
-
-          response[:plan] = plan
+          response[:plan] = found(plan_repo, request)
         end
       end
     end

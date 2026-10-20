@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "csv"
 require "date"
 require "digest"
 
@@ -156,6 +157,9 @@ module Tally
       Digest::SHA256.hexdigest(parts.join("|"))[0, 32]
     end
 
+    # The first key that appears more than once, or nil.
+    def self.repeated(keys) = keys.tally.find { |_, count| count > 1 }&.first
+
     # Numbers identical rows: the k-th repeat of the same identity gets k (0, 1, 2, ...), so
     # two truly identical charges in one bill stay two rows (docs/statement-import.md, 2b).
     class Repeats
@@ -180,6 +184,17 @@ module Tally
         raise Error.new(:not_utf8) unless text.valid_encoding?
 
         text.delete_prefix("﻿")
+      end
+
+      # The file as a CSV table with headers.
+      def table(content) = CSV.parse(utf8(content), headers: true, skip_blanks: true)
+
+      # A record's fields, or an error naming its line when it doesn't have `count`.
+      def fields(record, line, count)
+        fields = record.fields
+        raise Error.new(:columns, line:, columns: count) if fields.size != count || fields.last.nil?
+
+        fields
       end
 
       def date(text, format, line)

@@ -5,8 +5,8 @@ module Tally
     module Plans
       class Index < Tally::Action
         def handle(request, response)
-          response[:error_code] = request.params[:error].to_s[/\A[a-z_]+\z/]
-          response[:notice_code] = request.params[:notice].to_s[/\A[a-z_]+\z/]
+          response[:error_code] = code_param(request.params[:error])
+          response[:notice_code] = code_param(request.params[:notice])
         end
       end
     end
