@@ -12,7 +12,7 @@ module Tally
 
         transaction do
           category_rule_repo.disable(id)
-          categorize.()
+          categorize.call
         end
       end
     end

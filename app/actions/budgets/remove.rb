@@ -14,12 +14,12 @@ module Tally
           return back(response, month, "month_and_category") unless month
 
           if request.params[:all] == "1"
-            remove_budgets.(month:)
+            remove_budgets.call(month:)
           else
             category = category_repo.find(request.params[:category_id].to_i)
             return back(response, month, "month_and_category") unless category
 
-            remove_budgets.(month:, category_id: category[:id])
+            remove_budgets.call(month:, category_id: category[:id])
           end
           back(response, month)
         end

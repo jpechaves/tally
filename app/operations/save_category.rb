@@ -21,7 +21,11 @@ module Tally
 
         parent = parent_id && category_repo.find(parent_id)
         step Failure(:invalid_parent) if parent_id && (parent.nil? || parent[:parent_id])
-        kind = existing ? existing[:kind] : (parent ? parent[:kind] : kind)
+        kind = if existing
+          existing[:kind]
+        else
+          (parent ? parent[:kind] : kind)
+        end
         step Failure(:invalid_kind) unless %w[expense income].include?(kind)
 
         nature = nil if kind == "income" || nature.to_s.empty?
@@ -34,7 +38,7 @@ module Tally
             archived_at = archived ? (existing[:archived_at] || Repos.now) : nil
             category_repo.update(id, name:, nature:, max_cut_pct:, archived_at:)
             # Rules don't use archived categories, so rows they categorized go back to review.
-            categorize.() if archived_at != existing[:archived_at]
+            categorize.call if archived_at != existing[:archived_at]
             id
           else
             category_repo.create(name:, kind:, parent_id:, nature:, max_cut_pct:)

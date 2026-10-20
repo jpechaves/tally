@@ -8,13 +8,13 @@ module Tally
         include Deps["routes", "operations.mark_self"]
 
         def handle(request, response)
-          result = mark_self.(counterparty_id: request.params[:id].to_i, is_self: request.params[:is_self] == "1")
+          result = mark_self.call(counterparty_id: request.params[:id].to_i, is_self: request.params[:is_self] == "1")
           halt 404 if result.failure?
 
           # Back to the same search and page.
           params = request.params
           back = Tally::Pagination.path(routes.path(:counterparties), q: params[:q].to_s.strip[0, 100])
-          response.redirect_to back.(Tally::Pagination.param(params[:page]))
+          response.redirect_to back.call(Tally::Pagination.param(params[:page]))
         end
       end
     end

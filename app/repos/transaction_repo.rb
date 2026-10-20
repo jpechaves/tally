@@ -63,7 +63,7 @@ module Tally
           .group(Sequel[:accounts][:currency])
           .select(Sequel[:accounts][:currency], Sequel.function(:sum, Tally::Adjustments.counted_amount).as(:cents))
           .to_h { [_1[:currency], _1[:cents]] }
-        {rows: scope.count, net: net.sort_by { |currency, _| currency == Tally::Money::DEFAULT_CURRENCY ? "" : currency }.to_h}
+        {rows: scope.count, net: net.sort_by { |currency, _| (currency == Tally::Money::DEFAULT_CURRENCY) ? "" : currency }.to_h}
       end
 
       # Months that have rows, newest first ("2026-09", ...), in one account if given.
@@ -136,7 +136,7 @@ module Tally
         transactions.dataset
           .exclude(Sequel[:transactions][:kind] => "transfer")
           .exclude(Sequel[:transactions][:id] => Tally::Adjustments.uncounted_ids(transactions.dataset))
-          .where(Sequel[:transactions][:category_source] => %w[none bank], missing_since_import_id: nil)
+          .where(Sequel[:transactions][:category_source] => %w[none bank], :missing_since_import_id => nil)
           .join(:accounts, id: :account_id)
           .left_join(:counterparties, id: Sequel[:transactions][:counterparty_id])
           .left_join(:categories, id: Sequel[:transactions][:category_id])
@@ -238,14 +238,14 @@ module Tally
         linked = adjustments.exclude(refund_transaction_id: nil).exclude(transaction_id: row[:id]).select(:refund_transaction_id)
         transactions.dataset
           .join(:accounts, id: :account_id)
-          .where(Sequel[:accounts][:currency] => row[:currency], column.(:missing_since_import_id) => nil,
-            column.(:kind) => Tally::Insights::SPENDING_KINDS + Tally::Insights::INCOME_KINDS,
-            column.(:occurred_on) => (date + window.begin).iso8601..(date + window.end).iso8601)
-          .where { (column.(:amount_cents) > 0) & (column.(:amount_cents) <= row[:amount_cents].abs) }
-          .exclude(column.(:id) => linked)
-          .exclude(column.(:id) => adjustments.select(:transaction_id))
+          .where(Sequel[:accounts][:currency] => row[:currency], column.call(:missing_since_import_id) => nil,
+            column.call(:kind) => Tally::Insights::SPENDING_KINDS + Tally::Insights::INCOME_KINDS,
+            column.call(:occurred_on) => (date + window.begin).iso8601..(date + window.end).iso8601)
+          .where { (column.call(:amount_cents) > 0) & (column.call(:amount_cents) <= row[:amount_cents].abs) }
+          .exclude(column.call(:id) => linked)
+          .exclude(column.call(:id) => adjustments.select(:transaction_id))
           .select_all(:transactions).select_append(Sequel[:accounts][:name].as(:account_name))
-          .order(Sequel.function(:abs, Sequel.function(:julianday, column.(:occurred_on)) - Sequel.function(:julianday, row[:occurred_on])), column.(:id))
+          .order(Sequel.function(:abs, Sequel.function(:julianday, column.call(:occurred_on)) - Sequel.function(:julianday, row[:occurred_on])), column.call(:id))
           .limit(limit)
           .all
       end
@@ -334,22 +334,22 @@ module Tally
       # Narrows a transactions dataset to a Tally::TransactionFilter.
       def filtered(scope, filter)
         column = ->(name) { Sequel[:transactions][name] }
-        scope = scope.where(column.(:account_id) => filter.account) if filter.account
-        scope = scope.where(Sequel.function(:substr, column.(:occurred_on), 1, 7) => filter.month) if filter.month
-        scope = scope.where(column.(:category_id) => category_ids(filter.category)) if filter.category
-        scope = scope.where(column.(:kind) => KIND_FILTERS.fetch(filter.kind)) if filter.kind
+        scope = scope.where(column.call(:account_id) => filter.account) if filter.account
+        scope = scope.where(Sequel.function(:substr, column.call(:occurred_on), 1, 7) => filter.month) if filter.month
+        scope = scope.where(column.call(:category_id) => category_ids(filter.category)) if filter.category
+        scope = scope.where(column.call(:kind) => KIND_FILTERS.fetch(filter.kind)) if filter.kind
         scope = scope.where(nature_condition(filter.nature)) if filter.nature
         scope = scope.where(payee_key => filter.payee) if filter.payee
-        scope = scope.where(column.(:id) => installment_series(filter.purchase).map { _1[:id] }) if filter.purchase
-        scope = scope.where(column.(:id) => trip_ids(filter.trip)) if filter.trip
+        scope = scope.where(column.call(:id) => installment_series(filter.purchase).map { _1[:id] }) if filter.purchase
+        scope = scope.where(column.call(:id) => trip_ids(filter.trip)) if filter.trip
         scope = scope.where(search(filter.q)) if filter.q
         # Spending and income as the report counts them, which leaves out rows a
         # re-import flagged as missing, rows dated after today and rows your adjustment
         # says count as nothing (InsightRepo).
         if COUNTED.include?(filter.kind)
-          scope = scope.where(column.(:missing_since_import_id) => nil)
-            .where { column.(:occurred_on) <= Date.today.iso8601 }
-            .exclude(column.(:id) => Tally::Adjustments.uncounted_ids(transactions.dataset))
+          scope = scope.where(column.call(:missing_since_import_id) => nil)
+            .where { column.call(:occurred_on) <= Date.today.iso8601 }
+            .exclude(column.call(:id) => Tally::Adjustments.uncounted_ids(transactions.dataset))
         end
         scope
       end
@@ -378,10 +378,10 @@ module Tally
         like = ->(table, column) { Tally::Search.like(Sequel[table][column], word) }
         db = transactions.dataset.db
         Sequel.|(
-          *%i[description raw_description memo].map { like.(:transactions, _1) },
+          *%i[description raw_description memo].map { like.call(:transactions, _1) },
           {Sequel[:transactions][:counterparty_id] => db[:counterparties]
-            .where(Sequel.|(*%i[name display_name note].map { like.(:counterparties, _1) })).select(:id)},
-          {Sequel[:transactions][:id] => db[:transaction_adjustments].where(like.(:transaction_adjustments, :note)).select(:transaction_id)}
+            .where(Sequel.|(*%i[name display_name note].map { like.call(:counterparties, _1) })).select(:id)},
+          {Sequel[:transactions][:id] => db[:transaction_adjustments].where(like.call(:transaction_adjustments, :note)).select(:transaction_id)}
         )
       end
 

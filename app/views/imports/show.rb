@@ -25,7 +25,7 @@ module Tally
         end
 
         expose :rows do |import|
-          import.status == "applied" ? transaction_repo.list(import_id: import.id, limit: 1000) : []
+          (import.status == "applied") ? transaction_repo.list(import_id: import.id, limit: 1000) : []
         end
       end
     end

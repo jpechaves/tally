@@ -22,8 +22,8 @@ module Tally
           counterparty_repo.set_self(counterparty.id, is_self)
           ids = transaction_repo.ids_for_counterparty(counterparty.id)
           transaction_repo.rows(ids).each { |row| update(row, counterparty, is_self) }
-          pair_transfers.(touched_ids: ids)
-          categorize.(ids:)
+          pair_transfers.call(touched_ids: ids)
+          categorize.call(ids:)
         end
 
         counterparty_repo.find(counterparty.id)

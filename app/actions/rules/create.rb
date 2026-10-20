@@ -8,15 +8,13 @@ module Tally
 
         def handle(request, response)
           params = request.params
-          result = save_rule.(
-            field: params[:field].to_s,
+          result = save_rule.call(field: params[:field].to_s,
             operator: params[:operator].to_s,
             pattern: params[:pattern],
             category_id: params[:category_id].to_i,
             priority: params[:priority].to_s[/\A\d+\z/]&.to_i || 100,
             amount_min_cents: cents(params[:amount_min]),
-            amount_max_cents: cents(params[:amount_max])
-          )
+            amount_max_cents: cents(params[:amount_max]))
 
           path = routes.path(:rules)
           response.redirect_to result.failure? ? "#{path}?error=#{result.failure}" : path

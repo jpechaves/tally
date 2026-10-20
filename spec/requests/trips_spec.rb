@@ -95,6 +95,8 @@ RSpec.describe "Trips", :db, type: :request do
     expect(last_response.status).to eq(422)
     create_trip(name: " ")
     expect(last_response.status).to eq(422)
+    create_trip(ends_on: "2026-02-31")
+    expect(last_response.status).to eq(422)
 
     get "/trips/999"
     expect(last_response.status).to eq(404)

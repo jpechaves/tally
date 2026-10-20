@@ -9,7 +9,7 @@ module Tally
 
         def handle(request, response)
           remove_budgets = request.params[:remove_budgets] == "1"
-          result = delete_plan.(id: request.params[:id].to_i, remove_budgets:)
+          result = delete_plan.call(id: request.params[:id].to_i, remove_budgets:)
           halt 404 if result.failure?
 
           notice = if result.value!.zero? then "plan_deleted"

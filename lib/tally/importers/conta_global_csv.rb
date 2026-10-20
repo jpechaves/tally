@@ -153,7 +153,11 @@ module Tally
         rate = decimal(rate, line)
         if from == currency
           other = fields["Exchange To Amount"].to_s
-          exchange_amount = other.empty? ? nil : money(other, to, line).abs * (amount.negative? ? -1 : 1)
+          exchange_amount = if other.empty?
+            nil
+          else
+            money(other, to, line).abs * (amount.negative? ? -1 : 1)
+          end
           {exchange_currency: to, exchange_amount:, exchange_rate: rate.to_s("F")}
         elsif to == currency
           # The amount converted from isn't printed; the rate is turned around so it reads

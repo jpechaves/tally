@@ -15,7 +15,7 @@ RSpec.describe Tally::TransactionFilter do
   it "links to the filtered transactions, and to their pages" do
     filter = described_class.new(month: "2026-08", category: 12, kind: "spending")
     expect(filter.path).to eq("/transactions?month=2026-08&category=12&kind=spending")
-    expect(filter.pages.(2)).to eq("/transactions?month=2026-08&category=12&kind=spending&page=2")
+    expect(filter.pages.call(2)).to eq("/transactions?month=2026-08&category=12&kind=spending&page=2")
     expect(described_class.new.path).to eq("/transactions")
   end
 

@@ -32,10 +32,10 @@ module Tally
         transaction do
           if always && counterparty_id
             counterparty_repo.set_default_category(counterparty_id, category_id)
-            categorize.(ids: transaction_repo.ids_for_counterparty(counterparty_id))
+            categorize.call(ids: transaction_repo.ids_for_counterparty(counterparty_id))
           elsif always && pattern
             learn(pattern, category_id)
-            categorize.()
+            categorize.call
           end
 
           # Rows the default or rule could not cover (an expense category picked for money

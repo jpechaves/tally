@@ -43,10 +43,10 @@ module Tally
 
           {
             sqlite_version: db.fetch("SELECT sqlite_version()").single_value,
-            journal_mode: pragma.("journal_mode"),
-            foreign_keys: pragma.("foreign_keys") == 1 ? "on" : "off",
-            synchronous: {0 => "off", 1 => "normal", 2 => "full", 3 => "extra"}.fetch(pragma.("synchronous")),
-            busy_timeout: "#{pragma.("busy_timeout")} ms"
+            journal_mode: pragma.call("journal_mode"),
+            foreign_keys: (pragma.call("foreign_keys") == 1) ? "on" : "off",
+            synchronous: {0 => "off", 1 => "normal", 2 => "full", 3 => "extra"}.fetch(pragma.call("synchronous")),
+            busy_timeout: "#{pragma.call("busy_timeout")} ms"
           }
         end
       end

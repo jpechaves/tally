@@ -89,7 +89,7 @@ module Tally
         end
       end
 
-      def compact_round(value) = value.round(1) == value.round ? value.round : value.round(1)
+      def compact_round(value) = (value.round(1) == value.round) ? value.round : value.round(1)
 
       # A starting category's name in the current language; one you named yourself as typed.
       def category_name(name) = name && Tally::Categories.display(name, locale)
@@ -101,7 +101,7 @@ module Tally
         return "" unless row[:category_name]
 
         name = category_name(row[:category_name])
-        row[:category_source] == "bank" ? "#{name}?" : name
+        (row[:category_source] == "bank") ? "#{name}?" : name
       end
 
       # Your display name for a row's counterparty, when you gave it one (issue #37).
@@ -136,7 +136,7 @@ module Tally
       def gap_label(gap)
         if gap.whole_months?
           from, to = [gap.from, gap.to].map { month_label(_1.strftime("%Y-%m")) }
-          from == to ? t("gaps.#{gap.kind}.month", month: from) : t("gaps.#{gap.kind}.months", from:, to:)
+          (from == to) ? t("gaps.#{gap.kind}.month", month: from) : t("gaps.#{gap.kind}.months", from:, to:)
         elsif gap.from == gap.to
           t("gaps.statement.day", day: date(gap.from.iso8601))
         else

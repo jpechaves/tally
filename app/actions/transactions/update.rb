@@ -18,11 +18,11 @@ module Tally
 
           category_id = request.params[:category_id].to_s[/\A\d+\z/]&.to_i
           if category_id
-            result = assign_category.(ids: [id], category_id:)
+            result = assign_category.call(ids: [id], category_id:)
             halt 422, t("errors.could_not_save", reason: result.failure) if result.failure?
           elsif row[:category_source] == "manual"
             transaction_repo.set_category(id, category_id: nil, category_source: "none")
-            categorize.(ids: [id])
+            categorize.call(ids: [id])
           end
 
           response.redirect_to routes.path(:transaction, id:)

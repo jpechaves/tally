@@ -8,7 +8,7 @@ module Tally
       # pipeline (nothing to build on the Pi); the list is fixed.
       class Show < Tally::Action
         TYPES = {"app.css" => "text/css", "confirm.js" => "text/javascript", "picker.js" => "text/javascript", "plan.js" => "text/javascript",
-          "table.js" => "text/javascript"}.freeze
+                 "table.js" => "text/javascript"}.freeze
 
         def handle(request, response)
           name = request.params[:name].to_s

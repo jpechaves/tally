@@ -11,7 +11,7 @@ module Tally
           proposed = (request.params[:proposed] || {}).to_h.to_h do |category_id, text|
             [category_id.to_s.to_i, parse_amount(text.to_s).cents]
           end
-          result = accept_plan.(id: request.params[:id].to_i, proposed:)
+          result = accept_plan.call(id: request.params[:id].to_i, proposed:)
           halt 404 if result.failure? && result.failure == :not_found
           halt 422, t("errors.could_not_save", reason: result.failure) if result.failure?
 

@@ -9,7 +9,7 @@ module Tally
         def handle(request, response)
           target = parse_amount(request.params[:target].to_s).cents
           starts = month_param(request.params[:starts_month]) || Date.today.next_month.strftime("%Y-%m")
-          result = create_plan.(target_cents: target, starts_month: starts)
+          result = create_plan.call(target_cents: target, starts_month: starts)
 
           if result.failure?
             response.redirect_to "#{routes.path(:plans)}?error=#{result.failure}"

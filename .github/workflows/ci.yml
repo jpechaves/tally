@@ -9,6 +9,17 @@ permissions:
   contents: read
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "4.0"
+          bundler-cache: true
+      - name: Check the code style (Standard Ruby)
+        run: bundle exec standardrb
+
   test:
     runs-on: ubuntu-latest
     strategy:

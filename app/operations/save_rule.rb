@@ -21,7 +21,7 @@ module Tally
         transaction do
           id = category_rule_repo.create(field:, operator:, pattern:, category_id:, priority:, amount_min_cents:,
             amount_max_cents:, origin: "manual")
-          categorize.()
+          categorize.call
           id
         end
       end

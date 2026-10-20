@@ -92,7 +92,7 @@ module Tally
       def set_label(id, display_name:, note:)
         blank_to_nil = ->(text) { text.to_s.strip.then { _1.empty? ? nil : _1 } }
         counterparties.dataset.where(id:)
-          .update(display_name: blank_to_nil.(display_name), note: blank_to_nil.(note), updated_at: Repos.now)
+          .update(display_name: blank_to_nil.call(display_name), note: blank_to_nil.call(note), updated_at: Repos.now)
       end
 
       def set_self(id, value)
@@ -107,7 +107,7 @@ module Tally
         return scope if folded.empty?
 
         matches = ->(column) { Tally::Search.like(Sequel[:counterparties][column], folded) }
-        scope.where(Sequel.|(matches.(:name), matches.(:display_name)))
+        scope.where(Sequel.|(matches.call(:name), matches.call(:display_name)))
       end
 
       # The company with a CNPJ, not you, whose name has this merchant key ("|KEY"); the

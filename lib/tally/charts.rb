@@ -38,27 +38,27 @@ module Tally
       base = TOP + PLOT_HEIGHT
       y = ->(value) { base - (PLOT_HEIGHT * [value, 0].max / top.to_f) }
 
-      svg = +%(<svg viewBox="0 0 #{WIDTH} #{base + AXIS_BAND}" role="img" aria-label="#{h(title)}">)
+      svg = %(<svg viewBox="0 0 #{WIDTH} #{base + AXIS_BAND}" role="img" aria-label="#{h(title)}">)
       ticks.each do |tick|
-        line_y = y.(tick).round(1)
+        line_y = y.call(tick).round(1)
         svg << %(<line class="#{tick.zero? ? "baseline" : "grid"}" x1="#{LEFT}" x2="#{WIDTH}" y1="#{line_y}" y2="#{line_y}"/>)
-        svg << %(<text x="#{LEFT - 8}" y="#{line_y + 4}" text-anchor="end">#{h(compact.(tick))}</text>)
+        svg << %(<text x="#{LEFT - 8}" y="#{line_y + 4}" text-anchor="end">#{h(compact.call(tick))}</text>)
       end
 
-      every = labels.size > 12 ? 2 : 1
+      every = (labels.size > 12) ? 2 : 1
       labels.each_with_index do |label, index|
         left = LEFT + (slot * index) + ((slot - group) / 2)
         series.each_with_index do |one, position|
           value = one[:values][index].to_i
           x = (left + (position * (width + GAP))).round(1)
-          svg << %(<g><title>#{h(label)} · #{h(one[:name])}: #{h(format.(value))}</title>)
+          svg << %(<g><title>#{h(label)} · #{h(one[:name])}: #{h(format.call(value))}</title>)
           svg << %(<rect class="hit" x="#{x - (GAP / 2.0)}" y="#{TOP}" width="#{width + GAP}" height="#{PLOT_HEIGHT}"/>)
-          svg << %(<path class="mark #{one[:css]}" d="#{column_path(x, y.(value), width, base)}"/>) if value.positive?
+          svg << %(<path class="mark #{one[:css]}" d="#{column_path(x, y.call(value), width, base)}"/>) if value.positive?
           svg << "</g>"
         end
         next unless (index % every).zero? || index == highlight
 
-        css = index == highlight ? %( class="current") : ""
+        css = (index == highlight) ? %( class="current") : ""
         svg << %(<text x="#{(LEFT + (slot * index) + (slot / 2)).round(1)}" y="#{base + 18}" text-anchor="middle"#{css}>#{h(label)}</text>)
       end
       svg << "</svg>"

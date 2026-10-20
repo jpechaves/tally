@@ -22,7 +22,11 @@ module Tally
 
         private
 
-        def date(value) = Date.iso8601(value.to_s[DATE].to_s).iso8601 rescue nil
+        def date(value) = begin
+          Date.iso8601(value.to_s[DATE].to_s).iso8601
+        rescue
+          nil
+        end
       end
     end
   end

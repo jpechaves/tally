@@ -17,7 +17,7 @@ module Tally
       # @param ids [Array<Integer>, nil] the rows to look at; nil for all of them
       # @return [Integer] how many rows changed
       def call(ids: nil)
-        seed_categories.() if category_repo.empty?
+        seed_categories.call if category_repo.empty?
         categorizer = Categorizer.new(
           rules: category_rule_repo.active,
           categories: category_repo.kinds,
@@ -26,7 +26,7 @@ module Tally
 
         transaction do
           changed = transaction_repo.for_categorizing(ids:).count do |row|
-            decision = categorizer.(row)
+            decision = categorizer.call(row)
             next false if decision.category_id == row[:category_id] && decision.source == row[:category_source] &&
               decision.rule_id == row[:category_rule_id]
 

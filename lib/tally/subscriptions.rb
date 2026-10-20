@@ -55,7 +55,7 @@ module Tally
       totals = rows.group_by { Insights.month_of(_1) }.transform_values { Insights.spent_cents(_1) }
         .select { |_, cents| cents.positive? }.sort.to_h
       manual = @marked.include?(key)
-      return unless !totals.empty? && (manual || repeats?(totals))
+      return if totals.empty? || !(manual || repeats?(totals))
 
       months = totals.keys
       last = rows.select { Insights.month_of(_1) == months.last }.max_by { _1[:occurred_on] }

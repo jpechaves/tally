@@ -11,7 +11,7 @@ RSpec.describe Tally::Operations::ImportStatement, :db do
   after { FileUtils.rm_rf(storage) }
 
   def import(name, content = fixture(name))
-    import_statement.(file_name: name, content:)
+    import_statement.call(file_name: name, content:)
   end
 
   def account_id(name) = db[:accounts].where(name:).get(:id)
@@ -337,7 +337,7 @@ RSpec.describe Tally::Operations::ImportStatement, :db do
     it "becomes a transfer to your Itaú account once you mark yourself" do
       expect(row("Nubank conta", described_row)[:kind]).to eq("purchase")
 
-      expect(mark_self.(counterparty_id: me[:id], is_self: true)).to be_success
+      expect(mark_self.call(counterparty_id: me[:id], is_self: true)).to be_success
 
       pix = row("Nubank conta", described_row)
       expect(pix).to include(kind: "transfer", counter_account_id: account_id("Itaú conta"))
@@ -345,7 +345,7 @@ RSpec.describe Tally::Operations::ImportStatement, :db do
     end
 
     it "nets out against the card bill the Itaú account paid" do
-      mark_self.(counterparty_id: me[:id], is_self: true)
+      mark_self.call(counterparty_id: me[:id], is_self: true)
       import("itau_2026-10.pdf")
 
       # Pix in 1.500,00, bill paid 3.456,78: the account would be 1.956,78 short, which the
@@ -354,11 +354,11 @@ RSpec.describe Tally::Operations::ImportStatement, :db do
     end
 
     it "stays a transfer on re-import, and goes back when you unmark yourself" do
-      mark_self.(counterparty_id: me[:id], is_self: true)
+      mark_self.call(counterparty_id: me[:id], is_self: true)
       import("NU_12345678_01JUL2026_31JUL2026.csv", fixture("NU_12345678_01JUL2026_31JUL2026.csv") + "\n")
       expect(row("Nubank conta", described_row)[:kind]).to eq("transfer")
 
-      mark_self.(counterparty_id: me[:id], is_self: false)
+      mark_self.call(counterparty_id: me[:id], is_self: false)
       expect(row("Nubank conta", described_row)).to include(kind: "purchase", transfer_id: nil, counter_account_id: nil)
       expect(rows("Itaú conta").count).to eq(0)
     end

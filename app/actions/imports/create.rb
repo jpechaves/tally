@@ -17,7 +17,7 @@ module Tally
           end
 
           imports = uploads.map do |upload|
-            result = import_statement.(file_name: upload[:filename].to_s, content: upload[:tempfile].read)
+            result = import_statement.call(file_name: upload[:filename].to_s, content: upload[:tempfile].read)
             result.value_or { result.failure }
           end
 

@@ -9,7 +9,7 @@ RSpec.describe "Translations" do
   def flatten(hash, prefix = nil)
     hash.flat_map do |key, value|
       path = [prefix, key].compact.join(".")
-      value.is_a?(Hash) && !(value.key?("one") && value.key?("other")) ? flatten(value, path).to_a : [[path, value]]
+      (value.is_a?(Hash) && !(value.key?("one") && value.key?("other"))) ? flatten(value, path).to_a : [[path, value]]
     end.to_h
   end
 

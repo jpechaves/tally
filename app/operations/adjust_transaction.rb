@@ -50,7 +50,7 @@ module Tally
         if refund_id
           refund = transaction_repo.refund_candidates(row, limit: nil).find { _1[:id] == refund_id }
           refund ? Success(refund[:amount_cents]) : Failure(:invalid_refund)
-        elsif amount && amount.positive? && amount.cents <= -row[:amount_cents]
+        elsif amount&.positive? && amount.cents <= -row[:amount_cents]
           Success(amount.cents)
         else
           Failure(:invalid_reimbursed_amount)
