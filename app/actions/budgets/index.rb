@@ -6,7 +6,7 @@ module Tally
       class Index < Tally::Action
         def handle(request, response)
           response[:requested_month] = month_param(request.params[:month])
-          response[:error_code] = request.params[:error].to_s[/\A[a-z_]+\z/]
+          response[:error_code] = code_param(request.params[:error])
         end
       end
     end

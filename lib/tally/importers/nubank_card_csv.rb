@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require "csv"
-
 module Tally
   module Importers
     # Nubank credit card bill export, named after its due date: Nubank_2026-09-09.csv.
@@ -30,8 +28,7 @@ module Tally
       REFUND = /\A(?:Estorno de "?(.+?)"?|Desconto Antecipação (.+))\z/
 
       def call(file_name, content)
-        text = Text.utf8(content)
-        table = CSV.parse(text, headers: true, skip_blanks: true)
+        table = Text.table(content)
         unless table.headers == HEADER.split(",")
           raise Error.new(:nubank_card_header, header: HEADER.inspect)
         end
@@ -67,8 +64,7 @@ module Tally
       end
 
       def row(record, line, due_on, repeats, warnings)
-        date_text, title, value = record.fields
-        raise Error.new(:columns, line:, columns: 3) if value.nil? || record.fields.size != 3
+        date_text, title, value = Text.fields(record, line, 3)
 
         date = Text.date(date_text, "%Y-%m-%d", line)
         title = title.strip

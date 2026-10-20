@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require "csv"
-
 module Tally
   module Importers
     # Nubank account (conta) CSV export, e.g. NU_<account>_01JUN2026_30JUN2026.csv.
@@ -46,8 +44,7 @@ module Tally
       }.freeze
 
       def call(file_name, content)
-        text = Text.utf8(content)
-        table = CSV.parse(text, headers: true, skip_blanks: true)
+        table = Text.table(content)
         unless table.headers == HEADER.split(",")
           raise Error.new(:nubank_account_header, header: HEADER.inspect)
         end
@@ -56,8 +53,8 @@ module Tally
         rows, warnings = describe(records)
 
         keys = rows.map(&:external_id)
-        if (repeated = keys.tally.find { |_, count| count > 1 })
-          raise Error.new(:repeated_identificador, id: repeated.first)
+        if (id = Importers.repeated(keys))
+          raise Error.new(:repeated_identificador, id:)
         end
 
         period_start, period_end = period(file_name, rows, warnings)
@@ -70,8 +67,7 @@ module Tally
       private
 
       def read(record, line)
-        date_text, value, id, description = record.fields
-        raise Error.new(:columns, line:, columns: 4) if description.nil? || record.fields.size != 4
+        date_text, value, id, description = Text.fields(record, line, 4)
 
         id = id.strip
         raise Error.new(:not_a_uuid, line:, text: id.inspect) unless UUID.match?(id)
@@ -164,8 +160,7 @@ module Tally
 
       def period(file_name, rows, warnings)
         if (match = PERIOD.match(File.basename(file_name.to_s)))
-          from = Date.new(match[3].to_i, MONTHS.index(match[2]) + 1, match[1].to_i)
-          to = Date.new(match[6].to_i, MONTHS.index(match[5]) + 1, match[4].to_i)
+          from, to = match.captures.each_slice(3).map { |day, month, year| Date.new(year.to_i, MONTHS.index(month) + 1, day.to_i) }
           outside = rows.count { !(from..to).cover?(_1.occurred_on) }
           raise Error.new(:rows_outside_period, rows: outside) if outside.positive?
 

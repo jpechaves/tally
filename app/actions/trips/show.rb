@@ -7,10 +7,7 @@ module Tally
         include Deps["repos.trip_repo"]
 
         def handle(request, response)
-          trip = trip_repo.find(request.params[:id].to_i)
-          halt 404 unless trip
-
-          response[:trip] = trip
+          response[:trip] = found(trip_repo, request)
         end
       end
     end

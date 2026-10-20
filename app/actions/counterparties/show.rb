@@ -8,10 +8,7 @@ module Tally
         include Deps["repos.counterparty_repo"]
 
         def handle(request, response)
-          party = counterparty_repo.find(request.params[:id].to_i)
-          halt 404 unless party
-
-          response[:party] = party
+          response[:party] = found(counterparty_repo, request)
           response[:back] = back_param(request.params[:back])
         end
       end

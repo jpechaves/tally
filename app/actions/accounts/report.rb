@@ -8,10 +8,7 @@ module Tally
         include Deps["repos.account_repo"]
 
         def handle(request, response)
-          account = account_repo.find(request.params[:id].to_i)
-          halt 404 unless account
-
-          response[:account] = account
+          response[:account] = found(account_repo, request)
           response[:requested_month] = month_param(request.params[:month])
         end
       end

@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require "bigdecimal"
-require "csv"
 
 module Tally
   module Importers
@@ -41,7 +40,7 @@ module Tally
       CARD_DESCRIPTION = /(?:emitida por|issued by)\s+(?<merchant>.+)\z/
 
       def call(_file_name, content)
-        table = CSV.parse(Text.utf8(content), headers: true, skip_blanks: true)
+        table = Text.table(content)
         missing = REQUIRED - table.headers
         raise Error.new(:conta_global_columns, columns: missing.join(", ")) unless missing.empty?
 
@@ -50,9 +49,8 @@ module Tally
         records = table.each.with_index(2).map { |record, line| read(record, line, currency) }
         raise Error.new(:no_rows) if records.empty?
 
-        keys = records.map { _1[:key] }
-        if (repeated = keys.tally.find { |_, count| count > 1 })
-          raise Error.new(:repeated_row, id: repeated.first)
+        if (id = Importers.repeated(records.map { _1[:key] }))
+          raise Error.new(:repeated_row, id:)
         end
 
         records = records.sort_by { [_1[:time], -_1[:line]] }

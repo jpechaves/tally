@@ -11,7 +11,7 @@ module Tally
           halt 404 unless row
 
           response[:row] = row
-          response[:error_code] = request.params[:error].to_s[/\A[a-z_]+\z/]
+          response[:error_code] = code_param(request.params[:error])
           response[:back] = back_param(request.params[:back])
         end
       end
