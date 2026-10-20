@@ -213,6 +213,7 @@ module Tally
       # Narrows a transactions dataset to a Tally::TransactionFilter.
       def filtered(scope, filter)
         scope = scope.where(TRANSACTIONS[:account_id] => filter.account) if filter.account
+        scope = scope.where(TRANSACTIONS[:account_id] => accounts.dataset.unordered.where(person_id: filter.person).select(:id)) if filter.person
         scope = scope.where(Sequel.function(:substr, TRANSACTIONS[:occurred_on], 1, 7) => filter.month) if filter.month
         scope = scope.where(TRANSACTIONS[:category_id] => category_ids(filter.category)) if filter.category
         scope = scope.where(TRANSACTIONS[:kind] => KIND_FILTERS.fetch(filter.kind)) if filter.kind

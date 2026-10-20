@@ -14,6 +14,7 @@ module Tally
   #
   # Every attribute is optional; nil means "any".
   #   account   an account id
+  #   person    the id of someone of the household, for their accounts' rows (issue #21)
   #   month     "YYYY-MM"
   #   category  a category id, which takes in its children when it is a parent, or NONE
   #   kind      one of KINDS: "spending" and "income" are the rows the report counts as
@@ -28,8 +29,8 @@ module Tally
   #   trip      a trip's id, for its rows (Tally::Trip)
   #   q         a search: rows whose amount is it (Tally::Search.amount), or whose texts
   #             have every word of it (TransactionRepo)
-  TransactionFilter = Data.define(:account, :month, :category, :kind, :nature, :payee, :purchase, :trip, :q) do
-    def initialize(account: nil, month: nil, category: nil, kind: nil, nature: nil, payee: nil, purchase: nil, trip: nil, q: nil) = super
+  TransactionFilter = Data.define(:account, :person, :month, :category, :kind, :nature, :payee, :purchase, :trip, :q) do
+    def initialize(account: nil, person: nil, month: nil, category: nil, kind: nil, nature: nil, payee: nil, purchase: nil, trip: nil, q: nil) = super
 
     # The query string's parameters that are set, in a stable order.
     def query = to_h.compact
@@ -75,6 +76,7 @@ module Tally
     def self.parse(params)
       new(
         account: params[:account].to_s[ID]&.to_i,
+        person: params[:person].to_s[ID]&.to_i,
         month: params[:month].to_s[MONTH],
         category: (params[:category].to_s == NONE) ? NONE : params[:category].to_s[ID]&.to_i,
         kind: KINDS.find { _1 == params[:kind].to_s },

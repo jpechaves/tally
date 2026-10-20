@@ -5,6 +5,7 @@ module Tally
     module Report
       class Show < Tally::View
         include Deps["repos.account_repo", "repos.insight_repo", "repos.transaction_repo", "repos.trip_repo"]
+        include PersonSwitch
 
         expose :months do
           transaction_repo.months
@@ -29,11 +30,11 @@ module Tally
         end
 
         # Income and spending for the months up to this one, from the first with rows.
-        expose :trend, decorate: false do |month, hidden_ids|
+        expose :trend, decorate: false do |month, hidden_ids, person|
           next [] unless month
 
           months = Tally::Insights.previous_months(month, TREND_MONTHS - 1) + [month]
-          totals = Tally::Insights.monthly(insight_repo.rows(from: months.first, to: month, without: hidden_ids), months)
+          totals = Tally::Insights.monthly(insight_repo.rows(from: months.first, to: month, without: hidden_ids, person: person&.id), months)
           totals.drop_while { _1[:income_cents].zero? && _1[:spending_cents].zero? }
         end
 
@@ -42,11 +43,11 @@ module Tally
           account_repo.all.reject { _1.currency == Tally::Money::DEFAULT_CURRENCY }
         end
 
-        expose :report do |month, hidden_ids|
+        expose :report do |month, hidden_ids, person|
           next unless month
 
           from = Tally::Insights.previous_months(month, Tally::Report::AVERAGE_MONTHS).first
-          Tally::Report.new(insight_repo.rows(from:, to: month, without: hidden_ids), month:)
+          Tally::Report.new(insight_repo.rows(from:, to: month, without: hidden_ids, person: person&.id), month:)
         end
       end
     end

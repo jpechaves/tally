@@ -119,8 +119,18 @@ module Tally
       end
 
       # A link to the transactions behind a number (Tally::TransactionFilter), with the
-      # way back to this page.
-      def transactions_path(**filters) = with_back(Tally::TransactionFilter.new(**filters).path)
+      # way back to this page. On a page showing one person of the household (?person=,
+      # issue #21), the rows are theirs too, unless +filters+ say otherwise.
+      def transactions_path(**filters)
+        person = _context.request.params[:person].to_s[Tally::TransactionFilter::ID]&.to_i
+        with_back(Tally::TransactionFilter.new(person:, **filters).path)
+      end
+
+      # +path+ with a query of the +params+ that are set: "/report?month=2026-09&person=2".
+      def path_with_query(path, **params)
+        params = params.compact
+        params.empty? ? path : "#{path}?#{URI.encode_www_form(params)}"
+      end
 
       # A link to a row's page, with the way back to this page; on that page itself, the
       # page as it is.
@@ -168,8 +178,9 @@ module Tally
       end
 
       # What a filter without a form field shows, for its badge on the transactions page.
-      def carried_filter_label(key, value, payee:, purchase:, trip: nil)
+      def carried_filter_label(key, value, payee:, purchase:, trip: nil, person: nil)
         case key
+        when :person then person || value
         when :nature then nature_label((value == Tally::TransactionFilter::UNSET) ? nil : value)
         when :payee then payee
         when :purchase then purchase ? "#{purchase.description} (#{purchase.account_name})" : value

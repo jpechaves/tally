@@ -5,7 +5,7 @@
   <% if report.nil? %>
     <p><%= t("accounts.report.empty") %></p>
   <% else %>
-    <%= render "report/month_picker", path: "/accounts/#{account.id}/report", months: months, month: month %>
+    <%= render "report/month_picker", path: "/accounts/#{account.id}/report", months: months, month: month, person: nil %>
     <% averaged = report.averaged_months %>
     <div class="cards">
       <div><%= t("report.show.spending") %><strong><%= money(report.spending_cents, currency) %></strong><span class="note"><%= t("report.show.average_of", amount: money(report.average_spending_cents, currency)) %></span></div>

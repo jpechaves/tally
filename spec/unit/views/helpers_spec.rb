@@ -51,6 +51,8 @@ RSpec.describe Tally::Views::Helpers do
       .to eq(helpers.nature_label(nil))
     expect(helpers.carried_filter_label(:nature, "fixed", payee: nil, purchase: nil)).to eq(helpers.nature_label("fixed"))
     expect(helpers.carried_filter_label(:payee, "description:loja", payee: "Loja", purchase: nil)).to eq("Loja")
+    expect(helpers.carried_filter_label(:person, 7, payee: nil, purchase: nil, person: "Bruno")).to eq("Bruno")
+    expect(helpers.carried_filter_label(:person, 7, payee: nil, purchase: nil)).to eq(7)
     expect(helpers.carried_filter_label(:purchase, "abc", payee: nil, purchase:)).to eq("LOJA EXEMPLO (Nubank cartão)")
     expect(helpers.carried_filter_label(:purchase, "abc", payee: nil, purchase: nil)).to eq("abc")
     expect(helpers.carried_filter_label(:month, "2026-09", payee: nil, purchase: nil)).to be_nil

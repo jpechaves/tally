@@ -1,9 +1,11 @@
 <main>
   <h1><%= t("report.show.title") %></h1>
+  <%= render "shared/person_switch", path: "/report", people: people, person: person, month: month %>
+  <%= render "shared/unmatched", count: unmatched_rows %>
   <% if report.nil? %>
     <p><%= t("common.nothing_imported_html") %></p>
   <% else %>
-    <%= render "report/month_picker", path: "/report", months: months, month: month %>
+    <%= render "report/month_picker", path: "/report", months: months, month: month, person: person %>
     <% averaged = report.averaged_months %>
     <div class="cards">
       <div><%= t("report.show.income") %><strong><%= money(report.income_cents) %></strong><span class="note"><%= t("report.show.average_of", amount: money(report.average_income_cents)) %></span></div>
@@ -14,8 +16,8 @@
       <%= t("report.show.counting") %>
       <% unless foreign_accounts.empty? %><%= t("report.show.foreign_accounts") %>
         <% foreign_accounts.each_with_index do |account, index| %><%= ", " if index.positive? %><a href="/accounts/<%= account.id %>/report"><%= account.name %></a><% end %>.<% end %>
-      <% if hide_trips %><%= " " %><%= t("report.show.trips_hidden") %> <a href="/report?month=<%= month %>"><%= t("report.show.show_trips") %></a>
-      <% elsif any_trips %><%= " " %><a href="/report?month=<%= month %>&amp;trips=hide"><%= t("report.show.hide_trips") %></a><% end %></p>
+      <% if hide_trips %><%= " " %><%= t("report.show.trips_hidden") %> <a href="<%= path_with_query("/report", month: month, person: person&.id) %>"><%= t("report.show.show_trips") %></a>
+      <% elsif any_trips %><%= " " %><a href="<%= path_with_query("/report", month: month, person: person&.id, trips: "hide") %>"><%= t("report.show.hide_trips") %></a><% end %></p>
 
     <%= render "charts/trend", currency: Tally::Money::DEFAULT_CURRENCY, title: t("report.show.trend"), trend: trend, month: month %>
 
