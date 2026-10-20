@@ -239,6 +239,9 @@ details.danger form { margin-top: 12px; }
 label { color: var(--ink-muted); }
 input[type=checkbox] { accent-color: var(--accent); }
 .filters, form.inline, .group form { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 16px; }
+/* The people of the household, each a rename form (accounts page). */
+ul.people { list-style: none; margin: 0; padding: 0; }
+ul.people form { margin-bottom: 8px; }
 .group form { margin-bottom: 0; }
 form.inline { margin-bottom: 0; }
 /* A filter the form has no field for (a payee, a nature), with a link that drops it. */
