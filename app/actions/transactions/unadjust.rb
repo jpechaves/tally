@@ -12,7 +12,7 @@ module Tally
           halt 404 unless transaction_repo.row(id)
 
           transaction_repo.remove_adjustment(id)
-          response.redirect_to routes.path(:transaction, id:)
+          response.redirect_to path_with(routes.path(:transaction, id:), back: back_param(request.params[:back]))
         end
       end
     end

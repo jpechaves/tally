@@ -1,7 +1,7 @@
 <main>
   <h1><%= t("budgets.index.title") %></h1>
   <%= render "report/month_picker", path: "/budgets", months: months, month: month %>
-  <% if error_code %><p class="error"><%= t("errors.#{error_code}", default: error_code.to_s) %></p><% end %>
+  <% if error_code %><%= render "shared/message", kind: :error, text: t("errors.#{error_code}", default: error_code.to_s) %><% end %>
   <p><% if plan && plan[:starts_month] <= month %><%= t("budgets.index.from_plan", amount: money(plan[:target_cents]), month: month_label(plan[:starts_month])) %>
       <a href="/plan/<%= plan[:id] %>"><%= t("budgets.index.see_plan") %></a>
     <% elsif plan %><%= t(budget_month.lines.empty? ? "budgets.index.before_plan" : "budgets.index.before_plan_by_hand", amount: money(plan[:target_cents]), month: month_label(plan[:starts_month]), this_month: month_label(month)) %>

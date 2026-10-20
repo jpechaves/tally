@@ -67,6 +67,8 @@ RSpec.describe "Refused requests", :db, type: :request do
     it "says why it couldn't rename a category" do
       post "/categories/#{category_id("Delivery")}", name: " "
       expect(location).to eq("/categories?error=empty_name")
+      get location
+      expect(last_response.body).to include(%(<p class="error" role="alert">A category needs a name.</p>))
     end
 
     it "says a rule's amount isn't one" do

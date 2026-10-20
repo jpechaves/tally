@@ -21,7 +21,8 @@ module Tally
         transaction do
           counterparty_repo.set_self(counterparty.id, is_self)
           ids = transaction_repo.ids_for_counterparty(counterparty.id)
-          transaction_repo.rows(ids).each { |row| update(row, counterparty, is_self) }
+          account_ids = Hash.new { |known, name| known[name] = account_repo.ensure(name).id }
+          transaction_repo.rows(ids).each { |row| update(row, counterparty, is_self, account_ids) }
           pair_transfers.call(touched_ids: ids)
           categorize.call(ids:)
         end
@@ -31,11 +32,11 @@ module Tally
 
       private
 
-      def update(row, counterparty, is_self)
+      def update(row, counterparty, is_self, account_ids)
         if is_self && %w[purchase income].include?(row[:kind])
           counter = Importers.self_account_for(counterparty)
           transaction_repo.update(row[:id], kind: "transfer",
-            counter_account_id: counter && account_repo.ensure(counter).id)
+            counter_account_id: counter && account_ids[counter])
         elsif !is_self && row[:kind] == "transfer" && row[:counter_account_id] != row[:account_id]
           # Back to what the statement said. (A Pix no Crédito leg points at its own account
           # and stays a transfer.)

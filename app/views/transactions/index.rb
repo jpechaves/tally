@@ -9,6 +9,7 @@ module Tally
         PER_PAGE = Tally::Pagination::PER_PAGE
 
         expose :filter, decorate: false
+        expose :return_to, decorate: false
         expose :changed, :skipped, decorate: false
 
         expose :accounts do
@@ -32,9 +33,10 @@ module Tally
           Tally::Pagination.page(page, total: totals[:rows], per_page: PER_PAGE)
         end
 
-        # Where a change of category from the table comes back to: these filters and page.
-        expose :back, decorate: false do |filter, pagination|
-          filter.query.merge(page: pagination.number)
+        # Where a change of category from the table comes back to: these filters and page,
+        # and the page that sent you here.
+        expose :back, decorate: false do |filter, pagination, return_to|
+          filter.query.merge(page: pagination.number, back: return_to).compact
         end
 
         expose :rows do |filter, pagination|

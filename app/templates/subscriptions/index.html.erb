@@ -1,4 +1,5 @@
 <main>
+  <%= render "shared/breadcrumb", parents: [[t("layout.nav.cuts"), "/cuts"]], current: t("layout.nav.subscriptions") %>
   <h1><%= t("subscriptions.index.title") %></h1>
   <% if subscriptions.nil? %>
     <p><%= t("common.nothing_imported_html") %></p>

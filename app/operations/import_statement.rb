@@ -78,9 +78,11 @@ module Tally
         end
 
         counts = Hash.new(0)
+        known = transaction_repo.by_external_ids(account.id, statement.rows.map(&:external_id))
+        account_ids = Hash.new { |ids, name| ids[name] = account_repo.ensure(name).id }
         ids = statement.rows.map do |row|
-          attributes = attributes(row, card_statement_id)
-          existing = transaction_repo.by_external_id(account.id, row.external_id)
+          attributes = attributes(row, card_statement_id, account_ids)
+          existing = known[row.external_id]
 
           if existing.nil?
             counts[:inserted] += 1
@@ -117,7 +119,8 @@ module Tally
         end
       end
 
-      def attributes(row, card_statement_id)
+      # @param account_ids [Hash] account name => id, the account created the first time
+      def attributes(row, card_statement_id, account_ids)
         counterparty = row.counterparty && counterparty_repo.upsert(**row.counterparty)
         kind = row.kind
         counter_account = row.counter_account
@@ -141,7 +144,7 @@ module Tally
           installment_total: row.installment_total,
           purchase_key: row.purchase_key,
           counterparty_id: counterparty&.id,
-          counter_account_id: counter_account && account_repo.ensure(counter_account).id,
+          counter_account_id: counter_account && account_ids[counter_account],
           card_statement_id:,
           exchange_currency: row.exchange_currency,
           exchange_amount_cents: row.exchange_amount&.cents,

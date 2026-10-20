@@ -10,7 +10,7 @@
         <% if categories %><td><input type="checkbox" name="ids[]" value="<%= row[:id] %>" form="recategorize" aria-label="<%= t("transactions.table.select") %>"></td><% end %>
         <td><%= date(row[:occurred_on]) %></td>
         <td><%= row[:account_name] %></td>
-        <td title="<%= row[:raw_description] %>"><a href="/transactions/<%= row[:id] %>"><%= display_name(row) || row[:description] %></a></td>
+        <td title="<%= row[:raw_description] %>"><a href="<%= transaction_path(row[:id]) %>"><%= display_name(row) || row[:description] %></a></td>
         <td><%= kind_label(row[:kind]) %><% if row[:kind] == "transfer" %><%= row[:counter_account_name] ? " ↔ #{row[:counter_account_name]}" : "" %><%= row[:transfer_id] ? "" : " #{t("transactions.table.one_leg")}" %><% end %></td>
         <% if row[:category_source] == "bank" %><td class="suggested" title="<%= t("transactions.table.bank_suggestion") %>"><% else %><td><% end %><% if categories %>
           <form action="/transactions/category" method="post" class="inline-category">

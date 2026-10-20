@@ -62,6 +62,17 @@ pt-BR:
       transactions: Lançamentos
       trips: Viagens
 
+  breadcrumb:
+    back: Voltar
+    detail:
+      accounts: Relatório da conta
+      counterparties: Contraparte
+      imports: Importação
+      plan: Plano
+      transactions: Lançamento
+      trips: Viagem
+    label: Você está aqui
+
   charts:
     income: Receitas
     millions: "%{n} mi"
@@ -327,7 +338,6 @@ pt-BR:
       hint: "Em branco, volta a aparecer “%{name}”. Importações e regras continuam usando o nome do banco."
       note: Nota
     show:
-      back: Voltar
       bank_name: "No banco: %{name}"
       subscription: É uma assinatura
       subscription_note: Mostra na página de assinaturas mesmo quando ela não é encontrada lá.

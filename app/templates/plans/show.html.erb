@@ -1,5 +1,7 @@
 <main>
-  <h1><%= t("plans.show.title", amount: money(plan[:target_cents])) %></h1>
+  <% title = t("plans.show.title", amount: money(plan[:target_cents])) %>
+  <%= render "shared/breadcrumb", parents: [[t("layout.nav.plan"), "/plan"]], current: title %>
+  <h1><%= title %></h1>
   <p class="note"><%= status_label(:plan, plan[:status]) %> · <%= t("plans.show.baseline", from: month_label(plan[:baseline_from]), to: month_label(plan[:baseline_to])) %> ·
     <%= t("plans.show.budgets_from", month: month_label(plan[:starts_month])) %></p>
   <p class="notice">

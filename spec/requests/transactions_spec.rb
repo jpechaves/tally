@@ -16,7 +16,7 @@ RSpec.describe "Filtering transactions", :db, type: :request do
 
   def category_id(name) = db[:categories].where(name:).get(:id)
 
-  def descriptions(body) = body.scan(%r{<a href="/transactions/\d+">([^<]*)</a>}).flatten
+  def descriptions(body) = body.scan(%r{<a href="/transactions/\d+[^"]*">([^<]*)</a>}).flatten
 
   it "shows one category's rows in a month, with their total" do
     get "/transactions", category: category_id("Supermercado").to_s, month: "2026-09"
@@ -145,14 +145,14 @@ RSpec.describe "Installments link to their purchase", :db, type: :request do
 
   def installment(description, number) = db[:transactions].where(description:, installment_number: number).get(:id)
 
-  def descriptions(body) = body.scan(%r{<a href="/transactions/\d+">([^<]*)</a>}).flatten
+  def descriptions(body) = body.scan(%r{<a href="/transactions/\d+[^"]*">([^<]*)</a>}).flatten
 
   it "shows what is left of each purchase, linked to its installments" do
     allow(Date).to receive(:today).and_return(Date.new(2027, 1, 15))
     get "/installments"
 
     id = installment("LOJA EXEMPLO", 3)
-    expect(last_response.body).to match(%r{<a href="/transactions\?purchase=#{id}">LOJA EXEMPLO</a>.*?7 × R\$ 120\.00 = R\$ 840\.00}m)
+    expect(last_response.body).to match(%r{<a href="/transactions\?purchase=#{id}&amp;back=%2Finstallments">LOJA EXEMPLO</a>.*?7 × R\$ 120\.00 = R\$ 840\.00}m)
 
     get "/transactions", purchase: id.to_s
     body = last_response.body
@@ -166,7 +166,7 @@ RSpec.describe "Installments link to their purchase", :db, type: :request do
     allow(Date).to receive(:today).and_return(Date.new(2026, 8, 15))
     get "/report", month: "2026-07"
     second = installment("Hotel Exemplo", 2)
-    expect(last_response.body).to include(%(<a href="/transactions?purchase=#{second}">Hotel Exemplo</a>))
+    expect(last_response.body).to include(%(<a href="/transactions?purchase=#{second}&amp;back=%2Freport%3Fmonth%3D2026-07">Hotel Exemplo</a>))
 
     [second, installment("Hotel Exemplo", 1)].each do |id|
       get "/transactions", purchase: id.to_s
@@ -255,7 +255,7 @@ RSpec.describe "Searching transactions", :db, type: :request do
 
   def found(query, **filters)
     get "/transactions", q: query, **filters
-    last_response.body.scan(%r{<a href="/transactions/\d+">([^<]*)</a>}).flatten
+    last_response.body.scan(%r{<a href="/transactions/\d+[^"]*">([^<]*)</a>}).flatten
   end
 
   it "finds rows by any of their texts, without accents or case, every word in any order" do
@@ -310,7 +310,12 @@ RSpec.describe "Searching transactions", :db, type: :request do
     expect(row("Pagamento via conta")[:category_id]).to be_nil
 
     follow_redirect!
-    expect(last_response.body).to include("Changed the category of 2 rows. 1 transfer left as it was: transfers have no category.")
+    expect(last_response.body).to include(%(<p class="success" role="status">Changed the category of 2 rows. 1 transfer left as it was: transfers have no category.</p>))
+  end
+
+  it "says in red when a change of category reached no row" do
+    get "/transactions?q=pagamento&changed=0&skipped=1"
+    expect(last_response.body).to include(%(<p class="error" role="alert">Changed the category of 0 rows. 1 transfer left as it was))
   end
 
   it "refuses to change every row when nothing narrows them" do

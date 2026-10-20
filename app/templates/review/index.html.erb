@@ -1,6 +1,6 @@
 <main>
   <h1><%= t("review.index.title") %></h1>
-  <% if saved %><p class="notice"><%= t("review.index.saved", rows: t("common.row_count", count: saved.to_i)) %></p><% end %>
+  <% if saved %><%= render "shared/message", kind: :success, text: t("review.index.saved", rows: t("common.row_count", count: saved.to_i)) %><% end %>
   <% if groups.empty? %>
     <p><%= t("review.index.empty") %></p>
   <% else %>

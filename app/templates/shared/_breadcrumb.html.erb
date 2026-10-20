@@ -1,0 +1,6 @@
+<%# The way back above a page's title (issue #87): parents, [label, path] pairs from the
+    section down, then the current page's name, which isn't a link. %>
+<nav class="breadcrumb" aria-label="<%= t("breadcrumb.label") %>"><ol>
+  <% parents.each do |label, path| %><li><a href="<%= path %>"><%= label %></a></li><% end %>
+  <li><span aria-current="page"><%= current %></span></li>
+</ol></nav>

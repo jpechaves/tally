@@ -78,7 +78,7 @@ RSpec.describe "Adjusting a transaction", :db, type: :request do
     expect(rows.find { _1[:id] == purchase[:id] }).to include(amount_cents: purchase[:amount_cents] + 6466, original_cents: purchase[:amount_cents])
 
     get "/transactions/#{refund[:id]}"
-    expect(last_response.body).to include("counted in a purchase", %(href="/transactions/#{purchase[:id]}"))
+    expect(last_response.body).to include("counted in a purchase", %(href="/transactions/#{purchase[:id]}?back=))
 
     post "/transactions/#{refund[:id]}/adjustment", kind: "canceled"
     expect(last_response.location).to end_with("error=not_adjustable")

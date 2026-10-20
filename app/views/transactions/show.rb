@@ -8,6 +8,9 @@ module Tally
 
         expose :row
 
+        # The page that linked here, for the way back (issue #87).
+        expose :back, decorate: false
+
         # The error the adjustment form sent back, if any (config/i18n, "errors").
         expose :error_code, decorate: false
 

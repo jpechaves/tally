@@ -7,9 +7,13 @@ Tally looks like a dark product tool, after Linear's app: dense, quiet, and read
 - **One dark canvas, a ladder of surfaces.** The page is near-black (`--canvas` #010102). Panels, tables, stat tiles and charts sit one step up on charcoal (`--surface-1` #0f1011) with a 1px hairline border (`--hairline` #23252a) and 12px corners. Hover lifts a row one more step. No drop shadows, no gradients.
 - **Light gray ink in four steps.** `--ink` for values and headings, `--ink-muted` for body text, `--ink-subtle` for labels and notes, `--ink-tertiary` for what's disabled or struck through.
 - **One accent, used sparingly.** Lavender (`--accent` #5e6ad2) marks the current page in the sidebar, focus rings, and the one primary button on a page (import, make a plan, accept a plan, save a transaction). Every other button is a charcoal secondary button.
-- **Red and green only mean bad and good.** Over budget, spending up, a rejected import or an error is red; saved money, a bill that matches, money freed is green. They always come with words, never color alone.
+- **Red and green only mean bad and good.** Over budget, spending up, a rejected import or an error is red; saved money, a bill that matches, money freed is green. They always come with words, never color alone. The message an action leaves at the top of the page (`shared/message`) follows the same rule: green text on a faint green tint when it worked ("Changed the category of 2 rows."), red on a faint red tint when it didn't (a refused form, or a change that reached no row).
 - **Type.** Inter if installed, otherwise the system's UI sans (SF Pro on a Mac). 14px body, 26px page titles at weight 600 with slightly negative tracking, 11.5px uppercase group labels. Numbers in tables use tabular figures so columns line up; big stat values don't.
 - **Layout.** A 232px sidebar with the pages grouped by task (Overview, Planning, Data, Organize) and the language switch at the bottom. Below 860px it folds into a top bar, stat tiles go two per row, and wide tables scroll sideways inside their panel.
+
+## Breadcrumb
+
+Pages below a section show where they sit above the `<h1>`: small `--ink-subtle` crumbs, `›` between them, the lavender hover on links, and the current page last in `--ink-muted`, cut with an ellipsis when long. It is a `<nav>` with `aria-current="page"` on the last crumb (`app/templates/shared/_breadcrumb.html.erb`).
 
 ## Charts
 

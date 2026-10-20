@@ -23,7 +23,7 @@ RSpec.describe "An account's own report", :db, type: :request do
     expect(last_response).to be_ok
     expect(body).to include("Nubank Conta Global: where the money went", "US$ 119.95", "Amounts in US$", "nothing here is added to the reais")
     expect(body).not_to match(/R\$ 119[.,]95/)
-    expect(body).to include(%(href="/transactions?account=#{account_id}&amp;month=2026-07&amp;kind=spending">US$ 119.95</a>))
+    expect(body).to include(%(href="/transactions?account=#{account_id}&amp;month=2026-07&amp;kind=spending&amp;back=%2Faccounts%2F#{account_id}%2Freport%3Fmonth%3D2026-07">US$ 119.95</a>))
     expect(body).to include(%(<a href="/accounts/#{account_id}/report?month=2026-07">Jul 2026</a>))
     expect(body).to include("Loja Exemplo LONDON")
     expect(body).to include("No rows in the three months before, so there is no average yet.")

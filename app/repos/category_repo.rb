@@ -35,13 +35,14 @@ module Tally
       # id => kind ("expense" | "income") of the categories rules may use: not archived.
       def kinds = categories.dataset.where(archived_at: nil).select_hash(:id, :kind)
 
-      # Child names are unique in the seeds, so a name finds one category. A child wins
-      # over a parent of the same name.
-      def id_by_name(name)
-        categories.dataset.where(name:).order(Sequel.desc(Sequel.function(:coalesce, :parent_id, 0))).get(:id)
+      # name => id for the categories with these names. Child names are unique in the
+      # seeds, so a name finds one category. A child wins over a parent of the same name.
+      def ids_by_name(names)
+        categories.dataset.where(name: names).order(Sequel.function(:coalesce, :parent_id, 0)).select_hash(:name, :id)
       end
 
-      def find_by(name:, parent_id:) = categories.dataset.where(name:, parent_id:).first
+      # [name, parent_id] => id of every category.
+      def ids_by_name_and_parent = categories.dataset.select_hash(%i[name parent_id], :id)
 
       def create(name:, kind:, parent_id: nil, nature: nil, max_cut_pct: nil)
         if kind == "expense" && nature

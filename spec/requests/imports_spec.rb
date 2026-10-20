@@ -112,7 +112,7 @@ RSpec.describe "Importing statements", :db, type: :request do
     upload("NU_12345678_01JUL2026_31JUL2026.csv")
     account = db[:accounts].where(name: "Nubank conta").get(:id)
     net = db[:transactions].where(account_id: account).sum(:amount_cents)
-    rows = ->(body) { body.scan(%r{<a href="/transactions/\d+">}).size }
+    rows = ->(body) { body.scan(%r{<a href="/transactions/\d+[^"]*">}).size }
 
     get "/transactions", account:, month: "2026-07"
     body = last_response.body

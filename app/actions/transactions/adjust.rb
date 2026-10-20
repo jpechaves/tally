@@ -16,16 +16,16 @@ module Tally
 
           result = adjust_transaction.call(id:, kind:, amount:, refund_id:, note: request.params[:note])
           halt 404 if result.failure == :not_found
-          back(response, id, result.failure)
+          back(request, response, id, result.failure)
         rescue Tally::Money::ParseError
-          back(response, id, (kind == "reimbursed") ? :invalid_reimbursed_amount : :invalid_adjusted_amount)
+          back(request, response, id, (kind == "reimbursed") ? :invalid_reimbursed_amount : :invalid_adjusted_amount)
         end
 
         private
 
-        def back(response, id, error)
-          path = routes.path(:transaction, id:)
-          response.redirect_to error ? "#{path}?#{URI.encode_www_form(error:)}" : path
+        # Back to the row's page, with the error, if any, and the page that page goes back to.
+        def back(request, response, id, error)
+          response.redirect_to path_with(routes.path(:transaction, id:), error:, back: back_param(request.params[:back]))
         end
       end
     end

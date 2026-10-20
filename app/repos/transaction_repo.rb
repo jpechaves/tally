@@ -22,6 +22,11 @@ module Tally
         transactions.dataset.where(account_id:, external_id:).first
       end
 
+      # external_id => row, for the rows of the account already there with these ids.
+      def by_external_ids(account_id, external_ids)
+        transactions.dataset.where(account_id:, external_id: external_ids).to_hash(:external_id)
+      end
+
       def row(id) = transactions.dataset.where(id:).first
 
       def rows(ids) = transactions.dataset.where(id: ids).order(:id).all

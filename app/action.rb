@@ -23,6 +23,12 @@ module Tally
     # local path, so a link can't send you to another site.
     def back_param(value) = value.to_s[%r{\A/(?![/\\])[^\s]{0,500}\z}]
 
+    # +path+ with a query of the +params+ that are set: "/transactions/5?back=%2Freview".
+    def path_with(path, **params)
+      params = params.compact
+      params.empty? ? path : "#{path}?#{URI.encode_www_form(params)}"
+    end
+
     # A "YYYY-MM" month from a param, or nil.
     def month_param(value) = value.to_s[Tally::Insights::MONTH]
 
