@@ -53,6 +53,7 @@ en:
       subscriptions: Subscriptions
       transactions: Transactions
       trips: Trips
+    system: System theme
 
   breadcrumb:
     back: Back
