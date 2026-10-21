@@ -206,11 +206,11 @@ module Tally
       end
 
       # How a home bill's month stands (Tally::HomeBills::Month): "paid on Oct 8, 2026 ·
-      # R$ 182.40 · Nubank conta", "due on Oct 10, 2026" or "late since Oct 10, 2026".
+      # R$ 182.40 · Bruno · Nubank conta (Bruno)", "due on Oct 10, 2026" or "late since Oct 10, 2026".
       def home_bill_status(entry)
         payment = entry.payment
         text = if payment
-          [t("home_bills.paid", date: date(payment[:paid_on])), money(payment[:amount_cents]), payment[:paid_by] || payment[:account_name]].compact.join(" · ")
+          [t("home_bills.paid", date: date(payment[:paid_on])), money(payment[:amount_cents]), payment[:paid_by], payment[:account_name]].compact.join(" · ")
         else
           t("home_bills.#{entry.status}", date: date(entry.due_on))
         end

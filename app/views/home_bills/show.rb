@@ -5,7 +5,7 @@ module Tally
     module HomeBills
       # One bill: each month with its payment, the rows that could be it, and its receipts.
       class Show < Tally::View
-        include Deps["repos.home_bill_repo", "repos.insight_repo"]
+        include Deps["repos.home_bill_repo", "repos.insight_repo", "repos.person_repo"]
 
         # With its payee as the rows name it today.
         expose :bill, decorate: false do |home_bill:|
@@ -28,6 +28,11 @@ module Tally
           ids = linked.values
           insight_repo.rows(from: Tally::Insights.previous_months(from, 1).first, to: Tally::Insights.next_months(to, 1).first)
             .reject { ids.include?(_1[:id]) }
+        end
+
+        # Who could have paid by hand; with only you, nobody to pick.
+        expose :people, decorate: false do
+          person_repo.all
         end
 
         expose :receipts, decorate: false do |bill|

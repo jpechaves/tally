@@ -3,10 +3,10 @@
 module Tally
   module Actions
     module HomeBills
-      # Marks a month paid: by an imported row (transaction_id), or by hand with the day, the
-      # amount and who paid.
+      # Marks a month paid: by an imported row (transaction_id), paid by its account's owner, or
+      # by hand with the day, the amount and who of the household paid (person_id, you if none).
       class Pay < Tally::Action
-        include Deps["repos.home_bill_repo"]
+        include Deps["repos.home_bill_repo", "repos.person_repo"]
 
         DATE = /\A\d{4}-\d{2}-\d{2}\z/
 
@@ -29,10 +29,12 @@ module Tally
           amount_cents = parse_amount(params[:amount]).cents
           raise ArgumentError unless amount_cents.positive?
 
-          {paid_on:, amount_cents:, paid_by: params[:paid_by].to_s.strip[0, 100].then { _1 unless _1.empty? }}
+          {paid_on:, amount_cents:, paid_by: payer(params[:person_id]).name}
         rescue ArgumentError, Tally::Money::ParseError
           halt 422, t("errors.invalid_payment")
         end
+
+        def payer(id) = id ? person_repo.find(id.to_i) || raise(ArgumentError) : person_repo.first
       end
     end
   end

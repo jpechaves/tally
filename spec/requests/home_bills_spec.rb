@@ -4,7 +4,7 @@ require "rack/test"
 
 RSpec.describe "Home bills", :db, type: :request do
   let(:db) { Hanami.app["db.gateway"].connection }
-  let(:conta) { db[:accounts].insert(name: "Nubank conta", kind: "checking") }
+  let(:conta) { db[:accounts].insert(name: "Nubank conta", kind: "checking", person_id: me_id) }
   let(:energy_company) { db[:counterparties].insert(name: "Energia Exemplo", match_key: "|ENERGIA EXEMPLO") }
   let(:category) { db[:categories].insert(name: "Contas da casa", kind: "expense") }
   let(:storage) { Hanami.app.root.join(Hanami.app["settings"].receipt_storage_dir) }
@@ -78,7 +78,7 @@ RSpec.describe "Home bills", :db, type: :request do
     again = db[:transactions].insert(row.except(:id))
 
     get "/home-bills/#{energy[:id]}"
-    expect(last_response.body).to include("paid on Oct 8, 2026 · R$ 182.40 · Nubank conta", %(href="/transactions/#{again}?back=))
+    expect(last_response.body).to include("paid on Oct 8, 2026 · R$ 182.40 · Eu · Nubank conta", %(href="/transactions/#{again}?back=))
     expect(last_response.body).not_to include(%(<option value="#{again}"))
 
     post "/home-bills/#{energy[:id]}/payments/remove", month: "2026-10"
@@ -87,15 +87,29 @@ RSpec.describe "Home bills", :db, type: :request do
     expect(last_response.status).to eq(404)
   end
 
-  it "marks a month paid by hand, with who paid" do
+  it "marks a month paid by hand, by you or whoever of the household paid" do
     energy = create_bill
     pay("2026-10-09", 5_000, "MERCADO EXEMPLO")
     get "/home-bills/#{energy[:id]}"
     expect(last_response.body).to include(%(<option value="" disabled selected>Pick the row</option>))
-    post "/home-bills/#{energy[:id]}/payments", month: "2026-09", paid_on: "2026-09-10", amount: "190.00", paid_by: "Bruno"
-    get "/home-bills/#{energy[:id]}"
-    expect(last_response.body).to include("paid on Sep 10, 2026 · R$ 190.00 · Bruno")
+    expect(last_response.body).not_to include(%(name="person_id"))
+    post "/home-bills/#{energy[:id]}/payments", month: "2026-09", paid_on: "2026-09-10", amount: "180.00"
 
+    bruno = db[:people].insert(name: "Bruno")
+    get "/home-bills/#{energy[:id]}"
+    expect(last_response.body).to include("paid on Sep 10, 2026 · R$ 180.00 · Eu", %(<select name="person_id" data-picker>),
+      %(<option value="#{me_id}" selected>Eu</option>), %(<option value="#{bruno}">Bruno</option>))
+    post "/home-bills/#{energy[:id]}/payments", month: "2026-10", paid_on: "2026-10-10", amount: "190.00", person_id: bruno.to_s
+    get "/home-bills/#{energy[:id]}"
+    expect(last_response.body).to include("paid on Oct 10, 2026 · R$ 190.00 · Bruno")
+
+    # A new name reaches the months they paid.
+    post "/people/#{bruno}", name: "Beto"
+    get "/home-bills/#{energy[:id]}"
+    expect(last_response.body).to include("paid on Oct 10, 2026 · R$ 190.00 · Beto", "paid on Sep 10, 2026 · R$ 180.00 · Eu")
+
+    post "/home-bills/#{energy[:id]}/payments", month: "2026-10", paid_on: "2026-10-10", amount: "190.00", person_id: "999"
+    expect(last_response.status).to eq(422)
     post "/home-bills/#{energy[:id]}/payments", month: "2026-10", paid_on: "2026-10-40", amount: "190.00"
     expect(last_response.status).to eq(422)
     post "/home-bills/#{energy[:id]}/payments", month: "2026-13", paid_on: "2026-10-10", amount: "190.00"
@@ -104,8 +118,6 @@ RSpec.describe "Home bills", :db, type: :request do
     expect(last_response.status).to eq(422)
     post "/home-bills/#{energy[:id]}/payments", month: "2026-10", paid_on: "2026-10-10", amount: "x"
     expect(last_response.status).to eq(422)
-    post "/home-bills/#{energy[:id]}/payments", month: "2026-10", paid_on: "2026-10-10", amount: "182.40", paid_by: " "
-    expect(db[:home_bill_payments].where(month: "2026-10").get(:paid_by)).to be_nil
   end
 
   it "keeps receipts on disk, serves them only through the app, and deletes them" do
