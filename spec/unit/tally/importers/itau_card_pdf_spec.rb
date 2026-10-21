@@ -318,6 +318,14 @@ RSpec.describe Tally::Importers::ItauCardPdf do
         expect(statement.warnings.map(&:to_s)).to contain_exactly(/3 rows adding up to -R\$ 0\.19 are printed twice/)
       end
 
+      it "drops both copies of two identical lines in a reprinted block" do
+        same = ItauBills.row("15/11", "LOJA EXEMPLO 01/02", "-0,05")
+        rows = [same, same, ItauBills.row("16/11", "FARMACIA EXEMPLO", "-0,09")]
+        statement = parse(ItauBills.december(reprinted: rows).to_pdf)
+
+        expect(statement.warnings.map(&:to_s)).to contain_exactly(/3 rows adding up to -R\$ 0\.19 are printed twice/)
+      end
+
       it "drops the city when exactly 3 letters of the name are left, and needs a city of 3 letters or more" do
         statement = parse(bill(ItauBills.row("01/09", "ABCSAO PAULO", "10,00", "outros SAO PAULO"),
           ItauBills.row("02/09", "LOJA EXEMPLOSAO", "11,00", "outros SAO PAULO"),
