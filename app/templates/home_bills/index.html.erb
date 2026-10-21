@@ -1,0 +1,42 @@
+<main>
+  <h1><%= t("home_bills.index.title") %></h1>
+  <p class="note"><%= t("home_bills.index.intro") %></p>
+  <% if bills.empty? %>
+    <p><%= t("home_bills.index.empty") %></p>
+  <% else %>
+    <div class="cards">
+      <div><%= t("home_bills.index.expected") %><strong><%= t("home_bills.index.a_month", amount: money(bills.sum { |bill, _| bill[:expected_cents].to_i })) %></strong></div>
+      <div><%= t("home_bills.index.late_title") %><strong><%= t("home_bills.index.late", count: bills.sum { |_, entries| entries.count { _1.status == :late } }) %></strong></div>
+    </div>
+    <div class="scroll"><table class="rows">
+      <thead><tr>
+        <th><%= t("home_bills.index.name") %></th><th><%= t("report.show.category") %></th><th><%= t("home_bills.index.due_day") %></th>
+        <th class="num"><%= t("home_bills.index.expected") %></th>
+        <% months.each do |month| %><th><%= month_label(month) %></th><% end %>
+      </tr></thead>
+      <tbody>
+        <% bills.each do |bill, entries| %>
+          <tr>
+            <td><a href="/home-bills/<%= bill[:id] %>"><%= bill[:name] %></a></td>
+            <td><%= category_name(bill[:category_name]) %></td>
+            <td><%= t("home_bills.day", day: bill[:due_day]) %></td>
+            <td class="num"><%= money(bill[:expected_cents]) %></td>
+            <% entries.each do |entry| %><td><%= home_bill_status(entry) %></td><% end %>
+          </tr>
+        <% end %>
+      </tbody>
+    </table></div>
+  <% end %>
+
+  <h2 id="new"><%= t("home_bills.index.new") %></h2>
+  <form action="/home-bills" method="post">
+    <% if prefill[:payee_key] %>
+      <input type="hidden" name="payee_key" value="<%= prefill[:payee_key] %>"><input type="hidden" name="payee_label" value="<%= prefill[:name] %>">
+    <% end %>
+    <p><label><%= t("home_bills.index.name") %><br><input name="name" size="40" required value="<%= prefill[:name] %>"></label></p>
+    <p><label><%= t("report.show.category") %><br><%= render "categories/select", none: nil, name: "category_id", selected: nil, categories: categories, blank: t("home_bills.index.no_category"), form: nil %></label></p>
+    <p><label><%= t("home_bills.index.expected_optional") %><br><input name="expected" inputmode="decimal" size="12" value="<%= prefill[:expected] %>"></label></p>
+    <p><label><%= t("home_bills.index.due_day") %><br><input type="number" name="due_day" min="1" max="31" required value="<%= prefill[:due_day] %>"></label></p>
+    <button type="submit" class="primary"><%= t("common.add") %></button>
+  </form>
+</main>

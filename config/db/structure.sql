@@ -266,6 +266,43 @@ CREATE TABLE `trip_rows`(
   PRIMARY KEY(`trip_id`, `transaction_id`),
   CONSTRAINT `trip_rows_included` CHECK(included IN(0, 1))
 ) STRICT;
+CREATE TABLE `home_bills`(
+  `id` integer NOT NULL PRIMARY KEY AUTOINCREMENT,
+  `name` text NOT NULL,
+  `category_id` integer REFERENCES `categories` ON DELETE SET NULL,
+  `expected_cents` integer,
+  `due_day` integer NOT NULL,
+  `payee_key` text,
+  `payee_label` text,
+  `created_at` text DEFAULT((strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))) NOT NULL,
+  CONSTRAINT `home_bills_due_day` CHECK(due_day BETWEEN 1 AND 31)
+) STRICT;
+CREATE TABLE `home_bill_payments`(
+  `home_bill_id` integer NOT NULL REFERENCES `home_bills` ON DELETE CASCADE,
+  `month` text NOT NULL,
+  `paid_on` text NOT NULL,
+  `amount_cents` integer NOT NULL,
+  `paid_by` text,
+  `account_name` text,
+  `external_id` text,
+  `created_at` text DEFAULT((strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))) NOT NULL,
+  PRIMARY KEY(`home_bill_id`, `month`),
+  CONSTRAINT `home_bill_payments_link` CHECK((account_name IS NULL) =(external_id IS NULL))
+) STRICT;
+CREATE TABLE `home_bill_receipts`(
+  `id` integer NOT NULL PRIMARY KEY AUTOINCREMENT,
+  `home_bill_id` integer NOT NULL REFERENCES `home_bills` ON DELETE CASCADE,
+  `month` text NOT NULL,
+  `sha256` text NOT NULL,
+  `mime` text NOT NULL,
+  `byte_size` integer NOT NULL,
+  `filename` text NOT NULL,
+  `uploaded_at` text DEFAULT((strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))) NOT NULL
+) STRICT;
+CREATE INDEX `home_bill_receipts_home_bill_id_month_index` ON `home_bill_receipts`(
+  `home_bill_id`,
+  `month`
+);
 INSERT INTO schema_migrations (filename) VALUES
 ('20261015000000_create_accounts.rb'),
 ('20261015100000_create_import_tables.rb'),
@@ -277,4 +314,5 @@ INSERT INTO schema_migrations (filename) VALUES
 ('20261021000000_add_display_name_and_note_to_counterparties.rb'),
 ('20261022000000_create_transaction_adjustments.rb'),
 ('20261023000000_create_subscription_marks.rb'),
-('20261024000000_create_trips.rb');
+('20261024000000_create_trips.rb'),
+('20261025000000_create_home_bills.rb');

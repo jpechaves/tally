@@ -291,3 +291,16 @@ tr.child .share > span { opacity: 0.6; }
   h1 { font-size: 22px; }
   table.rows th, table.rows td { padding: 8px 10px; }
 }
+
+/* Home bills (issue #113): a month's status, and its receipts as thumbnails. */
+.home-bill-paid { color: var(--good-ink); }
+.home-bill-late { color: var(--bad-ink); }
+.home-bill-month { border-top: 1px solid var(--hairline); margin-top: 24px; }
+.receipts { display: flex; flex-wrap: wrap; gap: 12px; margin: 8px 0 12px; }
+.receipts figure { margin: 0; display: grid; gap: 4px; justify-items: start; }
+.receipts img, .receipt-file { width: 112px; height: 112px; object-fit: contain; border: 1px solid var(--hairline); border-radius: var(--radius-md); background: var(--surface-1); }
+.receipt-file { display: grid; place-items: center; padding: 8px; text-align: center; font-size: 12.5px; overflow-wrap: anywhere; }
+.receipts figcaption form { display: inline; }
+.home-bill-month .picker, .home-bill-month .picker input, .home-bill-month select { width: min(100%, 36em); }
+form.delete-home-bill { margin-top: 32px; }
+main form input[size] { max-width: 100%; }

@@ -14,6 +14,10 @@ module Tally
     # audited or re-run. Relative paths are under the app root. Keep it out of git.
     setting :import_storage_dir, default: "storage/imports", constructor: Types::String
 
+    # Where receipts of home bills are kept (Tally::Receipts), named by their SHA-256. Back it
+    # up with the database; bin/reset-db leaves it alone. Keep it out of git.
+    setting :receipt_storage_dir, default: "storage/receipts", constructor: Types::String
+
     # The Itaú account only passes money from the Pix to the card bill, so its balance
     # should stay near zero; above this many cents (either way) the app shows a warning.
     # The language the app starts in: "pt-BR" or "en" (Tally::Locales). Each browser can

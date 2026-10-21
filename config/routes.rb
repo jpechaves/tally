@@ -40,6 +40,15 @@ module Tally
     post "/trips/rows", to: "trips.choose", as: :trip_rows
     get "/trips/:id", to: "trips.show", as: :trip
     post "/trips/:id/delete", to: "trips.delete", as: :delete_trip
+    get "/home-bills", to: "home_bills.index", as: :home_bills
+    post "/home-bills", to: "home_bills.create"
+    get "/home-bills/:id", to: "home_bills.show", as: :home_bill
+    post "/home-bills/:id/delete", to: "home_bills.delete", as: :delete_home_bill
+    post "/home-bills/:id/payments", to: "home_bills.pay", as: :home_bill_payments
+    post "/home-bills/:id/payments/remove", to: "home_bills.unpay", as: :home_bill_unpay
+    post "/home-bills/:id/receipts", to: "home_bills.upload", as: :home_bill_receipts
+    get "/receipts/:id", to: "receipts.show", as: :receipt
+    post "/receipts/:id/delete", to: "receipts.delete", as: :delete_receipt
 
     get "/plan", to: "plans.index", as: :plans
     post "/plan", to: "plans.create"
