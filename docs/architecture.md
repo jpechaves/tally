@@ -463,7 +463,7 @@ Each purchase on the installments page, and each installment in the report, link
 
 ### 8.7 Subscriptions and recurring charges
 
-`/subscriptions` (issue #74, `Tally::Subscriptions`) lists charges that repeat every month, from two years of `InsightRepo#rows` up to the latest month that is over. A payee (`Insights.payee_key`, so a card merchant and its Pix or boleto payments are one counterparty) is a subscription when, in some 4 months in a row, it charged in at least 3, each month's total within ±10% of their median. Rows count as adjusted (§6), so a canceled charge doesn't keep one alive.
+`/subscriptions` (issue #74, `Tally::Subscriptions`) lists charges that repeat every month, from two years of `InsightRepo#rows` up to the latest month that is over. A payee (`Insights.payee_key`, so a card merchant and its Pix or boleto payments are one counterparty) is a subscription when, in some 4 months in a row, it charged in at least 3, each month's total within ±10% of their median; the latest may be a price increase (below), so three charges with a rise still count. Rows count as adjusted (§6), so a canceled charge doesn't keep one alive.
 
 - A foreign charge counts together with its IOF row, which carries the same merchant, so the rate moving month to month doesn't break the match. Fees without a merchant (the card's own fee) and installments are left out.
 - Each row shows the payee (linked to its rows with `kind=spending&payee=…`), category, accounts, last charge and its date, cost per month (the last charge) and per year (×12), and the first month seen.

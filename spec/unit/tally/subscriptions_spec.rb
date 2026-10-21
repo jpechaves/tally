@@ -42,6 +42,7 @@ RSpec.describe Tally::Subscriptions do
     rows = monthly(-39.90, "STREAMFLIX", months: %w[2026-06 2026-07 2026-08], **streamflix) +
       [insight_row("2026-09-05", -44.90, "STREAMFLIX", **streamflix)]
     expect(subscriptions(rows).items.first).to have_attributes(increase_cents: 500, monthly_cents: 4_490)
+    expect(subscriptions(rows.drop(1)).items.first).to have_attributes(increase_cents: 500, first_month: "2026-07")
 
     varying = [-50.00, -52.00, -51.00, -53.00].zip(%w[2026-06 2026-07 2026-08 2026-09])
       .map { |amount, month| insight_row("#{month}-03", amount, "CLOUDBOX") }
