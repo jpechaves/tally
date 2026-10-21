@@ -33,13 +33,14 @@ module Tally
         find(people.dataset.insert(name:))
       end
 
-      # Renames a person and the accounts named after them.
+      # Renames a person, the accounts named after them and the home bills they paid.
       # @return [Boolean] false for a blank name or one taken
       def rename(id, name)
         name = name.to_s.strip
         return false if name.empty? || people.dataset.where(name:).exclude(id:).any?
 
         transaction do
+          home_bill_payments.dataset.where(paid_by: find(id).name).update(paid_by: name)
           people.dataset.where(id:).update(name:)
           unless id == first.id
             accounts.dataset.where(person_id: id).update(name: Sequel.join([:template, " (#{name})"]), updated_at: Repos.now)

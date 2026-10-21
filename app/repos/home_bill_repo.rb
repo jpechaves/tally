@@ -50,11 +50,12 @@ module Tally
 
       def unpay(home_bill_id, month) = home_bill_payments.dataset.where(home_bill_id:, month:).delete
 
-      # What a row is known by across re-imports, and what it paid.
+      # What a row is known by across re-imports, what it paid, and who: its account's owner.
       def link(transaction_id)
-        transactions.dataset.join(:accounts, id: TRANSACTIONS[:account_id]).where(TRANSACTIONS[:id] => transaction_id)
+        transactions.dataset.join(:accounts, id: TRANSACTIONS[:account_id]).left_join(:people, id: Sequel[:accounts][:person_id])
+          .where(TRANSACTIONS[:id] => transaction_id)
           .select(Sequel[:accounts][:name].as(:account_name), TRANSACTIONS[:external_id], TRANSACTIONS[:occurred_on].as(:paid_on),
-            Sequel.function(:abs, TRANSACTIONS[:amount_cents]).as(:amount_cents)).first
+            Sequel.function(:abs, TRANSACTIONS[:amount_cents]).as(:amount_cents), Sequel[:people][:name].as(:paid_by)).first
       end
 
       # The rows payments are linked to, today, after any re-import.

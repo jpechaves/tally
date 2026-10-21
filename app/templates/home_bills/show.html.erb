@@ -38,7 +38,11 @@
             <input type="hidden" name="month" value="<%= entry.month %>">
             <p><label><%= t("home_bills.show.paid_on") %><br><input type="date" name="paid_on" required value="<%= entry.due_on %>"></label></p>
             <p><label><%= t("home_bills.show.amount") %><br><input name="amount" inputmode="decimal" size="12" required value="<%= bill[:expected_cents] && amount_field(bill[:expected_cents]) %>"></label></p>
-            <p><label><%= t("home_bills.show.paid_by") %><br><input name="paid_by" size="30"></label></p>
+            <% if people.size > 1 %>
+              <p><label><%= t("home_bills.show.paid_by") %><br><select name="person_id" data-picker>
+                <% people.each_with_index do |person, index| %><option value="<%= person.id %>"<%= " selected" if index.zero? %>><%= person.name %></option><% end %>
+              </select></label></p>
+            <% end %>
             <button type="submit"><%= t("home_bills.show.mark_paid") %></button>
           </form>
         </details>

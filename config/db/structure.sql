@@ -324,4 +324,5 @@ INSERT INTO schema_migrations (filename) VALUES
 ('20261023000000_create_subscription_marks.rb'),
 ('20261024000000_create_trips.rb'),
 ('20261025000000_create_home_bills.rb'),
-('20261026000000_create_people.rb');
+('20261026000000_create_people.rb'),
+('20261027120000_home_bill_payers.rb');
