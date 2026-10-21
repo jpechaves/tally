@@ -59,6 +59,8 @@ RSpec.describe "Adjusting every installment of a purchase", :db, type: :request 
     expect(counted).to eq([-10_001, -10_000])
     get "/installments"
     expect(last_response.body).to include("2 × R$ 100.00 = R$ 200.00")
+    get "/transactions/#{hotel.last[:id]}"
+    expect(last_response.body).to include("real total: R$ 600.01.", %(value="600.01"))
 
     post "/transactions/#{hotel.first[:id]}/adjustment", kind: "reimbursed", scope: "purchase", amount: "3000.00"
     expect(db[:purchase_adjustments].count).to eq(1)

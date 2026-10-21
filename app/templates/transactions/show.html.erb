@@ -48,9 +48,12 @@
       <p><%= t("transactions.adjustment.counts_as", amount: money(row[:counted_cents], row[:currency]), original: money(row[:amount_cents], row[:currency])) %>
         <% if row[:refund_transaction_id] %><a href="<%= transaction_path(row[:refund_transaction_id]) %>"><%= t("transactions.adjustment.the_refund") %></a><% end %></p>
       <% if row[:adjustment_note] %><p class="note"><%= row[:adjustment_note] %></p><% end %>
-      <% if row[:purchase_adjustment_id] %><p class="note"><%= t("transactions.adjustment.whole_purchase", kind: t("transactions.adjustment.badge.#{row[:adjustment_kind]}", amount: money(row[:adjustment_cents], row[:currency]))) %></p><% end %>
+      <% if purchase_adjustment %>
+        <% total = purchase_adjustment[:amount_cents] && money(purchase_adjustment[:amount_cents], row[:currency]) %>
+        <p class="note"><%= t("transactions.adjustment.whole_purchase", kind: t("transactions.adjustment.badge.#{purchase_adjustment[:kind]}", amount: total)) %><%= " #{t("transactions.adjustment.purchase_total", amount: total)}" if purchase_adjustment[:kind] == "amount_changed" %></p>
+      <% end %>
       <form action="/transactions/<%= row[:id] %>/adjustment/remove" method="post"><%= render "transactions/back", back: {back:}.compact %>
-        <% if row[:purchase_adjustment_id] %>
+        <% if purchase_adjustment %>
           <button type="submit"><%= t("transactions.adjustment.remove_row") %></button>
           <button type="submit" name="scope" value="purchase"><%= t("transactions.adjustment.remove_purchase") %></button>
         <% else %><button type="submit"><%= t("transactions.adjustment.remove") %></button><% end %>
@@ -68,12 +71,13 @@
       </p>
       <% unless installments.empty? %>
         <p>
-          <label><input type="radio" name="scope" value="row"<%= " checked" unless row[:purchase_adjustment_id] %>> <%= t("transactions.adjustment.scope.row") %></label>
-          <label><input type="radio" name="scope" value="purchase"<%= " checked" if row[:purchase_adjustment_id] %>> <%= t("transactions.adjustment.scope.purchase", total: "#{row[:installment_total]} × #{money(row[:amount_cents].abs, row[:currency])}") %></label>
+          <label><input type="radio" name="scope" value="row"<%= " checked" unless purchase_adjustment %>> <%= t("transactions.adjustment.scope.row") %></label>
+          <label><input type="radio" name="scope" value="purchase"<%= " checked" if purchase_adjustment %>> <%= t("transactions.adjustment.scope.purchase", total: "#{row[:installment_total]} × #{money(row[:amount_cents].abs, row[:currency])}") %></label>
           <br><span class="note"><%= t("transactions.adjustment.scope.hint") %></span>
         </p>
       <% end %>
-      <p><label><%= t("transactions.adjustment.amount") %><br><input name="amount" inputmode="decimal" size="12" value="<%= amount_field(row[:adjustment_cents].abs) if row[:adjustment_cents] && !row[:refund_transaction_id] %>"></label>
+      <p><label><%= t("transactions.adjustment.amount") %><br><input name="amount" inputmode="decimal" size="12" value="<%= if purchase_adjustment then purchase_adjustment[:amount_cents] && amount_field(purchase_adjustment[:amount_cents])
+          elsif row[:adjustment_cents] && !row[:refund_transaction_id] then amount_field(row[:adjustment_cents].abs) end %>"></label>
         <span class="note"><%= t("transactions.adjustment.amount_hint") %></span></p>
       <% unless refund_candidates.empty? %>
         <p><label><%= t("transactions.adjustment.refund") %><br><select name="refund_id">

@@ -31,6 +31,12 @@ module Tally
           transaction_repo.list(Tally::TransactionFilter.new(purchase: row[:id]))
         end
 
+        # The adjustment of the whole purchase this row's adjustment came from, if any: its
+        # amount is the purchase's, not this installment's share.
+        expose :purchase_adjustment, decorate: false do |row|
+          row[:purchase_adjustment_id] && transaction_repo.purchase_adjustment(row[:purchase_adjustment_id])
+        end
+
         # Rows that could have paid this purchase back, for the reimbursed form.
         expose :refund_candidates do |row|
           next [] if row[:kind] == "transfer" || !row[:amount_cents].negative? || row[:refunds_transaction_id]

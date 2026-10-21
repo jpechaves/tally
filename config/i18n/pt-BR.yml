@@ -397,6 +397,7 @@ pt-BR:
       no_refund: Nenhum, vou digitar o valor
       note: Observação
       original: Como diz o extrato
+      purchase_total: "Total real da compra: %{amount}."
       refund: Devolvido por um lançamento importado
       refund_of: "Este lançamento devolveu uma compra, então conta nela, não sozinho:"
       installments: Parcelas desta compra

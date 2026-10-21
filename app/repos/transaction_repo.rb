@@ -170,6 +170,8 @@ module Tally
         purchase_adjustments.dataset.where(id:).first
       end
 
+      def purchase_adjustment(id) = purchase_adjustments.dataset.where(id:).first
+
       def update_purchase_adjustment(id, through_transaction_id:) = purchase_adjustments.dataset.where(id:).update(through_transaction_id:)
 
       # Takes out the adjustment of the whole purchase the row's adjustment came from, from

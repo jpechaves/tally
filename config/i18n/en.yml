@@ -386,6 +386,7 @@ en:
       no_refund: None, I'll type the amount
       note: Note
       original: As the statement says
+      purchase_total: "The purchase's real total: %{amount}."
       refund: Paid back by an imported row
       refund_of: "This row paid back a purchase, so it counts there, not on its own:"
       installments: Installments of this purchase
