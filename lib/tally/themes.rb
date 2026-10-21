@@ -6,6 +6,9 @@ module Tally
   module Themes
     AVAILABLE = %w[dark light].freeze
 
+    # Not a theme of its own: forgets the choice, so the browser follows the system again.
+    SYSTEM = "system"
+
     # The cookie that remembers a browser's choice.
     COOKIE = "theme"
 
