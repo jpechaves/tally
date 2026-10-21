@@ -113,7 +113,7 @@ main { padding: 32px 40px 64px; max-width: 1160px; width: 100%; min-width: 0; }
 
 /* --- Type ----------------------------------------------------------------------------- */
 
-h1 { margin: 0 0 20px; font-size: 26px; line-height: 1.2; font-weight: 600; letter-spacing: -0.025em; }
+h1 { margin: 0 0 20px; font-size: 26px; line-height: 1.2; font-weight: 600; letter-spacing: -0.025em; overflow-wrap: anywhere; }
 /* Breadcrumb: small muted crumbs above the title, "›" between them, the current page last. */
 .breadcrumb ol { display: flex; flex-wrap: wrap; align-items: center; margin: 0 0 8px; padding: 0; list-style: none; font-size: 12.5px; color: var(--ink-subtle); }
 .breadcrumb li { display: flex; min-width: 0; }
@@ -136,7 +136,9 @@ th, td { text-align: left; vertical-align: top; padding: 6px 16px 6px 0; }
 th { font-weight: 500; color: var(--ink-subtle); }
 
 /* Tables scroll sideways inside their own box, never the page. */
-.scroll { max-width: 100%; overflow-x: auto; }
+/* position: relative keeps a picker's hidden native <select> (position: absolute) inside the
+   box, so it scrolls with the table instead of widening the page. */
+.scroll { max-width: 100%; overflow-x: auto; position: relative; }
 
 table.rows { width: 100%; background: var(--surface-1); border: 1px solid var(--hairline); border-radius: var(--radius-lg); overflow: hidden; }
 table.rows th, table.rows td { padding: 9px 14px; }
@@ -183,6 +185,7 @@ p.error[role=alert] { background: rgba(208, 59, 59, 0.1); }
 /* --- Forms ------------------------------------------------------------------------------ */
 
 input, select, textarea, button { font: inherit; color: inherit; }
+select, textarea { max-width: 100%; }
 input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not([type=file]), select, textarea {
   background: var(--surface-1); color: var(--ink); border: 1px solid var(--hairline-strong); border-radius: var(--radius-md); padding: 6px 10px; min-height: 32px;
 }
