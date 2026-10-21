@@ -49,6 +49,8 @@ RSpec.describe "The household", :db, type: :request do
     post "/counterparties/#{jose}/self", person: bruno.to_s
     get "/counterparties"
     expect(last_response.body).to include("JOSE DA SILVA EXEMPLO</span> (Bruno)", %(<option value="#{bruno}" selected>Bruno</option>))
+    expect(last_response.body).to include("Pick who in the household each name is")
+    expect(last_response.body).not_to include("This is me")
 
     post "/counterparties/#{party("MARIA E SOUZA")}/self", person: me_id.to_s
     get "/transactions", kind: "unmatched"

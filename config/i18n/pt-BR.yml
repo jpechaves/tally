@@ -352,6 +352,10 @@ pt-BR:
       intro: >-
         Marque você mesmo (seu nome em outros bancos) com "Sou eu": aí um Pix entre suas
         próprias contas conta como transferência, nunca como gasto ou receita.
+      intro_household: >-
+        Escolha quem da casa é cada nome (seu nome e o das outras pessoas em outros bancos):
+        aí um Pix entre suas próprias contas, ou entre pessoas da casa, conta como transferência,
+        nunca como gasto ou receita.
       name: Nome
       no_match: "Nenhum nome contém “%{search}”."
       no_one: Ninguém da casa

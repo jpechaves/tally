@@ -341,6 +341,10 @@ en:
       intro: >-
         Mark yourself (your name at other banks) with "This is me": a Pix between your own
         accounts then counts as a transfer, never as spending or income.
+      intro_household: >-
+        Pick who in the household each name is (your names as other banks show them): a Pix between
+        your own accounts, or between people in the household, then counts as a transfer, never as
+        spending or income.
       name: Name
       no_match: "No one's name contains “%{search}”."
       no_one: No one of the household
