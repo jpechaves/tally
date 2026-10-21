@@ -42,9 +42,30 @@ module Tally
         Sequel[:adjustments][:amount_cents].as(:adjustment_cents),
         Sequel[:adjustments][:refund_transaction_id],
         Sequel[:adjustments][:note].as(:adjustment_note),
+        Sequel[:adjustments][:purchase_adjustment_id],
         Sequel[:refund_links][:transaction_id].as(:refunds_transaction_id)
       ]
     end
+
+    # How an amount for a whole card purchase (its real total, or what came back) splits
+    # over its installments (issue #69), the way the bank split the purchase: in proportion
+    # to each installment, so the rounding cents stay where the bank put them. Installments
+    # not imported yet weigh as much as the latest one.
+    # @param series [Array<Hash>] the purchase's installment rows (InstallmentCalendar.series)
+    # @return [Hash] installment number => cents, positive
+    def purchase_shares(series, cents)
+      Money.new(cents).allocate(installment_weights(series)).each_with_index.to_h { |share, index| [index + 1, share.cents] }
+    end
+
+    # What the purchase cost, in positive cents, as #purchase_shares counts it.
+    def purchase_cents(series) = installment_weights(series).sum
+
+    def installment_weights(series)
+      latest = series.last
+      by_number = series.to_h { [_1[:installment_number], _1[:amount_cents].abs] }
+      (1..latest[:installment_total]).map { by_number.fetch(_1, latest[:amount_cents].abs) }
+    end
+    private_class_method :installment_weights
 
     # Ids of the rows of `dataset` that count as nothing: canceled, fully reimbursed, or
     # counted inside the purchase they paid back.
