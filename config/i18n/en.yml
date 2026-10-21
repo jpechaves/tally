@@ -547,7 +547,9 @@ en:
       income: Income
       installment: Installment
       installments: Card installments this month
-      installments_summary: "%{amount} of this month's spending, %{count} installments."
+      installments_summary:
+        one: "%{amount} of this month's spending, 1 installment."
+        other: "%{amount} of this month's spending, %{count} installments."
       nature: Nature
       no_average: No rows in the three months before, so there is no average yet.
       payee: Payee
