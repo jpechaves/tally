@@ -15,7 +15,7 @@ module Tally
     #    written.
     # 3. In one DB transaction: upsert each row by (account, external_id), flag rows the
     #    file no longer has, link card merchants to the same company paid with a CNPJ,
-    #    pair transfers, categorize, and log the import with its counts.
+    #    pair transfers, categorize, adjust new installments of adjusted purchases, and log the import with its counts.
     # 4. Keep the original file under the import storage folder, named by its SHA-256.
     #
     # Every outcome is an `imports` row: Success(import) when applied or a duplicate,
@@ -28,7 +28,8 @@ module Tally
         "repos.import_repo",
         "repos.transaction_repo",
         "operations.pair_transfers",
-        "operations.categorize"
+        "operations.categorize",
+        "operations.adjust_purchase"
       ]
 
       # Fields that come from the bank and are updated on re-import. Everything else
@@ -109,6 +110,7 @@ module Tally
         linked = counterparty_repo.link_merchants
         pair_transfers.call(touched_ids: ids)
         categorize.call(ids: ids | linked)
+        adjust_purchase.catch_up
 
         import_repo.update(import.id, rows_inserted: counts[:inserted], rows_updated: counts[:updated],
           rows_unchanged: counts[:unchanged], rows_missing: missing)

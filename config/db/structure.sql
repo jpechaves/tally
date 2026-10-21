@@ -237,6 +237,7 @@ CREATE TABLE `transaction_adjustments`(
   `note` text,
   `created_at` text DEFAULT((strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))) NOT NULL,
   `updated_at` text DEFAULT((strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))) NOT NULL,
+  `purchase_adjustment_id` integer REFERENCES `purchase_adjustments` ON DELETE CASCADE,
   CONSTRAINT `transaction_adjustments_kind` CHECK(kind IN('canceled', 'reimbursed', 'amount_changed')),
   CONSTRAINT `transaction_adjustments_amount` CHECK((kind = 'canceled' AND amount_cents IS NULL) OR(kind = 'reimbursed' AND amount_cents > 0) OR(kind = 'amount_changed' AND amount_cents <> 0)),
   CONSTRAINT `transaction_adjustments_refund` CHECK(refund_transaction_id IS NULL OR kind = 'reimbursed')
@@ -311,6 +312,17 @@ CREATE TABLE `people`(
   `name` text NOT NULL UNIQUE,
   `created_at` text DEFAULT((strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))) NOT NULL
 ) STRICT;
+CREATE TABLE `purchase_adjustments`(
+  `id` integer NOT NULL PRIMARY KEY AUTOINCREMENT,
+  `transaction_id` integer NOT NULL UNIQUE REFERENCES `transactions` ON DELETE CASCADE,
+  `kind` text NOT NULL,
+  `amount_cents` integer,
+  `note` text,
+  `through_transaction_id` integer NOT NULL,
+  `created_at` text DEFAULT((strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))) NOT NULL,
+  CONSTRAINT `purchase_adjustments_kind` CHECK(kind IN('canceled', 'reimbursed', 'amount_changed')),
+  CONSTRAINT `purchase_adjustments_amount` CHECK((kind = 'canceled') =(amount_cents IS NULL) AND(amount_cents IS NULL OR amount_cents > 0))
+) STRICT;
 INSERT INTO schema_migrations (filename) VALUES
 ('20261015000000_create_accounts.rb'),
 ('20261015100000_create_import_tables.rb'),
@@ -325,4 +337,5 @@ INSERT INTO schema_migrations (filename) VALUES
 ('20261024000000_create_trips.rb'),
 ('20261025000000_create_home_bills.rb'),
 ('20261026000000_create_people.rb'),
-('20261027120000_home_bill_payers.rb');
+('20261027120000_home_bill_payers.rb'),
+('20261029000000_create_purchase_adjustments.rb');

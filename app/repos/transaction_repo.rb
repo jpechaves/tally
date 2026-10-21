@@ -146,15 +146,37 @@ module Tally
       # The adjustment whose reimbursement this row paid, if any.
       def refund_link(refund_transaction_id) = transaction_adjustments.dataset.where(refund_transaction_id:).first
 
-      # One adjustment per row: a new one replaces the old.
-      def save_adjustment(transaction_id, kind:, amount_cents: nil, refund_transaction_id: nil, note: nil)
-        attributes = {kind:, amount_cents:, refund_transaction_id:, note:}
+      # One adjustment per row: a new one replaces the old, and leaves its purchase's
+      # adjustment (issue #69) unless it comes from it.
+      def save_adjustment(transaction_id, kind:, amount_cents: nil, refund_transaction_id: nil, note: nil, purchase_adjustment_id: nil)
+        attributes = {kind:, amount_cents:, refund_transaction_id:, note:, purchase_adjustment_id:}
         transaction_adjustments.dataset.insert_conflict(
           target: :transaction_id, update: attributes.to_h { [_1, Sequel[:excluded][_1]] }.merge(updated_at: Repos.now)
         ).insert(transaction_id:, **attributes)
       end
 
       def remove_adjustment(transaction_id) = transaction_adjustments.dataset.where(transaction_id:).delete
+
+      # Adjustments of whole card purchases (Operations::AdjustPurchase), oldest first.
+      def all_purchase_adjustments = purchase_adjustments.dataset.order(:id).all
+
+      # A purchase's adjustment, made from the installment `transaction_id`, replacing any
+      # other made on the installments `series_ids`.
+      # @return [Hash] the new row
+      def save_purchase_adjustment(transaction_id, series_ids:, **attributes)
+        purchase_adjustments.dataset
+          .where(Sequel.|({id: purchase_adjustment_ids(series_ids)}, {transaction_id: series_ids})).delete
+        id = purchase_adjustments.dataset.insert(transaction_id:, through_transaction_id: series_ids.max, **attributes)
+        purchase_adjustments.dataset.where(id:).first
+      end
+
+      def purchase_adjustment(id) = purchase_adjustments.dataset.where(id:).first
+
+      def update_purchase_adjustment(id, through_transaction_id:) = purchase_adjustments.dataset.where(id:).update(through_transaction_id:)
+
+      # Takes out the adjustment of the whole purchase the row's adjustment came from, from
+      # every installment.
+      def remove_purchase_adjustment(transaction_id) = purchase_adjustments.dataset.where(id: purchase_adjustment_ids(transaction_id)).delete
 
       # Rows that could have paid a purchase back: money coming in that is spending or
       # income (not a transfer), up to the purchase's amount, near its date, not already
@@ -203,6 +225,10 @@ module Tally
       def around(row, days)
         date = Date.iso8601(row[:occurred_on])
         (date + days.begin).iso8601..(date + days.end).iso8601
+      end
+
+      def purchase_adjustment_ids(transaction_id)
+        transaction_adjustments.dataset.where(transaction_id:).exclude(purchase_adjustment_id: nil).select(:purchase_adjustment_id)
       end
 
       # Days between the column's date and the row's, for ordering by the closest.

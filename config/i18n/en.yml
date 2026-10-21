@@ -53,6 +53,7 @@ en:
       subscriptions: Subscriptions
       transactions: Transactions
       trips: Trips
+    system: System theme
 
   breadcrumb:
     back: Back
@@ -104,6 +105,7 @@ en:
     not_a_draft: This plan was already accepted.
     not_adjustable: This row cannot be adjusted.
     not_found: That is no longer there.
+    not_installment: Only a card purchase in installments can be adjusted as a whole.
     not_reimbursable: Only money that left can be reimbursed.
     refused: That request couldn't be done.
     title: That didn't work
@@ -385,13 +387,25 @@ en:
       no_refund: None, I'll type the amount
       note: Note
       original: As the statement says
+      purchase_total: "The purchase's real total: %{amount}."
       refund: Paid back by an imported row
       refund_of: "This row paid back a purchase, so it counts there, not on its own:"
+      installments: Installments of this purchase
       remove: Remove the adjustment
+      remove_purchase: Remove it from every installment
+      remove_row: Remove it from this installment only
+      scope:
+        hint: >-
+          For every installment, type the whole purchase's amount: what came back, or its real
+          total. It is split over the installments the way the bank split the purchase, and
+          installments imported later are adjusted as they arrive.
+        purchase: "Every installment of this purchase (%{total})"
+        row: This installment only
       the_purchase: see the purchase
       the_refund: (see the row that paid it back)
       title: Canceled, reimbursed or another amount
       transfer: A transfer between your accounts never counts as spending, so there is nothing to adjust.
+      whole_purchase: "Applies to every installment of this purchase: %{kind}."
     table:
       account: Account
       amount: Amount

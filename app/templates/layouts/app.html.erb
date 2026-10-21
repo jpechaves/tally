@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html lang="<%= locale %>" data-theme="<%= Tally::Themes.pick(request.cookies[Tally::Themes::COOKIE]) || "system" %>">
+<% picked_theme = Tally::Themes.pick(request.cookies[Tally::Themes::COOKIE]) %>
+<html lang="<%= locale %>" data-theme="<%= picked_theme || "system" %>">
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -40,11 +41,14 @@
               <button type="submit" name="locale" value="<%= code %>" lang="<%= code %>"><svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6"/><path d="M2 8h12M8 2c-2.2 2.4-2.2 9.6 0 12M8 2c2.2 2.4 2.2 9.6 0 12"/></svg><%= name %></button>
             <% end %>
           </form>
-          <%# Both switches are sent; the stylesheet shows the one leading away from the theme in effect. %>
+          <%# Both switches are sent; the stylesheet shows the one leading away from the theme in effect. Once one is picked, the system's can be followed again. %>
           <form action="/theme" method="post">
             <input type="hidden" name="back" value="<%= request.fullpath %>">
             <button type="submit" name="theme" value="light" class="to-light"><svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="3"/><path d="M8 1.5v1.5M8 13v1.5M1.5 8H3M13 8h1.5M3.4 3.4l1 1M11.6 11.6l1 1M3.4 12.6l1-1M11.6 4.4l1-1"/></svg><%= t("layout.light") %></button>
             <button type="submit" name="theme" value="dark" class="to-dark"><svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M13 9.5A5.5 5.5 0 0 1 6.5 3a5.5 5.5 0 1 0 6.5 6.5Z"/></svg><%= t("layout.dark") %></button>
+            <% if picked_theme %>
+              <button type="submit" name="theme" value="system"><svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="3" width="12" height="8" rx="1"/><path d="M6 14h4M8 11v3"/></svg><%= t("layout.system") %></button>
+            <% end %>
           </form>
         </div>
       </aside>

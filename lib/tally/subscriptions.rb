@@ -6,7 +6,8 @@ module Tally
   #
   # A payee (Insights.payee_key, so a card merchant and its Pix or boleto payments are one)
   # is a subscription when, in some 4 months in a row, it charged in at least 3, each
-  # month's total within 10% of their typical (median) amount. A foreign charge counts
+  # month's total within 10% of their typical (median) amount, the latest one allowed to be
+  # a price increase. A foreign charge counts
   # with its IOF row, which has the same merchant, so the rate moving doesn't break it.
   # Installments are left out, and so are fees without a merchant (the card's own fee).
   class Subscriptions
@@ -67,15 +68,20 @@ module Tally
       )
     end
 
-    # Some WINDOW months in a row with MIN_MONTHS charges near their median.
+    # Some WINDOW months in a row with MIN_MONTHS charges near their median, or all but the
+    # latest near it and the latest a price increase (so three charges with a rise count).
     def repeats?(totals)
       first = totals.keys.first
       ([first] + Insights.next_months(first, Insights.months_between(first, @month))).any? do |last|
         window = Insights.previous_months(last, WINDOW - 1) + [last]
         values = totals.values_at(*window).compact
-        typical = values.sort[values.size / 2]
-        values.size >= MIN_MONTHS && values.all? { (_1 - typical).abs * 100 <= typical * TOLERANCE_PCT }
+        values.size >= MIN_MONTHS && (near_typical?(values) || (increase(values.last(3)) && near_typical?(values[...-1])))
       end
+    end
+
+    def near_typical?(values)
+      typical = values.sort[values.size / 2]
+      values.all? { (_1 - typical).abs * 100 <= typical * TOLERANCE_PCT }
     end
 
     # How much the latest charge went up from the one before: any rise on a fixed price
