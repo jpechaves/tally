@@ -109,7 +109,8 @@ module Tally
           reprint = find_reprint(purchases.map { _1.values_at(:date, :description, :amount) }) or return []
           first, second, length = reprint
 
-          copy = Set.new(purchases[second, length]).compare_by_identity
+          # By identity: the block can hold two identical lines, and both copies go.
+          copy = Set.new.compare_by_identity.merge(purchases[second, length])
           entries.reject! { copy.include?(_1) }
           purchases[first, length].each { _1[:section] = :reprinted }
         end
