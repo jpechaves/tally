@@ -555,7 +555,9 @@ pt-BR:
       income: Receitas
       installment: Parcela
       installments: Parcelas do cartão neste mês
-      installments_summary: "%{amount} dos gastos deste mês, %{count} parcelas."
+      installments_summary:
+        one: "%{amount} dos gastos deste mês, 1 parcela."
+        other: "%{amount} dos gastos deste mês, %{count} parcelas."
       nature: Natureza
       no_average: Sem lançamentos nos três meses anteriores, então ainda não há média.
       payee: Favorecido

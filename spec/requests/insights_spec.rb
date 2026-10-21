@@ -33,6 +33,11 @@ RSpec.describe "Report, cuts and installments", :db, type: :request do
     expect(body).to include("R$ 1,559.30 of this month&#39;s spending, 3 installments.")
     expect(body).to match(%r{>Hotel Exemplo</a> .*?</td>\s*<td>2/6</td>\s*<td>Nov 2026</td>}m)
     expect(body).not_to include("Pagamento de fatura")
+
+    july = db[:transactions].where(occurred_on: Date.new(2026, 7, 1)..Date.new(2026, 7, 31)).exclude(installment_total: nil)
+    july.exclude(id: july.min(:id)).delete
+    get "/report", month: "2026-07"
+    expect(last_response.body).to match(/spending, 1 installment\./)
   end
 
   it "opens on the latest month that is over, since the current one is only partly imported" do
