@@ -1,6 +1,6 @@
 <main>
   <h1><%= t("counterparties.index.title") %></h1>
-  <p><%= t("counterparties.index.intro") %></p>
+  <p><%= t(people.one? ? "counterparties.index.intro" : "counterparties.index.intro_household") %></p>
   <form action="/counterparties" method="get" class="filters">
     <input type="search" name="q" value="<%= search %>" placeholder="<%= t("counterparties.index.search") %>" aria-label="<%= t("counterparties.index.search") %>">
     <button type="submit"><%= t("common.show") %></button>
