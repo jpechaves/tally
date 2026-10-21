@@ -117,6 +117,7 @@ pt-BR:
     not_a_draft: Este plano já foi aceito.
     not_adjustable: Este lançamento não pode ser ajustado.
     not_found: Isso não existe mais.
+    not_installment: Só uma compra parcelada no cartão pode ser ajustada inteira.
     not_reimbursable: Só dinheiro que saiu pode ser reembolsado.
     refused: Esse pedido não pôde ser feito.
     title: Não deu certo
@@ -397,13 +398,25 @@ pt-BR:
       no_refund: Nenhum, vou digitar o valor
       note: Observação
       original: Como diz o extrato
+      purchase_total: "Total real da compra: %{amount}."
       refund: Devolvido por um lançamento importado
       refund_of: "Este lançamento devolveu uma compra, então conta nela, não sozinho:"
+      installments: Parcelas desta compra
       remove: Tirar o ajuste
+      remove_purchase: Tirar de todas as parcelas
+      remove_row: Tirar só desta parcela
+      scope:
+        hint: >-
+          Para todas as parcelas, digite o valor da compra inteira: quanto voltou, ou o total
+          real. Ele é dividido entre as parcelas como o banco dividiu a compra, e as parcelas
+          importadas depois são ajustadas quando chegarem.
+        purchase: "Todas as parcelas desta compra (%{total})"
+        row: Só esta parcela
       the_purchase: ver a compra
       the_refund: (ver o lançamento que devolveu)
       title: Cancelado, reembolsado ou outro valor
       transfer: Uma transferência entre suas contas nunca conta como gasto, então não há o que ajustar.
+      whole_purchase: "Vale para todas as parcelas desta compra: %{kind}."
     table:
       account: Conta
       amount: Valor
