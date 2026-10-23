@@ -1,0 +1,13 @@
+# Counterparties
+
+Sidebar: **Organize › Counterparties**.
+
+![Counterparties](../images/en/counterparties.png)
+
+Everyone money went to or came from. Card merchants are grouped by their stable name, so "LATAM AIR*ABC" and "LATAM AIR*XYZ" are one.
+
+**This is me.** Find your own name as other banks show it and press **This is me**. A Pix between your accounts then counts as a transfer, not spending or income. With two people in the household, pick who each name is and press **Save** instead.
+
+**Name and note.** Click **Name and note** to give a payee your own name for it and a note. Imports and rules keep using the bank's name. On the counterparty's page, **It's a subscription** lists it on [Subscriptions](subscriptions.md) even when it isn't found there, and **See its transactions** opens its rows.
+
+**Search a name** filters the list.
