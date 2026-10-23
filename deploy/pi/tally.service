@@ -1,0 +1,21 @@
+# Installed by deploy/pi/setup.sh; @...@ are filled in there.
+[Unit]
+Description=Tally
+After=network-online.target
+Wants=network-online.target
+ConditionPathExists=@BASE@/current
+
+[Service]
+User=@USER@
+WorkingDirectory=@BASE@/current
+EnvironmentFile=@BASE@/ruby.env
+EnvironmentFile=@BASE@/tally.env
+# One Puma process with two threads (config/puma.rb), capped so Pi-hole and SSH keep room.
+ExecStart=@RUBY_BIN@/bundle exec puma -C config/puma.rb
+Restart=on-failure
+RestartSec=5
+MemoryMax=250M
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

@@ -510,11 +510,44 @@ Plus a **nightly backup** (`sqlite3 … ".backup"`, 30 copies kept, copied off t
 
 ## 10. Running on the Pi Zero 2 W
 
-- **OS**: Raspberry Pi OS Lite 64-bit (Debian 13 based), whose packaged Ruby should be 3.3; to be confirmed at install. If it's older, install a prebuilt Ruby rather than compiling on 512 MB.
-- **Packages**: `sqlite3`, `poppler-utils`.
-- **Memory**: target under ~150 MB. Puma single mode, 2 threads, YJIT off, `MALLOC_ARENA_MAX=2`.
-- **Service**: systemd unit, restart on failure, start on boot.
-- **Access**: LAN only, optional HTTP basic auth (`BASIC_AUTH_USERNAME` / `BASIC_AUTH_PASSWORD`; both empty means no login in any environment, with a warning logged at boot in production, and only one set answers 503).
+The Pi is headless and reached only over SSH. Deploys go from the laptop with plain `ssh`, `git archive` and `rsync`: the Pi needs no GitHub access, Docker or Kamal (Kamal needs Docker and kamal-proxy, too much for 512 MB; it fits the VPS route in issue #103). The Pi can share the board with other small services (Pi-hole, for one, which keeps port 80).
+
+- **OS**: Raspberry Pi OS Lite 64-bit. Debian 12 (Bookworm) is fine: it has security updates under Debian LTS until mid-2028. Its packaged Ruby (3.1) is too old, so Ruby comes from [mise](https://mise.jdx.dev). Raspberry Pi doesn't support upgrading Pi OS in place; to move to a newer one, reflash, then run `bin/pi-setup` and `bin/deploy` again and copy the database back.
+- **Packages**: `sqlite3`, `poppler-utils`, and the headers Ruby builds with.
+- **Memory**: target under ~150 MB. Puma single mode, 2 threads, YJIT off, `MALLOC_ARENA_MAX=2`; the service is capped at 250 MB (`MemoryMax`) so SSH and the other services keep room.
+- **Service**: systemd unit `tally`, restart on failure, start on boot, logs in the journal (`sudo journalctl -u tally`).
+- **Access**: LAN only, at `http://<pi>:2300`, optional HTTP basic auth (`BASIC_AUTH_USERNAME` / `BASIC_AUTH_PASSWORD`; both empty means no login in any environment, with a warning logged at boot in production, and only one set answers 503).
+
+### 10.1 Layout on the Pi
+
+```
+~/tally/
+  releases/<commit>/   one folder per deployed commit (the last three are kept)
+  current ─▶ releases/<commit>   what the service runs
+  shared/
+    db/tally.sqlite    the live database
+    storage/           imports/ and receipts/ (§8.9)
+    backups/           nightly-*.sqlite and pre-deploy-*.sqlite, 30 of each
+    bundle/            installed gems, shared by the releases
+  tally.env            production settings (HANAMI_ENV, port, paths, basic auth); written once, yours to edit
+  ruby.env             PATH to mise's Ruby and the Bundler settings; rewritten by setup
+```
+
+### 10.2 Scripts (run on the laptop)
+
+| Command | What it does |
+|---|---|
+| `bin/pi-setup [user@host]` | Once, and after a reflash or to change Ruby. Copies `deploy/pi/` to the Pi and runs `setup.sh`: apt packages, mise and Ruby (`TALLY_RUBY`, default 4.0; it compiles on the Pi, about an hour the first time), the folders and settings above, the `tally` service and the `tally-backup` timer. Safe to run again. |
+| `bin/deploy [user@host]` | Each release. Sends the committed HEAD with `git archive` (uncommitted changes and gitignored files never leave the laptop) and runs `deploy/pi/release.sh` from it: `bundle install`, a pre-deploy backup, `hanami db migrate` (or `db prepare` the first time, which seeds), switches `current`, restarts the service and waits for it to answer. |
+| `bin/pull-backup [user@host]` | Copies `shared/backups/` and `shared/storage/` off the SD card into `data/pi/` (gitignored). Nothing is deleted on either side. |
+
+The host defaults to `$TALLY_HOST`, else `pi@pihole.local`. The Pi user needs passwordless sudo (Pi OS's first user has it) and the laptop's SSH key (`ssh-copy-id`).
+
+### 10.3 Backups
+
+`tally-backup.timer` runs `deploy/pi/backup.sh` at 03:30 (or at boot if the Pi was off): SQLite's online `.backup`, then `PRAGMA integrity_check` on the copy, keeping the newest 30. A failed check fails the unit (`systemctl --failed`). Each deploy takes a `pre-deploy` copy before migrating. Off the SD card they go with `bin/pull-backup`, along with the receipts and imported files.
+
+To restore: `sudo systemctl stop tally`, copy the backup over `shared/db/tally.sqlite` (removing `tally.sqlite-wal` and `-shm`), `sudo systemctl start tally`. Moving the laptop's database to the Pi the first time is the same, with a copy made by `sqlite3 db/tally.sqlite ".backup /tmp/tally.sqlite"` and `rsync -a storage/ <pi>:tally/shared/storage/` for the files.
 
 ## 11. Code layout
 
@@ -534,7 +567,9 @@ lib/tally/
   insights/     baseline.rb, cut_signals.rb, recurring.rb, planner.rb   (pure: data in, numbers out)
   locales.rb    the languages Tally speaks
 config/db/migrate/, config/providers/db.rb
-bin/                        setup, dev, check-private (pre-commit), reset-db (wipe and reseed a local database)
+bin/                        setup, dev, check-private (pre-commit), reset-db (wipe and reseed a local database),
+                            pi-setup, deploy, pull-backup (§10)
+deploy/pi/                  what runs on the Pi: setup.sh, release.sh, backup.sh, systemd units
 config/i18n/                pt-BR.yml and en.yml: every word on the pages (§12, milestone 6)
 spec/fixtures/statements/   (synthetic only: fake names and amounts in the real formats)
 data/                       (gitignored: real statements, the database, rules from your data)
@@ -551,7 +586,7 @@ Actions validate input and call one operation. Operations hold the rules and the
 5. **Savings planner and budgets**: "save X a month" planner, accepted plan writes budgets, on-track dashboard, month-end score.
 6. **Localization**: the app in Brazilian Portuguese (the default) and English. Every page, message and cut suggestion comes from `config/i18n`; amounts, dates and months follow the language (R$ 1.234,56 and 02/09/2026, or R$ 1,234.56 and Sep 2, 2026), and forms read amounts with its decimal mark. Each browser picks its language with a switch in the menu, kept in a cookie; `DEFAULT_LOCALE` sets the default and the language new databases get their starting categories in.
 7. **Design and charts**: a dark product look after Linear's (docs/design.md, from the reference in docs/design-linear.app.md): a sidebar grouped by task, charcoal panels with hairline borders, one lavender accent. A home dashboard and charts drawn on the server as inline SVG (no JavaScript bundle, nothing for the Content Security Policy to block): income against spending by month on the home page and the report, spending by category, installments committed per month, and a meter per budget.
-8. **Pi deployment** (postponed while the app is tried by hand): systemd, backups, integrity check, memory measurement.
+8. **Pi deployment**: deploys over SSH, systemd, nightly backups with an integrity check, memory measurement (§10).
 9. **Later**: named savings goals with deadlines, split transactions.
 10. **Phase 2, smart suggestions**: local classifier, rule suggestions, unusual-spending alerts, forecasts, optional AI (§15).
 
@@ -617,7 +652,7 @@ Only after version 1 is correct and in daily use. Each one only **suggests**; no
 - **Trips** (issue #75): done. See §8.8.
 - **Home bills** (issue #113): done. See §8.9.
 - **Household** (issue #21): people, accounts by owner, Pix between people paired or shown as unmatched, and the household / person switch (§6.1).
-- **Next, milestone 8 (Pi deployment)**, postponed while the app is tried by hand.
+- **Milestone 8 (Pi deployment)**: in progress (issue #23). `bin/pi-setup`, `bin/deploy`, `bin/pull-backup`, the `tally` service and the nightly backup with an integrity check (§10). Left: measuring memory and response times on the Zero 2 W with real-sized data, and showing a failed integrity check on the home page.
 
 ## 17. Public repository: keeping personal data out
 

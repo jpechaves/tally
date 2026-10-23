@@ -1,0 +1,10 @@
+# Installed by deploy/pi/setup.sh. Persistent: a backup missed while the Pi was off runs at boot.
+[Unit]
+Description=Nightly Tally database backup
+
+[Timer]
+OnCalendar=*-*-* 03:30
+Persistent=true
+
+[Install]
+WantedBy=timers.target

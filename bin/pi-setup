@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+set -euo pipefail
+IFS=$'\n\t'
+
+# Prepares the Raspberry Pi over SSH (once, and again after a reflash or to change Ruby):
+# copies deploy/pi to the Pi and runs deploy/pi/setup.sh there. See docs/architecture.md
+# section 10.
+#
+# Usage: bin/pi-setup [user@host]
+#   TALLY_HOST  the Pi, when no argument is given (default pi@pihole.local)
+#   TALLY_RUBY  the Ruby version mise installs (default 4.0)
+#   TALLY_PORT  the port Tally listens on, written to ~/tally/tally.env the first time (default 2300)
+#
+# The Pi user needs passwordless sudo (Raspberry Pi OS's first user has it) and your SSH key
+# (ssh-copy-id user@host).
+
+host="${1:-${TALLY_HOST:-pi@pihole.local}}"
+ruby_version="${TALLY_RUBY:-4.0}"
+port="${TALLY_PORT:-2300}"
+cd "$(dirname "$0")/.."
+
+git archive --format=tar HEAD deploy/pi |
+  ssh "$host" "rm -rf ~/tally/setup && mkdir -p ~/tally/setup && tar -xf - -C ~/tally/setup"
+ssh -t -o ServerAliveInterval=30 "$host" "bash ~/tally/setup/deploy/pi/setup.sh $ruby_version $port"
