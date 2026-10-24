@@ -171,7 +171,7 @@ pt-BR:
       export: Exportar
       export_button: Baixar o banco de dados
       export_note: Uma cópia do banco de dados como está agora, em um arquivo .sqlite. Comprovantes e extratos importados (a pasta storage/) não vão junto.
-      export_off: Exportar só funciona com o login ligado (BASIC_AUTH_USERNAME e BASIC_AUTH_PASSWORD preenchidos), porque o arquivo tem todos os lançamentos.
+      export_off: Exportar só funciona com o login ligado (BASIC_AUTH_USERNAME e BASIC_AUTH_PASSWORD preenchidos), porque o arquivo tem todos os lançamentos. ALLOW_EXPORT_WITHOUT_LOGIN=true libera sem login.
       foreign_keys: Chaves estrangeiras
       journal_mode: Modo de journal
       sqlite_version: Versão do SQLite

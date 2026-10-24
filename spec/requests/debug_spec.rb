@@ -30,6 +30,17 @@ RSpec.describe "Debug info", type: :request do
       expect(last_response.body).to include("Export needs the login on")
     end
 
+    it "downloads without the login when ALLOW_EXPORT_WITHOUT_LOGIN is true" do
+      allow(Hanami.app["settings"]).to receive(:allow_export_without_login).and_return(true)
+
+      get "/debug"
+      expect(last_response.body).to include(%(action="/debug/export"))
+
+      post "/debug/export"
+      expect(last_response.status).to eq(200)
+      expect(last_response.body).to start_with("SQLite format 3\0")
+    end
+
     it "downloads a copy of the database when the login is on" do
       allow(Hanami.app["settings"]).to receive_messages(basic_auth_username: "maria", basic_auth_password: "secret")
       allow(Time).to receive(:now).and_return(Time.utc(2026, 10, 24, 15, 0, 0))

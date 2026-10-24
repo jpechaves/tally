@@ -12,6 +12,12 @@ module Tally
 
     module_function
 
+    # Whether the download is offered: behind the login (Tally::BasicAuth.on?), or without it
+    # when Settings#allow_export_without_login says so.
+    def allowed?(settings = Hanami.app["settings"])
+      settings.allow_export_without_login || Tally::BasicAuth.on?(settings)
+    end
+
     # Writes the copy to a new file in +dir+, named after +now+, and returns its path.
     def write(db, dir, now: Time.now)
       path = File.join(dir, now.strftime("tally-%Y%m%d-%H%M%S.sqlite"))

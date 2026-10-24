@@ -10,6 +10,10 @@ module Tally
     setting :basic_auth_username, default: nil, constructor: Types::String.optional
     setting :basic_auth_password, default: nil, constructor: Types::String.optional
 
+    # The database download on the Debug info page needs the login above, because the file
+    # holds every transaction. True lets it work without one (e.g. on a trusted home network).
+    setting :allow_export_without_login, default: false, constructor: Types::Params::Bool
+
     # Where imported statement files are kept, named by their SHA-256, so any import can be
     # audited or re-run. Relative paths are under the app root. Keep it out of git.
     setting :import_storage_dir, default: "storage/imports", constructor: Types::String

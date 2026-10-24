@@ -159,7 +159,7 @@ en:
       export: Export
       export_button: Download the database
       export_note: A copy of the database as it is now, in one .sqlite file. Receipts and imported statement files (the storage/ folder) are not included.
-      export_off: Export needs the login on (BASIC_AUTH_USERNAME and BASIC_AUTH_PASSWORD set), because the file holds every transaction.
+      export_off: Export needs the login on (BASIC_AUTH_USERNAME and BASIC_AUTH_PASSWORD set), because the file holds every transaction. ALLOW_EXPORT_WITHOUT_LOGIN=true allows it without one.
       foreign_keys: Foreign keys
       journal_mode: Journal mode
       sqlite_version: SQLite version
