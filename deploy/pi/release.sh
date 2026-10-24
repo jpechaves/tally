@@ -22,8 +22,10 @@ set -a
 set +a
 cd "$release"
 
-announce "Installing gems..."
-bundle install --quiet
+# One gem and one compiler at a time: in parallel, the native extensions (puma, nio4r,
+# bigdecimal...) run a 512 MB Pi out of memory and the kernel kills the install.
+announce "Installing gems (the first time a few compile, which takes a few minutes)..."
+MAKEFLAGS=-j1 bundle install --quiet --jobs 1
 
 database="${DATABASE_URL#sqlite://}"
 if [ -f "$database" ]; then
