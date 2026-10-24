@@ -8,6 +8,7 @@ module Tally
     post "/locale", to: "locale.update", as: :locale
     post "/theme", to: "theme.update", as: :theme
     get "/debug", to: "debug.show", as: :debug
+    post "/debug/export", to: "debug.export", as: :debug_export
 
     get "/imports", to: "imports.index", as: :imports
     post "/imports", to: "imports.create"

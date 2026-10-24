@@ -16,6 +16,8 @@ Set both `BASIC_AUTH_USERNAME` and `BASIC_AUTH_PASSWORD` in `.env.local` and res
 
 Sidebar, bottom: **Debug info**. Shows the SQLite version and settings (journal mode, foreign keys, synchronous, busy timeout). Look at it on a new machine or after a database problem.
 
+**Download the database** saves a copy of everything (not receipts or imported files) as one `.sqlite` file. It only shows when the login is on.
+
 ![Debug info](../images/en/debug.png)
 
 ## Privacy guard

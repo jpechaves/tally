@@ -20,6 +20,9 @@ module Tally
             busy_timeout: "#{pragma.call("busy_timeout")} ms"
           }
         end
+
+        # The export button shows only behind the login (Actions::Debug::Export).
+        expose(:export_on) { Tally::BasicAuth.on? }
       end
     end
   end

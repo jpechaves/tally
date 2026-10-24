@@ -6,4 +6,13 @@
       <tr><th scope="row"><%= t("debug.show.#{key}") %></th><td><%= value %></td></tr>
     <% end %>
   </table></div>
+  <h2><%= t("debug.show.export") %></h2>
+  <p class="note"><%= t("debug.show.export_note") %></p>
+  <% if export_on %>
+    <form action="/debug/export" method="post">
+      <button type="submit" class="primary"><%= t("debug.show.export_button") %></button>
+    </form>
+  <% else %>
+    <p class="note"><%= t("debug.show.export_off") %></p>
+  <% end %>
 </main>
