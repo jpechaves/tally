@@ -516,7 +516,8 @@ The Pi is headless and reached only over SSH. Deploys go from the laptop with pl
 - **Packages**: `sqlite3`, `poppler-utils`, and the headers Ruby builds with.
 - **Memory**: target under ~150 MB. Puma single mode, 2 threads, YJIT off, `MALLOC_ARENA_MAX=2`; the service is capped at 250 MB (`MemoryMax`) so SSH and the other services keep room.
 - **Service**: systemd unit `tally`, restart on failure, start on boot, logs in the journal (`sudo journalctl -u tally`).
-- **Access**: LAN only, at `http://<pi>:2300`, optional HTTP basic auth (`BASIC_AUTH_USERNAME` / `BASIC_AUTH_PASSWORD`; both empty means no login in any environment, with a warning logged at boot in production, and only one set answers 503).
+- **Name**: the `tally-name` unit announces `tally.local` over mDNS with Avahi (`avahi-publish -a -R`, the Pi's first address), so the address doesn't depend on the Pi's hostname. It keeps a port: port 80 belongs to Pi-hole, and sharing it would take a reverse proxy, which isn't worth it on this board. It isn't a Pi-hole Local DNS record because that only works when the router hands out Pi-hole as the DNS server, and Apple devices look up `.local` names only over mDNS. `.local` lookups work on macOS and iOS but are unreliable on Android and Windows. After the Pi's address changes: `sudo systemctl restart tally-name`.
+- **Access**: LAN only, at `http://tally.local:2300` (or `http://<pi>:2300`), optional HTTP basic auth (`BASIC_AUTH_USERNAME` / `BASIC_AUTH_PASSWORD`; both empty means no login in any environment, with a warning logged at boot in production, and only one set answers 503).
 
 ### 10.1 Layout on the Pi
 
@@ -537,7 +538,7 @@ The Pi is headless and reached only over SSH. Deploys go from the laptop with pl
 
 | Command | What it does |
 |---|---|
-| `bin/pi-setup [user@host]` | Once, and after a reflash or to change Ruby. Copies `deploy/pi/` to the Pi and runs `setup.sh`: apt packages, mise and Ruby (`TALLY_RUBY`, default 4.0; mise downloads a precompiled build, about a minute; without one it compiles on the Pi for about an hour), the folders and settings above, the `tally` service and the `tally-backup` timer. Safe to run again. |
+| `bin/pi-setup [user@host]` | Once, and after a reflash or to change Ruby. Copies `deploy/pi/` to the Pi and runs `setup.sh`: apt packages, mise and Ruby (`TALLY_RUBY`, default 4.0; mise downloads a precompiled build, about a minute; without one it compiles on the Pi for about an hour), the folders and settings above, the `tally` service, the `tally-backup` timer and the `tally-name` service (`TALLY_NAME`, default `tally`; empty removes it). Safe to run again. |
 | `bin/deploy [user@host]` | Each release. Sends the committed HEAD with `git archive` (uncommitted changes and gitignored files never leave the laptop) and runs `deploy/pi/release.sh` from it: `bundle install`, a pre-deploy backup, `hanami db migrate` (or `db prepare` the first time, which seeds), switches `current`, restarts the service and waits for it to answer. |
 | `bin/pull-backup [user@host]` | Copies `shared/backups/` and `shared/storage/` off the SD card into `data/pi/` (gitignored). Nothing is deleted on either side. |
 
@@ -569,7 +570,7 @@ lib/tally/
 config/db/migrate/, config/providers/db.rb
 bin/                        setup, dev, check-private (pre-commit), reset-db (wipe and reseed a local database),
                             pi-setup, deploy, pull-backup (§10)
-deploy/pi/                  what runs on the Pi: setup.sh, release.sh, backup.sh, systemd units
+deploy/pi/                  what runs on the Pi: setup.sh, release.sh, backup.sh, publish-name.sh, systemd units
 config/i18n/                pt-BR.yml and en.yml: every word on the pages (§12, milestone 6)
 spec/fixtures/statements/   (synthetic only: fake names and amounts in the real formats)
 data/                       (gitignored: real statements, the database, rules from your data)

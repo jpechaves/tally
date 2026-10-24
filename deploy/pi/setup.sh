@@ -6,18 +6,21 @@ IFS=$'\n\t'
 # there; it's safe to run again (to change the Ruby version, or after reflashing).
 #
 # Installs the system packages, mise and Ruby, creates ~/tally (releases, shared data, the
-# settings file) and installs the tally service and the nightly backup timer. It doesn't
-# start the app: the first bin/deploy does.
+# settings file) and installs the tally service, the nightly backup timer and, when a name
+# is given, the tally-name service that announces <name>.local. It doesn't start the app:
+# the first bin/deploy does.
 #
-# Usage (on the Pi): setup.sh <ruby version> <port>
+# Usage (on the Pi): setup.sh <ruby version> <port> [name]
 
-ruby_version="${1:?usage: setup.sh <ruby version> <port>}"
-port="${2:?usage: setup.sh <ruby version> <port>}"
+ruby_version="${1:?usage: setup.sh <ruby version> <port> [name]}"
+port="${2:?usage: setup.sh <ruby version> <port> [name]}"
+name="${3:-}"
 here="$(cd "$(dirname "$0")" && pwd)"
 base="$HOME/tally"
 shared="$base/shared"
 mise="$HOME/.local/bin/mise"
 user="$(id -un)"
+address=""
 
 announce() {
   printf '\033[1m%s\033[0m\n' "$1"
@@ -29,7 +32,7 @@ announce "Installing system packages..."
 sudo apt-get update -q
 sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -q \
   build-essential pkg-config libssl-dev libyaml-dev zlib1g-dev libffi-dev libreadline-dev libgmp-dev \
-  sqlite3 poppler-utils rsync curl ca-certificates
+  sqlite3 poppler-utils rsync curl ca-certificates avahi-daemon avahi-utils
 
 announce "Installing mise..."
 [ -x "$mise" ] || curl -fsSL https://mise.run | sh
@@ -78,4 +81,20 @@ sudo systemctl daemon-reload
 sudo systemctl enable tally.service
 sudo systemctl enable --now tally-backup.timer
 
-announce "Setup complete. Now run bin/deploy on your computer."
+if [ -n "$name" ]; then
+  announce "Announcing $name.local on the network..."
+  sudo install -m 755 "$here/publish-name.sh" /usr/local/bin/tally-publish-name
+  sed -e "s|@USER@|$user|g" -e "s|@NAME@|$name|g" "$here/tally-name.service" |
+    sudo tee /etc/systemd/system/tally-name.service >/dev/null
+  sudo systemctl daemon-reload
+  sudo systemctl enable tally-name.service
+  sudo systemctl restart tally-name.service
+  address="http://$name.local:$port"
+elif [ -f /etc/systemd/system/tally-name.service ]; then
+  announce "Removing the tally-name service..."
+  sudo systemctl disable --now tally-name.service
+  sudo rm -f /etc/systemd/system/tally-name.service /usr/local/bin/tally-publish-name
+  sudo systemctl daemon-reload
+fi
+
+announce "Setup complete. Now run bin/deploy on your computer${address:+; then Tally opens at $address}."
