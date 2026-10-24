@@ -22,10 +22,17 @@ set -a
 set +a
 cd "$release"
 
-# One gem and one compiler at a time: in parallel, the native extensions (puma, nio4r,
-# bigdecimal...) run a 512 MB Pi out of memory and the kernel kills the install.
+# Native extensions compile on the Pi (prism and rbs, through hanami-cli's irb, are the big
+# ones). Ruby builds them with -O3 and full debug info, which takes gcc to ~250 MB on
+# prism.c and sends a 512 MB Pi into swap until it freezes. So: one gem and one compiler at
+# a time, -O1 without debug info (about half the memory), and when systemd can, a memory
+# cap on the whole install so it gets throttled or killed instead of freezing the Pi.
 announce "Installing gems (the first time a few compile, which takes a few minutes)..."
-MAKEFLAGS=-j1 bundle install --quiet --jobs 1
+cap=()
+if systemd-run --user --scope --quiet true 2>/dev/null; then
+  cap=(systemd-run --user --scope --quiet -p MemoryHigh=180M -p MemoryMax=260M)
+fi
+MAKEFLAGS="-j1 optflags=-O1 debugflags=-g0" "${cap[@]}" bundle install --quiet --jobs 1
 
 database="${DATABASE_URL#sqlite://}"
 if [ -f "$database" ]; then
