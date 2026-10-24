@@ -65,6 +65,7 @@ RECEIPT_STORAGE_DIR=$shared/storage/receipts
 # Set both for a login, leave both commented out for none.
 # BASIC_AUTH_USERNAME=
 # BASIC_AUTH_PASSWORD=
+# ALLOW_EXPORT_WITHOUT_LOGIN=false
 ENV
   chmod 600 "$base/tally.env"
 fi

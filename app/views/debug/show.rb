@@ -20,6 +20,9 @@ module Tally
             busy_timeout: "#{pragma.call("busy_timeout")} ms"
           }
         end
+
+        # The export button shows only when the download is allowed (Actions::Debug::Export).
+        expose(:export_on) { Tally::DatabaseExport.allowed? }
       end
     end
   end

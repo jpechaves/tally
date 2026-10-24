@@ -16,6 +16,8 @@ Defina `BASIC_AUTH_USERNAME` e `BASIC_AUTH_PASSWORD` no `.env.local` e reinicie:
 
 Fim do menu: **Informações de debug**. Mostra a versão e as configurações do SQLite (journal mode, foreign keys, synchronous, busy timeout). Olhe numa máquina nova ou depois de um problema no banco.
 
+**Baixar o banco de dados** salva uma cópia de tudo (sem comprovantes nem extratos importados) em um arquivo `.sqlite`. Só aparece com o login ligado, ou com `ALLOW_EXPORT_WITHOUT_LOGIN=true`.
+
 ![Informações de debug](../images/pt-BR/debug.png)
 
 ## Proteção de privacidade

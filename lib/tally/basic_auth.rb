@@ -16,6 +16,12 @@ module Tally
     REALM = "Tally"
     OFF_WARNING = "basic auth is off: both BASIC_AUTH_* are empty"
 
+    # Whether the settings turn the login on (both credentials set), for the pages that only
+    # work behind it, like the database export.
+    def self.on?(settings = Hanami.app["settings"])
+      [settings.basic_auth_username, settings.basic_auth_password].none? { |value| value.to_s.strip.empty? }
+    end
+
     def initialize(app, username: nil, password: nil, production: Hanami.env?(:production), logger: nil)
       @app = app
       @explicit = [username, password] if username || password

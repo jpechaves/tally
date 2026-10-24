@@ -547,6 +547,8 @@ The host defaults to `$TALLY_HOST`, else `pi@pihole.local`. The Pi user needs pa
 
 `tally-backup.timer` runs `deploy/pi/backup.sh` at 03:30 (or at boot if the Pi was off): SQLite's online `.backup`, then `PRAGMA integrity_check` on the copy, keeping the newest 30. A failed check fails the unit (`systemctl --failed`). Each deploy takes a `pre-deploy` copy before migrating. Off the SD card they go with `bin/pull-backup`, along with the receipts and imported files.
 
+A copy can also be downloaded from the browser: **Download the database** on the Debug info page (`/debug`, issue #136) runs `VACUUM INTO` a temp file (a consistent snapshot even mid-write in WAL mode), checks it with `PRAGMA integrity_check` and sends it as `tally-YYYYMMDD-HHMMSS.sqlite` in local time (`Tally::DatabaseExport`). Only the database, not `storage/`. The file holds every transaction, so the button shows and `POST /debug/export` answers only when basic auth is on (both `BASIC_AUTH_*` set) or `ALLOW_EXPORT_WITHOUT_LOGIN=true` (`Tally::DatabaseExport.allowed?`); otherwise the page says why and the route answers 403. Loading a file back from the browser is #139.
+
 To restore: `sudo systemctl stop tally`, copy the backup over `shared/db/tally.sqlite` (removing `tally.sqlite-wal` and `-shm`), `sudo systemctl start tally`. Moving the laptop's database to the Pi the first time is the same, with a copy made by `sqlite3 db/tally.sqlite ".backup /tmp/tally.sqlite"` and `rsync -a storage/ <pi>:tally/shared/storage/` for the files.
 
 ## 11. Code layout
@@ -652,7 +654,7 @@ Only after version 1 is correct and in daily use. Each one only **suggests**; no
 - **Trips** (issue #75): done. See §8.8.
 - **Home bills** (issue #113): done. See §8.9.
 - **Household** (issue #21): people, accounts by owner, Pix between people paired or shown as unmatched, and the household / person switch (§6.1).
-- **Milestone 8 (Pi deployment)**: in progress (issue #23). `bin/pi-setup`, `bin/deploy`, `bin/pull-backup`, the `tally` service and the nightly backup with an integrity check (§10). Left: measuring memory and response times on the Zero 2 W with real-sized data, and showing a failed integrity check on the home page.
+- **Milestone 8 (Pi deployment)**: in progress (issue #23). `bin/pi-setup`, `bin/deploy`, `bin/pull-backup`, the `tally` service and the nightly backup with an integrity check, and a database download on the Debug info page (#136) (§10). Left: measuring memory and response times on the Zero 2 W with real-sized data, and showing a failed integrity check on the home page.
 
 ## 17. Public repository: keeping personal data out
 
