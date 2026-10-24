@@ -63,7 +63,7 @@ bin/deploy                    # each release: sends the committed HEAD, migrates
 bin/pull-backup               # copies the Pi's backups and stored files into data/pi/
 ```
 
-Set `TALLY_HOST=user@host` (or pass it as the first argument) for another Pi. Tally then answers at `http://pihole.local:2300`; its settings are in `~/tally/tally.env` on the Pi.
+Set `TALLY_HOST=user@host` (or pass it as the first argument) for another Pi. Tally then opens at `http://tally.local:2300` (also `http://pihole.local:2300`); its settings are in `~/tally/tally.env` on the Pi. `TALLY_NAME=finance bin/pi-setup` picks another name, and `TALLY_NAME= bin/pi-setup` stops announcing one. `.local` names work on Macs and iPhones, but not always on Android or Windows: use the Pi's IP address there.
 
 ## Configuration
 

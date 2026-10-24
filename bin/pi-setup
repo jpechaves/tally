@@ -10,6 +10,8 @@ IFS=$'\n\t'
 #   TALLY_HOST  the Pi, when no argument is given (default pi@pihole.local)
 #   TALLY_RUBY  the Ruby version mise installs (default 4.0)
 #   TALLY_PORT  the port Tally listens on, written to ~/tally/tally.env the first time (default 2300)
+#   TALLY_NAME  the Pi announces <name>.local, so Tally opens at http://<name>.local:<port>
+#               (default tally; set it empty to stop announcing a name)
 #
 # The Pi user needs passwordless sudo (Raspberry Pi OS's first user has it) and your SSH key
 # (ssh-copy-id user@host).
@@ -17,8 +19,12 @@ IFS=$'\n\t'
 host="${1:-${TALLY_HOST:-pi@pihole.local}}"
 ruby_version="${TALLY_RUBY:-4.0}"
 port="${TALLY_PORT:-2300}"
+name="${TALLY_NAME-tally}"
+case "$name" in
+  *[!a-z0-9-]*) echo "pi-setup: TALLY_NAME takes lowercase letters, digits and hyphens"; exit 1 ;;
+esac
 cd "$(dirname "$0")/.."
 
 git archive --format=tar HEAD deploy/pi |
   ssh "$host" "rm -rf ~/tally/setup && mkdir -p ~/tally/setup && tar -xf - -C ~/tally/setup"
-ssh -t -o ServerAliveInterval=30 "$host" "bash ~/tally/setup/deploy/pi/setup.sh $ruby_version $port"
+ssh -t -o ServerAliveInterval=30 "$host" "bash ~/tally/setup/deploy/pi/setup.sh $ruby_version $port $name"
