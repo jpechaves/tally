@@ -239,6 +239,7 @@ en:
     unchanged: Unchanged
     updated: Updated
     index:
+      busy: Importing statements…
       empty: Nothing imported yet.
       history: History
       import: Import

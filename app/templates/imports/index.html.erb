@@ -2,7 +2,7 @@
   <h1><%= t("imports.index.title") %></h1>
   <p><%= t("imports.index.intro_html") %></p>
 
-  <form action="/imports" method="post" enctype="multipart/form-data">
+  <form action="/imports" method="post" enctype="multipart/form-data" data-busy>
     <input type="file" name="files[]" multiple accept=".csv,.pdf" required>
     <% unless people.one? %>
       <label><%= t("imports.index.whose") %>
@@ -11,6 +11,7 @@
         </select></label>
     <% end %>
     <button type="submit" class="primary"><%= t("imports.index.import") %></button>
+    <%= render "shared/busy", text: t("imports.index.busy") %>
   </form>
 
   <% if gaps.any? %>

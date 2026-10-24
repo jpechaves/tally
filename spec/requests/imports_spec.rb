@@ -19,6 +19,16 @@ RSpec.describe "Importing statements", :db, type: :request do
     expect(last_response.body).to include('enctype="multipart/form-data"', "Nothing imported yet.")
   end
 
+  it "keeps a hidden overlay in the form that busy.js shows while the import runs" do
+    get "/imports"
+
+    expect(last_response.body).to include(%(<form action="/imports" method="post" enctype="multipart/form-data" data-busy>),
+      %(<div class="busy" role="status" hidden><span class="spinner"></span>Importing statements…</div>))
+
+    get "/assets/busy.js"
+    expect(last_response.body).to include("dataset.busy", "disabled", "pageshow")
+  end
+
   it "imports one file and shows its result" do
     upload("itau_2026-10.pdf")
 
