@@ -55,7 +55,7 @@ The Pi is reached over SSH only; everything runs from your laptop (details in [d
 
 ```sh
 ssh-copy-id pi@pihole.local   # once, so the scripts log in with your key
-bin/pi-setup                  # once: packages, Ruby through mise (about an hour), the service and nightly backups
+bin/pi-setup                  # once: packages, Ruby through mise, the service and nightly backups
 bin/deploy                    # each release: sends the committed HEAD, migrates, restarts
 bin/pull-backup               # copies the Pi's backups and stored files into data/pi/
 ```

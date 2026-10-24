@@ -34,8 +34,9 @@ sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -q \
 announce "Installing mise..."
 [ -x "$mise" ] || curl -fsSL https://mise.run | sh
 
-# Built from source on the Pi; two make jobs keep it inside 512 MB of RAM plus swap.
-announce "Installing Ruby $ruby_version (the first time it compiles, which can take an hour)..."
+# mise uses a precompiled Ruby when there is one; if it has to compile, two make jobs keep
+# it inside 512 MB of RAM plus swap.
+announce "Installing Ruby $ruby_version (a precompiled build when mise has one, else it compiles for about an hour)..."
 MISE_JOBS=1 MAKE_OPTS=-j2 "$mise" install "ruby@$ruby_version"
 ruby_bin="$("$mise" where "ruby@$ruby_version")/bin"
 

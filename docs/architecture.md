@@ -537,7 +537,7 @@ The Pi is headless and reached only over SSH. Deploys go from the laptop with pl
 
 | Command | What it does |
 |---|---|
-| `bin/pi-setup [user@host]` | Once, and after a reflash or to change Ruby. Copies `deploy/pi/` to the Pi and runs `setup.sh`: apt packages, mise and Ruby (`TALLY_RUBY`, default 4.0; it compiles on the Pi, about an hour the first time), the folders and settings above, the `tally` service and the `tally-backup` timer. Safe to run again. |
+| `bin/pi-setup [user@host]` | Once, and after a reflash or to change Ruby. Copies `deploy/pi/` to the Pi and runs `setup.sh`: apt packages, mise and Ruby (`TALLY_RUBY`, default 4.0; mise downloads a precompiled build, about a minute; without one it compiles on the Pi for about an hour), the folders and settings above, the `tally` service and the `tally-backup` timer. Safe to run again. |
 | `bin/deploy [user@host]` | Each release. Sends the committed HEAD with `git archive` (uncommitted changes and gitignored files never leave the laptop) and runs `deploy/pi/release.sh` from it: `bundle install`, a pre-deploy backup, `hanami db migrate` (or `db prepare` the first time, which seeds), switches `current`, restarts the service and waits for it to answer. |
 | `bin/pull-backup [user@host]` | Copies `shared/backups/` and `shared/storage/` off the SD card into `data/pi/` (gitignored). Nothing is deleted on either side. |
 
