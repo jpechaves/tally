@@ -1,0 +1,11 @@
+# Installed by deploy/pi/setup.sh; started by tally-backup.timer.
+[Unit]
+Description=Tally database backup
+ConditionPathExists=@BASE@/current
+
+[Service]
+Type=oneshot
+User=@USER@
+EnvironmentFile=@BASE@/ruby.env
+EnvironmentFile=@BASE@/tally.env
+ExecStart=/bin/bash @BASE@/current/deploy/pi/backup.sh nightly

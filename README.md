@@ -7,7 +7,7 @@ Personal finance tracker in Ruby ([Hanami 3](https://hanakai.org)) and SQLite. I
 - [docs/statement-import.md](docs/statement-import.md): statement formats, re-import, categorization
 - [docs/design.md](docs/design.md): colors, type, layout and chart rules
 
-**Status:** milestone 7 (design and charts): statement import (Nubank account and card CSVs, Itaú card bill PDFs, re-imports that update instead of duplicating, transfers between your accounts), categories with a nature, generic rules and a review list grouped by payee, a monthly report, cut suggestions and an installment calendar, plus the "save X a month" planner, budgets and an on-track dashboard, in Brazilian Portuguese or English, with a dark dashboard and charts. Raspberry Pi deployment is postponed for now.
+**Status:** milestone 7 (design and charts): statement import (Nubank account and card CSVs, Itaú card bill PDFs, re-imports that update instead of duplicating, transfers between your accounts), categories with a nature, generic rules and a review list grouped by payee, a monthly report, cut suggestions and an installment calendar, plus the "save X a month" planner, budgets and an on-track dashboard, in Brazilian Portuguese or English, with a dark dashboard and charts.
 
 When a change adds or changes a screen, update its page in both languages of the user guide in the same PR (short: a few steps, a screenshot from made-up data).
 
@@ -51,6 +51,19 @@ The home page shows the SQLite settings in effect (WAL, foreign keys, full sync)
 `bin/reset-db` deletes everything in the database (statements, categories you changed, rules, plans, budgets) and recreates it from the migrations and seeds, for example to import everything again after an importer change. It asks you to type `yes`, then copies the database next to itself first (`db/tally-backup-20261016-143000.sqlite`) and prints where the copy went. Home bills, their payments and receipts are copied back from that backup, and receipt files in `storage/receipts/` are never touched. Stop `bin/dev` before running it.
 
 It refuses to run with `HANAMI_ENV=production` or on a Raspberry Pi, where the live database is. `bin/reset-db --force` skips the question, for scripts, and only works in development. To get your data back, stop the server and copy the backup over the database file.
+
+## Running it on the Raspberry Pi
+
+The Pi is reached over SSH only; everything runs from your laptop (details in [docs/architecture.md §10](docs/architecture.md#10-running-on-the-pi-zero-2-w)):
+
+```sh
+ssh-copy-id pi@pihole.local   # once, so the scripts log in with your key
+bin/pi-setup                  # once: packages, Ruby through mise, the service and nightly backups
+bin/deploy                    # each release: sends the committed HEAD, migrates, restarts
+bin/pull-backup               # copies the Pi's backups and stored files into data/pi/
+```
+
+Set `TALLY_HOST=user@host` (or pass it as the first argument) for another Pi. Tally then answers at `http://pihole.local:2300`; its settings are in `~/tally/tally.env` on the Pi.
 
 ## Configuration
 
