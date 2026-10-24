@@ -20,6 +20,9 @@ set -a
 # shellcheck source=/dev/null
 . "$base/tally.env"
 set +a
+# mise's precompiled Ruby ships a RubyGems plugin that runs `mise reshim` after each gem
+# install, so mise has to be on PATH (ruby.env from older setups left it out).
+PATH="$HOME/.local/bin:$PATH"
 cd "$release"
 
 # Native extensions compile on the Pi (prism and rbs, through hanami-cli's irb, are the big

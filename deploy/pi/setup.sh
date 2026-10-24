@@ -45,7 +45,7 @@ mkdir -p "$base/releases" "$shared/db" "$shared/storage/imports" "$shared/storag
 
 # Rewritten every time, so it always points at the Ruby above.
 cat > "$base/ruby.env" <<ENV
-PATH=$ruby_bin:/usr/local/bin:/usr/bin:/bin
+PATH=$ruby_bin:$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin
 BUNDLE_DEPLOYMENT=true
 BUNDLE_PATH=$shared/bundle
 BUNDLE_WITHOUT=development:test:cli
