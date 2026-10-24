@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+set -euo pipefail
+IFS=$'\n\t'
+
+# Copies the Pi's database backups and stored files (imported statements, home bill receipts)
+# off its SD card into data/pi/ here, which is gitignored. Nothing is deleted on either side.
+#
+# Usage: bin/pull-backup [user@host]    (default $TALLY_HOST, or pi@pihole.local)
+
+host="${1:-${TALLY_HOST:-pi@pihole.local}}"
+cd "$(dirname "$0")/.."
+
+mkdir -p data/pi/backups data/pi/storage
+rsync -a "$host:tally/shared/backups/" data/pi/backups/
+rsync -a "$host:tally/shared/storage/" data/pi/storage/
+echo "Copied to data/pi/: $(find data/pi/backups -name '*.sqlite' | wc -l | tr -d ' ') database backups, plus storage/."

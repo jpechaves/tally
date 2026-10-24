@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+set -euo pipefail
+IFS=$'\n\t'
+
+# Deploys the committed HEAD to the Raspberry Pi over SSH. It unpacks the commit into
+# ~/tally/releases/<commit> and runs deploy/pi/release.sh there: gems, a database backup,
+# migrations, then ~/tally/current is switched and the service restarted. Run bin/pi-setup
+# once first. Uncommitted changes are not deployed.
+#
+# Usage: bin/deploy [user@host]    (default $TALLY_HOST, or pi@pihole.local)
+
+host="${1:-${TALLY_HOST:-pi@pihole.local}}"
+cd "$(dirname "$0")/.."
+
+commit="$(git rev-parse --short=12 HEAD)"
+if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
+  echo "Uncommitted changes are left out; deploying commit $commit."
+fi
+
+# $commit expands here on purpose.
+# shellcheck disable=SC2029
+git archive --format=tar HEAD |
+  ssh "$host" "mkdir -p ~/tally/releases/$commit && tar -xf - -C ~/tally/releases/$commit"
+ssh -o ServerAliveInterval=30 "$host" "bash ~/tally/releases/$commit/deploy/pi/release.sh"
