@@ -251,6 +251,7 @@ pt-BR:
     unchanged: Iguais
     updated: Atualizados
     index:
+      busy: Importando extratos…
       empty: Nada importado ainda.
       history: Histórico
       import: Importar
