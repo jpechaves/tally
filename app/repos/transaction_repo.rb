@@ -3,12 +3,14 @@
 module Tally
   module Repos
     # Transactions, plus the rows that hang off them on import: card statements
-    # (Writing) and transfers (Transfers). Works on plain hashes from the Sequel datasets,
-    # because the import compares and updates column by column.
+    # (Writing), transfers (Transfers) and those between people of the household
+    # (Household). Works on plain hashes from the Sequel datasets, because the import
+    # compares and updates column by column.
     class TransactionRepo < Tally::DB::Repo
       include Deps["repos.trip_repo"]
       include Writing
       include Transfers
+      include Household
 
       MIRROR_PREFIX = "mirror:"
 

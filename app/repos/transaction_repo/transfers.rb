@@ -34,29 +34,6 @@ module Tally
             .order(:occurred_on, :id).all
         end
 
-        # Transfers to or from someone of the household that point at no account yet, with
-        # the counterparty's person (person_id).
-        def household_one_legs
-          transactions.dataset.where(kind: "transfer", transfer_id: nil, counter_account_id: nil)
-            .join(:counterparties, id: :counterparty_id).where(Sequel[:counterparties][:is_self] => 1)
-            .select_all(:transactions).select_append(Sequel[:counterparties][:person_id])
-            .order(Sequel[:transactions][:id]).all
-        end
-
-        # The other side of a transfer to someone of the household that names no bank (a
-        # name-only Pix, issue #164): an unpaired transfer in one of that person's accounts,
-        # same amount with the opposite sign, within a few days, pointing at no account or
-        # back at this row's. Closest date first.
-        def household_partner(row, person_id, days: 5)
-          transactions.dataset
-            .where(account_id: accounts.dataset.unordered.where(person_id:).select(:id), kind: "transfer", transfer_id: nil)
-            .where(amount_cents: -row[:amount_cents], occurred_on: around(row, -days..days))
-            .where(Sequel.|({counter_account_id: nil}, {counter_account_id: row[:account_id]}))
-            .exclude(account_id: row[:account_id])
-            .order(closest_to(row), :id)
-            .first
-        end
-
         def transfer_legs(transfer_id) = transactions.dataset.where(transfer_id:).order(:id).all
 
         # The other leg of a transfer between two imported accounts: same amount with the

@@ -15,8 +15,10 @@ module Tally
     # - Otherwise the row stays a one-leg transfer: still never spending or income. A Pix
     #   to someone of the household whose account wasn't imported yet finds it once it is
     #   (issue #21), and a name-only one finds the other person's side (issue #164).
+    # - A Pix to Nubank that paid another household person's Nubank card bill pairs with
+    #   the payment on that card (issue #158).
     class PairTransfers < Tally::Operation
-      include Deps["repos.account_repo", "repos.transaction_repo"]
+      include Deps["repos.account_repo", "repos.transaction_repo", "operations.pair_household_bills"]
 
       # @param touched_ids [Array<Integer>] rows whose amount, date or kind may have
       #   changed since they were paired; their transfers are checked first
@@ -25,7 +27,7 @@ module Tally
         currencies = account_repo.all.to_h { [_1.id, _1.currency] }
         find_counter_accounts
         touched_ids.each_slice(500) { |ids| transaction_repo.rows(ids).each { reconcile(_1, currencies) } }
-        pair_all(currencies)
+        pair_all(currencies) + step(pair_household_bills.call)
       end
 
       private

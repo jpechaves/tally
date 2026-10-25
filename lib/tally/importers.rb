@@ -95,6 +95,10 @@ module Tally
       end
     end
 
+    # Nubank's own CNPJ (NU PAGAMENTOS S/A): a Pix to it pays a Nubank card bill
+    # (issue #158).
+    NUBANK_CNPJ = "18.236.120/0001-58"
+
     # The accounts the importers know, created on first use.
     #
     # mirror_transfers: the account has no statement of its own, so each transfer into or
