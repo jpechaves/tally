@@ -23,6 +23,9 @@
           <label><input type="checkbox" name="always" value="1" checked> <%= t("review.index.always", payee: group.label) %></label>
           <button type="submit"><%= t("common.save") %></button>
         </form>
+        <% if (party = person_like[group.counterparty_id]) %>
+          <%= render "counterparties/who", party: party, people: people, fields: {back: page_path.(pagination.number)} %>
+        <% end %>
         <details>
           <summary class="note"><%= t("common.rows") %></summary>
           <%= render "transactions/table", rows: group.rows, categories: nil %>

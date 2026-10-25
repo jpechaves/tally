@@ -61,6 +61,30 @@ RSpec.describe "The household", :db, type: :request do
     expect(db[:counterparties].where(id: jose).get(%i[is_self person_id])).to eq([0, nil])
   end
 
+  # Issue #164: a Pix with only a name can be someone of the household too; a card or
+  # debit merchant can't.
+  it "offers who it is on a name-only Pix counterparty, in Contrapartes and in Revisar" do
+    Hanami.app["operations.import_statement"].call(file_name: "NU_11112222_01AUG2026_31AUG2026.csv", content: <<~CSV)
+      Data,Valor,Identificador,Descrição
+      16/08/2026,-1000.00,b1b2c3d4-0000-4000-8000-000000000001,Transferência enviada pelo Pix - BRUNO EXEMPLO DA SILVA (Transferência enviada)
+      17/08/2026,-20.00,b1b2c3d4-0000-4000-8000-000000000002,Compra no débito - PADARIA EXEMPLO
+    CSV
+    name_only = db[:counterparties].where(Sequel.like(:name, "BRUNO EXEMPLO%")).get(:id)
+    bakery = party("PADARIA EXEMPLO")
+
+    get "/counterparties"
+    expect(last_response.body).to include(%(action="/counterparties/#{name_only}/self"))
+    expect(last_response.body).not_to include(%(action="/counterparties/#{bakery}/self"))
+
+    get "/review"
+    expect(last_response.body).to include(%(action="/counterparties/#{name_only}/self"), %(name="back" value="/review?page=1"))
+    expect(last_response.body).not_to include(%(action="/counterparties/#{bakery}/self"))
+
+    post "/counterparties/#{name_only}/self", person: me_id.to_s, back: "/review?page=1"
+    expect(last_response.headers["Location"]).to end_with("/review?page=1")
+    expect(db[:transactions].where(counterparty_id: name_only).get(:kind)).to eq("transfer")
+  end
+
   describe "the person switch" do
     let(:bruno) { db[:people].where(name: "Bruno").get(:id) }
 

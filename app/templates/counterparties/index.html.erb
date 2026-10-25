@@ -29,23 +29,8 @@
             <td class="num"><% if party[:rows].positive? %><a href="<%= transactions_path(payee: "counterparty:#{party[:id]}") %>"><%= party[:rows] %></a><% else %>0<% end %></td>
             <td class="num"><%= money(party[:total_cents]) %></td>
             <td>
-              <% if party[:document_kind] == "cpf_masked" || party[:is_self] == 1 %>
-                <form action="/counterparties/<%= party[:id] %>/self" method="post">
-                  <input type="hidden" name="q" value="<%= search %>">
-                  <input type="hidden" name="page" value="<%= pagination.number %>">
-                  <% if people.one? %>
-                    <input type="hidden" name="person" value="<%= party[:is_self] == 1 ? "" : people.first.id %>">
-                    <button type="submit"><%= party[:is_self] == 1 ? t("counterparties.index.not_me") : t("counterparties.index.this_is_me") %></button>
-                  <% else %>
-                    <select name="person" aria-label="<%= t("counterparties.index.who") %>">
-                      <option value=""><%= t("counterparties.index.no_one") %></option>
-                      <% people.each do |person| %>
-                        <option value="<%= person.id %>"<%= " selected" if person.id == party[:person_id] %>><%= person.name %></option>
-                      <% end %>
-                    </select>
-                    <button type="submit"><%= t("common.save") %></button>
-                  <% end %>
-                </form>
+              <% if person_like.key?(party[:id]) %>
+                <%= render "counterparties/who", party: party, people: people, fields: {q: search, page: pagination.number} %>
               <% end %>
             </td>
           </tr>

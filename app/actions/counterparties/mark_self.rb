@@ -13,10 +13,10 @@ module Tally
           result = mark_self.call(counterparty_id: request.params[:id].to_i, person_id:)
           halt 404 if result.failure?
 
-          # Back to the same search and page.
+          # Back to the page it came from (Revisar), or to the same search and page.
           params = request.params
           back = Tally::Pagination.path(routes.path(:counterparties), q: params[:q].to_s.strip[0, 100])
-          response.redirect_to back.call(Tally::Pagination.param(params[:page]))
+          response.redirect_to back_param(params[:back]) || back.call(Tally::Pagination.param(params[:page]))
         end
       end
     end

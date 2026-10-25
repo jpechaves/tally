@@ -1,0 +1,15 @@
+<form action="/counterparties/<%= party[:id] %>/self" method="post">
+  <% fields.each do |name, value| %><input type="hidden" name="<%= name %>" value="<%= value %>"><% end %>
+  <% if people.one? %>
+    <input type="hidden" name="person" value="<%= party[:is_self] == 1 ? "" : people.first.id %>">
+    <button type="submit"><%= party[:is_self] == 1 ? t("counterparties.index.not_me") : t("counterparties.index.this_is_me") %></button>
+  <% else %>
+    <select name="person" aria-label="<%= t("counterparties.index.who") %>">
+      <option value=""><%= t("counterparties.index.no_one") %></option>
+      <% people.each do |person| %>
+        <option value="<%= person.id %>"<%= " selected" if person.id == party[:person_id] %>><%= person.name %></option>
+      <% end %>
+    </select>
+    <button type="submit"><%= t("common.save") %></button>
+  <% end %>
+</form>
