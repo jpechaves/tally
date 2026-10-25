@@ -17,7 +17,7 @@ module Tally
           halt 422, t("errors.invalid_receipt") unless stored.is_a?(Tally::Receipts::Stored)
 
           home_bill_repo.add_receipt(home_bill_id: bill[:id], month:, **stored.to_h, filename: File.basename(upload[:filename].to_s)[0, 200])
-          response.redirect_to "/home-bills/#{bill[:id]}"
+          response.redirect_to Tally::HomeBills.path(bill[:id], Tally::HomeBills.span(request.params[:months]))
         end
       end
     end

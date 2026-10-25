@@ -670,6 +670,12 @@ pt-BR:
       new: Nova conta da casa
       no_category: Sem categoria
       title: Contas da casa
+    span:
+      label: Meses exibidos
+      "1": Este mês
+      "2": 2 meses
+      "6": 6 meses
+      all: Todos os meses
     show:
       amount: Valor
       by_hand: Paga à mão

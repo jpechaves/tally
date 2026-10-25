@@ -3,6 +3,9 @@
   <h1><%= bill[:name] %></h1>
   <p class="note"><%= [category_name(bill[:category_name]), t("home_bills.day", day: bill[:due_day]), money(bill[:expected_cents]), bill[:payee_label]].reject { _1.to_s.empty? }.join(" · ") %></p>
 
+  <%= render "home_bills/span", path: "/home-bills/#{bill[:id]}", span: span %>
+  <% kept = (span == Tally::HomeBills::DEFAULT_SPAN) ? nil : span %>
+
   <% months.each do |entry| %>
     <section class="home-bill-month">
       <h2><%= month_label(entry.month) %></h2>
@@ -10,7 +13,7 @@
       <% payment = entry.payment %>
       <% if payment %>
         <% id = linked[[payment[:account_name], payment[:external_id]]] %>
-        <form action="/home-bills/<%= bill[:id] %>/payments/remove" method="post">
+        <form action="<%= path_with_query("/home-bills/#{bill[:id]}/payments/remove", months: kept) %>" method="post">
           <input type="hidden" name="month" value="<%= entry.month %>">
           <% if id %><a href="<%= transaction_path(id) %>"><%= t("home_bills.show.see_row") %></a><% end %>
           <button type="submit"><%= t("home_bills.show.unpay") %></button>
@@ -21,7 +24,7 @@
           <p class="note"><%= t("home_bills.show.no_rows") %></p>
         <% else %>
           <% suggested = Tally::HomeBills.suggest(bill, entry.month, rows) %>
-          <form action="/home-bills/<%= bill[:id] %>/payments" method="post">
+          <form action="<%= path_with_query("/home-bills/#{bill[:id]}/payments", months: kept) %>" method="post">
             <input type="hidden" name="month" value="<%= entry.month %>">
             <p><label><%= t("home_bills.show.pick") %><br><select name="transaction_id" data-picker required>
               <% unless suggested %><option value="" disabled selected><%= t("home_bills.show.pick_row") %></option><% end %>
@@ -34,7 +37,7 @@
         <% end %>
         <details>
           <summary><%= t("home_bills.show.by_hand") %></summary>
-          <form action="/home-bills/<%= bill[:id] %>/payments" method="post">
+          <form action="<%= path_with_query("/home-bills/#{bill[:id]}/payments", months: kept) %>" method="post">
             <input type="hidden" name="month" value="<%= entry.month %>">
             <p><label><%= t("home_bills.show.paid_on") %><br><input type="date" name="paid_on" required value="<%= entry.due_on %>"></label></p>
             <p><label><%= t("home_bills.show.amount") %><br><input name="amount" inputmode="decimal" size="12" required value="<%= bill[:expected_cents] && amount_field(bill[:expected_cents]) %>"></label></p>
@@ -58,12 +61,12 @@
               <a class="receipt-file" href="/receipts/<%= receipt[:id] %>"><%= receipt[:filename] %></a>
             <% end %>
             <figcaption class="note"><%= timestamp(receipt[:uploaded_at]) %>
-              <form action="/receipts/<%= receipt[:id] %>/delete" method="post" data-confirm="<%= t("home_bills.show.confirm_delete_receipt") %>"><button type="submit"><%= t("home_bills.show.delete_receipt") %></button></form>
+              <form action="<%= path_with_query("/receipts/#{receipt[:id]}/delete", months: kept) %>" method="post" data-confirm="<%= t("home_bills.show.confirm_delete_receipt") %>"><button type="submit"><%= t("home_bills.show.delete_receipt") %></button></form>
             </figcaption>
           </figure>
         <% end %>
       </div>
-      <form action="/home-bills/<%= bill[:id] %>/receipts" method="post" enctype="multipart/form-data">
+      <form action="<%= path_with_query("/home-bills/#{bill[:id]}/receipts", months: kept) %>" method="post" enctype="multipart/form-data">
         <input type="hidden" name="month" value="<%= entry.month %>">
         <input type="file" name="file" accept="image/jpeg,image/png,application/pdf" required>
         <button type="submit"><%= t("home_bills.show.upload") %></button>

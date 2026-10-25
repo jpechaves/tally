@@ -4,6 +4,7 @@
   <% if bills.empty? %>
     <p><%= t("home_bills.index.empty") %></p>
   <% else %>
+    <%= render "home_bills/span", path: "/home-bills", span: span %>
     <div class="cards">
       <div><%= t("home_bills.index.expected") %><strong><%= t("home_bills.index.a_month", amount: money(bills.sum { |bill, _| bill[:expected_cents].to_i })) %></strong></div>
       <div><%= t("home_bills.index.late_title") %><strong><%= t("home_bills.index.late", count: bills.sum { |_, entries| entries.count { _1.status == :late } }) %></strong></div>
@@ -17,7 +18,7 @@
       <tbody>
         <% bills.each do |bill, entries| %>
           <tr>
-            <td><a href="/home-bills/<%= bill[:id] %>"><%= bill[:name] %></a></td>
+            <td><a href="<%= Tally::HomeBills.path(bill[:id], span) %>"><%= bill[:name] %></a></td>
             <td><%= category_name(bill[:category_name]) %></td>
             <td><%= t("home_bills.day", day: bill[:due_day]) %></td>
             <td class="num"><%= money(bill[:expected_cents]) %></td>

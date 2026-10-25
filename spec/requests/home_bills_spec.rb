@@ -87,6 +87,28 @@ RSpec.describe "Home bills", :db, type: :request do
     expect(last_response.status).to eq(404)
   end
 
+  it "shows the months you choose, and keeps that choice through the bill's forms" do
+    energy = create_bill(payee_key: "counterparty:#{energy_company}", payee_label: "Energia Exemplo")
+    july = pay("2026-07-09", 17_510, "ENERGIA EXEMPLO", counterparty_id: energy_company)
+
+    get "/home-bills"
+    expect(last_response.body).to include(%(<a href="/home-bills?months=2" aria-current="page">2 months</a>), %(href="/home-bills/#{energy[:id]}"))
+    expect(last_response.body).not_to include("Jul 2026")
+
+    get "/home-bills", months: "all"
+    expect(last_response.body).to include("Jul 2026", "Aug 2026", %(href="/home-bills/#{energy[:id]}?months=all"))
+    get "/home-bills", months: "1"
+    expect(last_response.body).not_to include("Sep 2026")
+
+    get "/home-bills/#{energy[:id]}", months: "6"
+    body = last_response.body
+    expect(body).to include("Jul 2026", %(<option value="#{july}" selected>), %(action="/home-bills/#{energy[:id]}/payments?months=6"))
+    post "/home-bills/#{energy[:id]}/payments?months=6", month: "2026-07", transaction_id: july.to_s
+    expect(last_response.location).to end_with("/home-bills/#{energy[:id]}?months=6")
+    post "/home-bills/#{energy[:id]}/payments/remove?months=6", month: "2026-07"
+    expect(last_response.location).to end_with("/home-bills/#{energy[:id]}?months=6")
+  end
+
   it "doesn't offer a row again once it paid another month" do
     energy = create_bill(payee_key: "counterparty:#{energy_company}", payee_label: "Energia Exemplo")
     early = pay("2026-09-01", 17_510, "ENERGIA EXEMPLO", counterparty_id: energy_company)

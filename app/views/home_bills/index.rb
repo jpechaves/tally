@@ -3,14 +3,14 @@
 module Tally
   module Views
     module HomeBills
-      # Every home bill and how the month before and this month stand (Tally::HomeBills).
+      # Every home bill and how each month of the chosen span stands (Tally::HomeBills).
       class Index < Tally::View
-        include Deps["repos.home_bill_repo", "repos.category_repo"]
+        include Deps["repos.home_bill_repo", "repos.category_repo", "repos.transaction_repo"]
 
-        expose :prefill, decorate: false
+        expose :prefill, :span, decorate: false
 
-        expose :months, decorate: false do
-          Tally::HomeBills.months(Date.today)
+        expose :months, decorate: false do |span|
+          Tally::HomeBills.months(Date.today, span, first: transaction_repo.months.last)
         end
 
         expose :bills, decorate: false do |months|
