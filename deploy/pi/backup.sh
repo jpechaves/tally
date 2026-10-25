@@ -3,14 +3,15 @@ set -euo pipefail
 IFS=$'\n\t'
 
 # Copies the live database with SQLite's online backup, checks the copy and keeps the newest
-# 30 copies with the same name. Run nightly by tally-backup.timer ("nightly") and before each
-# migration by bin/deploy ("pre-deploy"). bin/pull-backup copies them off the SD card.
+# copies with the same name, 5 by default (TALLY_BACKUP_KEEP in ~/tally/tally.env). Run
+# nightly by tally-backup.timer ("nightly") and before each migration by bin/deploy
+# ("pre-deploy"). bin/pull-backup copies them off the SD card.
 #
 # Usage: backup.sh [name]    reads DATABASE_URL from the environment
 
 name="${1:-nightly}"
 dir="$HOME/tally/shared/backups"
-keep=30
+keep="${TALLY_BACKUP_KEEP:-5}"
 database="${DATABASE_URL#sqlite://}"
 
 [ -f "$database" ] || { echo "backup: no database at $database yet"; exit 0; }
