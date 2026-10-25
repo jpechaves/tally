@@ -73,6 +73,47 @@ RSpec.describe "A household of two", :db do
     expect(unmatched.map { _1[:amount_cents] }).to eq([-8_000])
   end
 
+  # Issue #158: a Pix to Nubank's CNPJ that paid the other person's card bill.
+  describe "a Pix that pays the other person's Nubank card bill" do
+    let(:conta) do
+      <<~CSV
+        Data,Valor,Identificador,Descrição
+        03/09/2026,-275.95,c1b2c3d4-0000-4000-8000-000000000001,Transferência enviada pelo Pix - NU PAGAMENTOS S/A - 18.236.120/0001-58 - NU PAGAMENTOS - IP (0260) Agência: 1 Conta: 9999999-9
+        10/09/2026,-50.00,c1b2c3d4-0000-4000-8000-000000000002,Transferência enviada pelo Pix - NU PAGAMENTOS S/A - 18.236.120/0001-58 - NU PAGAMENTOS - IP (0260) Agência: 1 Conta: 9999999-9
+      CSV
+    end
+    let(:card) { %(date,title,amount\n2026-08-20,Mercado Exemplo,"275,95"\n2026-09-03,Pagamento recebido,"- 275,95"\n) }
+
+    def import_text(name, content, person_id: nil)
+      Hanami.app["operations.import_statement"].call(file_name: name, content:, person_id:)
+    end
+
+    def expect_paired
+      sent = pix("Nubank conta", -27_595)
+      payment = pix("Nubank cartão (Bruno)", 27_595)
+      expect(sent).to include(kind: "transfer", counter_account_id: account("Nubank cartão (Bruno)")[:id])
+      expect(payment).to include(counter_account_id: account("Nubank conta")[:id])
+      expect(sent[:transfer_id]).to eq(payment[:transfer_id]).and be_truthy
+      # A Pix to Nubank that matches no card payment stays what it was.
+      expect(pix("Nubank conta", -5_000)).to include(kind: "purchase", transfer_id: nil)
+    end
+
+    it "pairs it when the card comes first, and again after the card is re-imported" do
+      import_text("Nubank_2026-09-06.csv", card, person_id: bruno.id)
+      import_text("NU_11112222_01SEP2026_30SEP2026.csv", conta)
+      expect_paired
+
+      import_text("Nubank_2026-09-06.csv", "#{card}2026-09-04,Padaria Exemplo,\"10,00\"\n", person_id: bruno.id)
+      expect_paired
+    end
+
+    it "pairs it when your account comes first" do
+      import_text("NU_11112222_01SEP2026_30SEP2026.csv", conta)
+      import_text("Nubank_2026-09-06.csv", card, person_id: bruno.id)
+      expect_paired
+    end
+  end
+
   # A Pix line with only a name (issue #164): no bank says which account it went to, so
   # it waits for the other person's side.
   it "pairs a Pix marked on a name-only counterparty with the other person's side" do

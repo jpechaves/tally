@@ -43,6 +43,31 @@ module Tally
             .order(Sequel[:transactions][:id]).all
         end
 
+        # Payments of a Nubank card bill ("Pagamento recebido") with no other side yet,
+        # with the card owner's person_id.
+        def unpaired_card_payments
+          transactions.dataset.join(:accounts, id: :account_id)
+            .where(ACCOUNTS[:template] => "Nubank cartão", TRANSACTIONS[:kind] => "transfer", TRANSACTIONS[:transfer_id] => nil)
+            .where(TRANSACTIONS[:amount_cents] > 0)
+            .select_all(:transactions).select_append(ACCOUNTS[:person_id])
+            .order(TRANSACTIONS[:id]).all
+        end
+
+        # The Pix to Nubank's CNPJ that someone else of the household sent to pay this card
+        # payment (issue #158): same amount, within a few days, still a purchase or already
+        # pointing at the card. Closest date first.
+        def bill_pix(payment, days: 5)
+          transactions.dataset.join(:accounts, id: :account_id).join(:counterparties, id: TRANSACTIONS[:counterparty_id])
+            .where(COUNTERPARTIES[:document] => Importers::NUBANK_CNPJ, TRANSACTIONS[:transfer_id] => nil)
+            .exclude(ACCOUNTS[:person_id] => payment[:person_id])
+            .where(TRANSACTIONS[:amount_cents] => -payment[:amount_cents], TRANSACTIONS[:occurred_on] => around(payment, -days..days))
+            .where(Sequel.|({TRANSACTIONS[:kind] => "purchase"},
+              Sequel.&({TRANSACTIONS[:kind] => "transfer"}, {TRANSACTIONS[:counter_account_id] => payment[:account_id]})))
+            .select_all(:transactions)
+            .order(closest_to(payment, TRANSACTIONS[:occurred_on]), TRANSACTIONS[:id])
+            .first
+        end
+
         # The other side of a transfer to someone of the household that names no bank (a
         # name-only Pix, issue #164): an unpaired transfer in one of that person's accounts,
         # same amount with the opposite sign, within a few days, pointing at no account or

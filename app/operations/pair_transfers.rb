@@ -15,6 +15,8 @@ module Tally
     # - Otherwise the row stays a one-leg transfer: still never spending or income. A Pix
     #   to someone of the household whose account wasn't imported yet finds it once it is
     #   (issue #21), and a name-only one finds the other person's side (issue #164).
+    # - A Pix to Nubank that paid another household person's Nubank card bill pairs with
+    #   the payment on that card (issue #158).
     class PairTransfers < Tally::Operation
       include Deps["repos.account_repo", "repos.transaction_repo"]
 
@@ -25,7 +27,7 @@ module Tally
         currencies = account_repo.all.to_h { [_1.id, _1.currency] }
         find_counter_accounts
         touched_ids.each_slice(500) { |ids| transaction_repo.rows(ids).each { reconcile(_1, currencies) } }
-        pair_all(currencies)
+        pair_all(currencies) + pay_household_bills
       end
 
       private
@@ -94,6 +96,19 @@ module Tally
         end
 
         created
+      end
+
+      # A Pix to Nubank that paid someone else of the household's card bill (issue #158):
+      # money sent to them, paired with the payment on their card.
+      def pay_household_bills
+        transaction_repo.unpaired_card_payments.count do |payment|
+          pix = transaction_repo.bill_pix(payment) or next false
+
+          transaction_repo.update(pix[:id], kind: "transfer", counter_account_id: payment[:account_id])
+          transaction_repo.set_category(pix[:id], category_id: nil, category_source: "none")
+          transaction_repo.update(payment[:id], counter_account_id: pix[:account_id])
+          transaction_repo.create_transfer(occurred_on: [pix[:occurred_on], payment[:occurred_on]].min, leg_ids: [pix[:id], payment[:id]])
+        end
       end
 
       def partner(row, currencies)
