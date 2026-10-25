@@ -661,7 +661,7 @@ en:
       confirm_delete_receipt: Delete this receipt?
       delete: Delete bill
       delete_receipt: Delete
-      link: It was this one
+      link: Save
       mark_paid: Mark paid
       no_rows: No spending near the due day to link.
       paid_by: Who paid
