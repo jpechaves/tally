@@ -654,6 +654,12 @@ en:
       new: New home bill
       no_category: No category
       title: Home bills
+    span:
+      label: Months shown
+      "1": This month
+      "2": 2 months
+      "6": 6 months
+      all: All months
     show:
       amount: Amount
       by_hand: Paid by hand

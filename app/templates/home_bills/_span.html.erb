@@ -1,0 +1,6 @@
+<%# How many months the page shows: this one, two, six or all. %>
+<nav class="switch" aria-label="<%= t("home_bills.span.label") %>">
+  <% Tally::HomeBills::SPANS.each do |choice| %>
+    <a href="<%= path_with_query(path, months: choice) %>"<%= ' aria-current="page"'.html_safe if choice == span %>><%= t("home_bills.span.#{choice}") %></a>
+  <% end %>
+</nav>

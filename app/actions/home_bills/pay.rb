@@ -17,7 +17,7 @@ module Tally
           payment = params[:transaction_id] ? linked(params[:transaction_id]) : by_hand(params)
 
           home_bill_repo.pay(bill[:id], month, **payment)
-          response.redirect_to "/home-bills/#{bill[:id]}"
+          response.redirect_to Tally::HomeBills.path(bill[:id], Tally::HomeBills.span(params[:months]))
         end
 
         private

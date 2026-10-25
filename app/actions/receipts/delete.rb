@@ -10,7 +10,7 @@ module Tally
         def handle(request, response)
           receipt = home_bill_repo.receipt(request.params[:id].to_i) || halt(404)
           home_bill_repo.delete_receipt(receipt).each { Tally::Receipts.delete(Tally::Receipts.dir, _1) }
-          response.redirect_to "/home-bills/#{receipt[:home_bill_id]}"
+          response.redirect_to Tally::HomeBills.path(receipt[:home_bill_id], Tally::HomeBills.span(request.params[:months]))
         end
       end
     end

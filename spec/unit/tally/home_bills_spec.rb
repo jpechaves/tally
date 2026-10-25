@@ -10,8 +10,21 @@ RSpec.describe Tally::HomeBills do
     expect(described_class.due_on("2026-02", 31)).to eq("2026-02-28")
   end
 
-  it "looks at the month before and this month" do
-    expect(described_class.months(Date.new(2026, 1, 5))).to eq(%w[2025-12 2026-01])
+  it "looks at the month before and this month, or the span chosen" do
+    today = Date.new(2026, 1, 5)
+    expect(described_class.months(today)).to eq(%w[2025-12 2026-01])
+    expect(described_class.months(today, "1")).to eq(%w[2026-01])
+    expect(described_class.months(today, "6")).to eq(%w[2025-08 2025-09 2025-10 2025-11 2025-12 2026-01])
+    expect(described_class.months(today, "all", first: "2025-11")).to eq(%w[2025-11 2025-12 2026-01])
+    expect(described_class.months(today, "all", first: "2026-03")).to eq(%w[2026-01])
+    expect(described_class.months(today, "all")).to eq(%w[2026-01])
+  end
+
+  it "takes a known span or the default, and keeps it in a bill's link" do
+    expect(%w[1 6 all].map { described_class.span(_1) }).to eq(%w[1 6 all])
+    expect([nil, "3", "x"].map { described_class.span(_1) }).to eq(%w[2 2 2])
+    expect(described_class.path(4)).to eq("/home-bills/4")
+    expect(described_class.path(4, "all")).to eq("/home-bills/4?months=all")
   end
 
   it "says paid, due up to the due day, then late" do

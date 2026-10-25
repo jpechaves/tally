@@ -5,7 +5,9 @@ module Tally
     module HomeBills
       # One bill: each month with its payment, the rows that could be it, and its receipts.
       class Show < Tally::View
-        include Deps["repos.home_bill_repo", "repos.insight_repo", "repos.person_repo"]
+        include Deps["repos.home_bill_repo", "repos.insight_repo", "repos.person_repo", "repos.transaction_repo"]
+
+        expose :span, decorate: false
 
         # With its payee as the rows name it today.
         expose :bill, decorate: false do |home_bill:|
@@ -13,8 +15,8 @@ module Tally
         end
 
         # This month first.
-        expose :months, decorate: false do |bill|
-          months = Tally::HomeBills.months(Date.today)
+        expose :months, decorate: false do |bill, span|
+          months = Tally::HomeBills.months(Date.today, span, first: transaction_repo.months.last)
           Tally::HomeBills.status_by_month(bill, months, home_bill_repo.payments([bill[:id]], months), today: Date.today).reverse
         end
 

@@ -19,8 +19,27 @@ module Tally
       (first + ([day, first.next_month.prev_day.day].min - 1)).iso8601
     end
 
-    # The month before and this one, the months the pages show.
-    def months(today) = [today.prev_month.strftime("%Y-%m"), today.strftime("%Y-%m")]
+    # How many months the pages show (the ?months= choice): this one, the one before too
+    # (the default), the last six, or every month since the first imported row.
+    SPANS = %w[1 2 6 all].freeze
+    DEFAULT_SPAN = "2"
+
+    def span(param) = SPANS.include?(param.to_s) ? param.to_s : DEFAULT_SPAN
+
+    # A bill's page, keeping a span other than the default.
+    def path(id, span = DEFAULT_SPAN) = (span == DEFAULT_SPAN) ? "/home-bills/#{id}" : "/home-bills/#{id}?months=#{span}"
+
+    # The months a span shows, oldest first, through this month.
+    # @param first [String, nil] the oldest month with rows, for "all"
+    def months(today, span = DEFAULT_SPAN, first: nil)
+      last = Date.new(today.year, today.month, 1)
+      start = if span == "all"
+        first ? [Date.iso8601("#{first}-01"), last].min : last
+      else
+        last << (span.to_i - 1)
+      end
+      (0..).lazy.map { start >> _1 }.take_while { _1 <= last }.map { _1.strftime("%Y-%m") }.to_a
+    end
 
     def status(bill, month, payment, today:)
       return :paid if payment

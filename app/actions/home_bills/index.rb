@@ -7,6 +7,7 @@ module Tally
       class Index < Tally::Action
         def handle(request, response)
           params = request.params
+          response[:span] = Tally::HomeBills.span(params[:months])
           response[:prefill] = {
             payee_key: params[:payee].to_s[Tally::TransactionFilter::PAYEE], name: params[:name].to_s[0, 200],
             expected: params[:amount].to_s[/\A[\d.,]{1,20}\z/], due_day: params[:day].to_s[/\A\d{1,2}\z/]

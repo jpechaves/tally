@@ -8,6 +8,7 @@ module Tally
 
         def handle(request, response)
           response[:home_bill] = found(home_bill_repo, request)
+          response[:span] = Tally::HomeBills.span(request.params[:months])
         end
       end
     end
