@@ -40,6 +40,9 @@ module Tally
           **options).html_safe
       end
 
+      # A dot per place on the world map (Tally::Charts.map).
+      def places_map(places) = Tally::Charts.map(places, title: t("trips.map.title")).html_safe
+
       # 5.5949… reais per dollar -> "5,5949" ("5.5949" in English), for an exchange rate.
       def rate(value)
         number(BigDecimal(value, 12).round(4).to_s("F"))

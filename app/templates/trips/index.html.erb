@@ -4,6 +4,7 @@
   <% if trips.empty? %>
     <p><%= t("trips.index.empty") %></p>
   <% else %>
+    <%= render "charts/map", places: places %>
     <div class="scroll"><table class="rows">
       <thead><tr><th><%= t("trips.index.name") %></th><th><%= t("trips.index.dates") %></th><th class="num"><%= t("trips.index.total") %></th></tr></thead>
       <tbody>

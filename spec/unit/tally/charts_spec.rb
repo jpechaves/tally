@@ -83,4 +83,23 @@ RSpec.describe Tally::Charts do
     expect(described_class.percent(-5, 200)).to eq(0.0)
     expect(described_class.percent(5, 0)).to eq(0.0)
   end
+
+  describe ".map" do
+    def place(name, lat, lon) = Tally::Places::Place.new(name:, lat:, lon:)
+
+    def view(*places) = described_class.map(places, title: "Places")[/viewBox="([^"]+)"/, 1]
+
+    it "draws a dot per place over the bundled world, named on hover" do
+      svg = described_class.map([place("<Lisboa>", 0, 0)], title: "Where we went")
+
+      expect(svg).to start_with(%(<svg class="map" viewBox="160 80 40 20" role="img" aria-label="Where we went">))
+      expect(svg).to include(%(<use href="/assets/world.svg#world"/>), %(<g><title>&lt;Lisboa&gt;</title><circle cx="180" cy="90" r="0.36"/></g>))
+    end
+
+    it "zooms to the places, 2:1, inside the world" do
+      expect(view(place("A", 60, -100), place("B", -40, 100))).to eq("70 25 220 110")
+      expect(view(place("A", 0, 175))).to eq("320 80 40 20")
+      expect(view(place("A", 80, -179), place("B", -80, 179))).to eq("0 0 360 180")
+    end
+  end
 end

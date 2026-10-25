@@ -64,6 +64,35 @@ module Tally
       svg << "</svg>"
     end
 
+    # The world drawn as x = lon + 180, y = 90 - lat (public/assets/world.svg).
+    WORLD = "/assets/world.svg#world"
+    MAP_PAD = 5
+    MAP_MIN_WIDTH = 40
+
+    # A dot per place over the world map, zoomed to the places (2:1, inside the world),
+    # each named on hover. The map is one cached file the page points at, not inlined.
+    #
+    # @param places [Array<Places::Place>] at least one
+    def map(places, title:)
+      xs = places.map { _1.lon + 180 }
+      ys = places.map { 90 - _1.lat }
+      width = [xs.max - xs.min + (2 * MAP_PAD), 2 * (ys.max - ys.min + (2 * MAP_PAD)), MAP_MIN_WIDTH].max.clamp(..360)
+      height = width / 2.0
+      left = (((xs.min + xs.max) / 2.0) - (width / 2.0)).clamp(0, 360 - width)
+      top = (((ys.min + ys.max) / 2.0) - (height / 2.0)).clamp(0, 180 - height)
+      radius = width / 110.0
+
+      svg = %(<svg class="map" viewBox="#{[left, top, width, height].map { number(_1) }.join(" ")}" role="img" aria-label="#{h(title)}">)
+      svg << %(<use href="#{WORLD}"/>)
+      places.each_with_index do |place, index|
+        svg << %(<g><title>#{h(place.name)}</title><circle cx="#{number(xs[index])}" cy="#{number(ys[index])}" r="#{number(radius)}"/></g>)
+      end
+      svg << "</svg>"
+    end
+
+    # 160.0 -> "160", 0.123 -> "0.12"
+    def number(value) = format("%.2f", value).sub(/\.?0+\z/, "")
+
     # A column from the baseline up to `top`, square at the base and rounded at the top.
     def column_path(x, top, width, base)
       radius = [RADIUS, (base - top), width / 2.0].min

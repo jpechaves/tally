@@ -715,6 +715,9 @@ en:
       starts_on: First day
       title: Trips
       total: Total
+    map:
+      missing: "Not on the map: %{places}"
+      title: Where we went
     show:
       added: added
       all_accounts: all accounts

@@ -11,4 +11,6 @@ Menu: **Visão geral › Viagens**.
 
 **Totais.** Um total somando as contas, depois **Por conta**. Uma compra parcelada conta inteira. Os lançamentos da Conta Global aparecem **Em outra moeda**, com a estimativa em reais pelo custo das recargas; as recargas não contam duas vezes.
 
+**Mapa.** Um ponto para cada cidade onde houve compra no cartão Itaú ou na Conta Global (o Nubank não diz onde). Passe o mouse num ponto para ver o nome; os lugares que ele não acha aparecem embaixo do mapa.
+
 Os lançamentos da viagem continuam no [relatório](report.md) do mês, que pode escondê-los.

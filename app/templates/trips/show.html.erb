@@ -12,6 +12,7 @@
     <% end %>
   </div>
   <p class="note"><%= t("trips.show.intro") %></p>
+  <%= render "charts/map", places: places %>
   <% result.future.each do |item| %>
     <p><%= item.description %>: <%= t("trips.show.future", count: item.count, amount: money(item.cents)) %></p>
   <% end %>

@@ -13,6 +13,10 @@ module Tally
           build_trip(trip)
         end
 
+        expose :places, decorate: false do |result|
+          Tally::Places.default.of(result.rows)
+        end
+
         # Rows its dates would bring in that you took out, so they can go back.
         expose :taken_out, decorate: false do |trip|
           ids = trip[:choices].reject { |_, included| included }.keys

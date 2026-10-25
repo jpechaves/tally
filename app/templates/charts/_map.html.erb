@@ -1,0 +1,12 @@
+<% unless places.places.empty? && places.missing.empty? %>
+  <section class="chart">
+    <h2><%= t("trips.map.title") %></h2>
+    <% unless places.places.empty? %>
+      <%= places_map(places.places) %>
+      <p class="note"><%= places.places.map(&:name).join(" · ") %></p>
+    <% end %>
+    <% unless places.missing.empty? %>
+      <p class="note"><%= t("trips.map.missing", places: places.missing.join(", ")) %></p>
+    <% end %>
+  </section>
+<% end %>
