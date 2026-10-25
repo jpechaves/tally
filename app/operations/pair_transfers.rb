@@ -14,7 +14,7 @@ module Tally
     #   written there, so that account's balance is right.
     # - Otherwise the row stays a one-leg transfer: still never spending or income. A Pix
     #   to someone of the household whose account wasn't imported yet finds it once it is
-    #   (issue #21).
+    #   (issue #21), and a name-only one finds the other person's side (issue #164).
     class PairTransfers < Tally::Operation
       include Deps["repos.account_repo", "repos.transaction_repo"]
 
@@ -57,8 +57,14 @@ module Tally
           known[[template, person_id, from]] = account_repo.counter_account_id(template, person_id, from:)
         end
         transaction_repo.household_one_legs.each do |row|
-          id = ids[[Importers.account_at(row[:raw_description]), row[:person_id], row[:account_id]]]
-          transaction_repo.update(row[:id], counter_account_id: id) if id
+          if (template = Importers.account_at(row[:raw_description]))
+            id = ids[[template, row[:person_id], row[:account_id]]]
+            transaction_repo.update(row[:id], counter_account_id: id) if id
+          elsif (partner = transaction_repo.household_partner(row, row[:person_id]))
+            # A name-only Pix (issue #164): the other person's side says which account.
+            transaction_repo.update(row[:id], counter_account_id: partner[:account_id])
+            transaction_repo.update(partner[:id], counter_account_id: row[:account_id])
+          end
         end
       end
 

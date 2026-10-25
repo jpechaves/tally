@@ -17,6 +17,11 @@ RSpec.describe "A household of two", :db do
     Hanami.app["operations.import_statement"].call(file_name: name, content: fixture(name), person_id:)
   end
 
+  def import_csv(name, *lines, person_id: nil)
+    content = ["Data,Valor,Identificador,Descrição", *lines].join("\n")
+    Hanami.app["operations.import_statement"].call(file_name: name, content:, person_id:)
+  end
+
   def party(name) = db[:counterparties].where(name:).get(:id)
 
   def account(name) = db[:accounts].where(name:).first
@@ -66,6 +71,30 @@ RSpec.describe "A household of two", :db do
 
     expect(pix("Nubank conta", -15_000)[:transfer_id]).to be_truthy
     expect(unmatched.map { _1[:amount_cents] }).to eq([-8_000])
+  end
+
+  # A Pix line with only a name (issue #164): no bank says which account it went to, so
+  # it waits for the other person's side.
+  it "pairs a Pix marked on a name-only counterparty with the other person's side" do
+    import_csv("NU_11112222_01AUG2026_31AUG2026.csv",
+      "16/08/2026,-1000.00,b1b2c3d4-0000-4000-8000-000000000001,Transferência enviada pelo Pix - BRUNO EXEMPLO DA SILVA (Transferência enviada)")
+    name_only = db[:counterparties].where(Sequel.like(:name, "BRUNO EXEMPLO%")).first
+    expect(name_only).to include(document: nil)
+
+    mark.call(counterparty_id: name_only[:id], person_id: bruno.id)
+    expect(pix("Nubank conta", -100_000)).to include(kind: "transfer", counter_account_id: nil, transfer_id: nil)
+    expect(unmatched.map { _1[:amount_cents] }).to eq([-100_000])
+
+    import_csv("NU_33334444_01AUG2026_31AUG2026.csv",
+      "16/08/2026,1000.00,b1b2c3d4-0000-4000-8000-000000000002,Transferência recebida pelo Pix - MARIA E SOUZA - •••.987.654-•• - NU PAGAMENTOS - IP (0260) Agência: 1 Conta: 2222222-2",
+      person_id: bruno.id)
+    mark.call(counterparty_id: party("MARIA E SOUZA"), person_id: me.id)
+
+    sent = pix("Nubank conta", -100_000)
+    received = pix("Nubank conta (Bruno)", 100_000)
+    expect(sent).to include(counter_account_id: account("Nubank conta (Bruno)")[:id])
+    expect(sent[:transfer_id]).to eq(received[:transfer_id]).and be_truthy
+    expect(unmatched).to be_empty
   end
 
   it "moves a counterparty from one person to another" do

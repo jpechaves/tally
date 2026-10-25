@@ -4,7 +4,7 @@ module Tally
   module Views
     module Review
       class Index < Tally::View
-        include Deps["repos.category_repo", "repos.transaction_repo"]
+        include Deps["repos.category_repo", "repos.counterparty_repo", "repos.person_repo", "repos.transaction_repo"]
 
         # Groups per page: a group's rows always stay together.
         PER_PAGE = Tally::Pagination::PER_PAGE
@@ -23,6 +23,16 @@ module Tally
 
         expose :groups do |all_groups, pagination|
           pagination.slice(all_groups)
+        end
+
+        # Who a Pix went to may be someone of the household (issue #164): marking them
+        # makes its rows transfers, and they leave this list.
+        expose :person_like, decorate: false do |groups|
+          counterparty_repo.person_like(groups.filter_map(&:counterparty_id))
+        end
+
+        expose :people, decorate: false do
+          person_repo.all
         end
 
         expose :categories do

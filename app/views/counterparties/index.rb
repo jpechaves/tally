@@ -19,6 +19,11 @@ module Tally
           counterparty_repo.with_totals(search:, limit: pagination.limit, offset: pagination.offset)
         end
 
+        # The ones that get the choice of who it is (issue #164).
+        expose :person_like, decorate: false do |counterparties|
+          counterparty_repo.person_like(counterparties.map { _1[:id] })
+        end
+
         # The household (issue #21): with one person, a "This is me" button; with more, a
         # choice of who it is.
         expose :people, decorate: false do

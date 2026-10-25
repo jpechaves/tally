@@ -101,6 +101,21 @@ module Tally
         counterparties.dataset.where(id:).update(person_id:, is_self: person_id ? 1 : 0, updated_at: Repos.now)
       end
 
+      # Of these counterparties, the ones that may be someone of the household (issue
+      # #164): a CPF, already marked, or a name with no document that a Pix went to or
+      # came from. Card merchants and companies are left out.
+      #
+      # @return [Hash] id => {id:, is_self:, person_id:}
+      def person_like(ids)
+        csv = Tally::Importers::NubankAccountCSV
+        pix = transactions.dataset.unordered
+          .where(Sequel.like(:raw_description, "#{csv::PIX_OUT}%") | Sequel.like(:raw_description, "#{csv::PIX_IN}%"))
+          .select(:counterparty_id)
+        counterparties.dataset.unordered.where(id: ids)
+          .where(Sequel.|({document_kind: "cpf_masked"}, {is_self: 1}, Sequel.&({document: nil}, {id: pix})))
+          .select(:id, :is_self, :person_id).all.to_h { [_1[:id], _1] }
+      end
+
       private
 
       def named(search)
