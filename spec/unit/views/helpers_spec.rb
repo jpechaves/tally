@@ -47,9 +47,6 @@ RSpec.describe Tally::Views::Helpers do
   it "labels the filters that have no form field" do
     purchase = Struct.new(:description, :account_name).new("LOJA EXEMPLO", "Nubank cartão")
 
-    expect(helpers.carried_filter_label(:nature, Tally::TransactionFilter::UNSET, payee: nil, purchase: nil))
-      .to eq(helpers.nature_label(nil))
-    expect(helpers.carried_filter_label(:nature, "fixed", payee: nil, purchase: nil)).to eq(helpers.nature_label("fixed"))
     expect(helpers.carried_filter_label(:payee, "description:loja", payee: "Loja", purchase: nil)).to eq("Loja")
     expect(helpers.carried_filter_label(:person, 7, payee: nil, purchase: nil, person: "Bruno")).to eq("Bruno")
     expect(helpers.carried_filter_label(:person, 7, payee: nil, purchase: nil)).to eq(7)

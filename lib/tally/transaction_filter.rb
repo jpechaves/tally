@@ -63,7 +63,7 @@ module Tally
     NATURES = (Categories::NATURES + [UNSET]).freeze
 
     # Filters with a field of their own in the transactions page's form.
-    FORM_FIELDS = %i[account month category kind q].freeze
+    FORM_FIELDS = %i[account month category kind nature q].freeze
 
     # The longest search read; the rest is dropped.
     SEARCH_MAX = 100
