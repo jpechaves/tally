@@ -108,6 +108,11 @@ RSpec.describe "Trips", :db, type: :request do
     get "/trips/#{trip[:id]}"
     expect(last_response.body).not_to include("Suggestions")
 
+    words = Hanami.app["repos.travel_word_repo"]
+    2.times { words.seed }
+    expect(db[:travel_words].count).to eq(9)
+    db[:travel_words].delete
+
     post "/trips/words", word: " LATAM "
     expect(last_response.location).to end_with("/trips")
     post "/trips/words", word: "látam"
