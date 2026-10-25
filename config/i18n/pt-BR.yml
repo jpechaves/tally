@@ -165,6 +165,27 @@ pt-BR:
       manual: manual
       seed: padrão
 
+  backups:
+    failed: "O último backup falhou: %{check}"
+    stale: Nenhum backup nas últimas 36 horas. Confira o timer tally-backup no Pi.
+    kinds:
+      nightly: Noturno
+      pre-deploy: Antes de um deploy
+    check_failed: "verificação falhou: %{check}"
+    check_ok: Verificação de integridade ok
+    copies: Cópias
+    date: Data
+    downloads_off: Baixar segue a mesma regra da exportação acima, porque cada cópia tem todos os lançamentos.
+    file: Arquivo
+    folder: Pasta
+    keep_html: O Pi guarda as 5 mais novas de cada tipo (<code>TALLY_BACKUP_KEEP</code> muda isso). Copie para fora do cartão SD com <code>bin/pull-backup</code>.
+    kind: Tipo
+    last_run: Último backup
+    no_copies: Nenhuma cópia na pasta ainda.
+    none_html: Não há backups nesta máquina. No Pi, uma cópia do banco é feita toda noite às 03:30 e antes de cada deploy, e <code>BACKUP_DIR</code> aponta para elas aqui.
+    size: Tamanho
+    title: Backups
+
   debug:
     show:
       busy_timeout: Busy timeout

@@ -1,4 +1,4 @@
-# Configurações, login, informações de debug e a proteção de privacidade
+# Configurações, login, informações de debug, backups e a proteção de privacidade
 
 ## Configurações
 
@@ -19,6 +19,14 @@ Fim do menu: **Informações de debug**. Mostra a versão e as configurações d
 **Baixar o banco de dados** salva uma cópia de tudo (sem comprovantes nem extratos importados) em um arquivo `.sqlite`. Só aparece com o login ligado, ou com `ALLOW_EXPORT_WITHOUT_LOGIN=true`.
 
 ![Informações de debug](../images/pt-BR/debug.png)
+
+## Backups
+
+Informações de debug, abaixo da exportação: **Backups**. No Pi, uma cópia do banco é feita toda noite às 03:30 e antes de cada deploy, e verificada. A seção mostra a última, se a verificação passou, e as cópias guardadas (as 5 mais novas de cada tipo). Se o último backup falhou, ou não há nenhum das últimas 36 horas, a seção e o início mostram um aviso em vermelho.
+
+Clique num arquivo para baixá-lo; como no download do banco, só com o login ligado ou `ALLOW_EXPORT_WITHOUT_LOGIN=true`. Para copiar todos para o seu computador, rode `bin/pull-backup`.
+
+![Backups](../images/pt-BR/backups.png)
 
 ## Proteção de privacidade
 

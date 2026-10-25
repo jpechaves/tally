@@ -65,6 +65,7 @@ HANAMI_PORT=$port
 DATABASE_URL=sqlite://$shared/db/tally.sqlite
 IMPORT_STORAGE_DIR=$shared/storage/imports
 RECEIPT_STORAGE_DIR=$shared/storage/receipts
+BACKUP_DIR=$shared/backups
 # Set both for a login, leave both commented out for none.
 # BASIC_AUTH_USERNAME=
 # BASIC_AUTH_PASSWORD=
@@ -72,6 +73,8 @@ RECEIPT_STORAGE_DIR=$shared/storage/receipts
 ENV
   chmod 600 "$base/tally.env"
 fi
+# Added after the first installs: where Debug info finds the backups.
+grep -q '^BACKUP_DIR=' "$base/tally.env" || echo "BACKUP_DIR=$shared/backups" >>"$base/tally.env"
 
 announce "Installing the tally service and the nightly backup..."
 for unit in tally.service tally-backup.service tally-backup.timer; do
