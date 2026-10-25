@@ -449,12 +449,16 @@ pt-BR:
         purchase: "Compra: %{value}"
         trip: "Viagem: %{value}"
       ask: "Mudar a categoria de %{rows} para %{category}?"
+      balance: Saldo
       change_category: Mudar categoria
       changed: "Categoria mudada em %{rows}."
       clear: Limpar filtros
       clear_search: Limpar busca
       drop: Tirar este filtro
       empty: Nenhum lançamento.
+      in_transfers: "%{amount} em transferências"
+      money_in: Entradas
+      money_out: Saídas
       no_match: Nenhum lançamento com estes filtros.
       kinds:
         income: Receitas
@@ -471,8 +475,8 @@ pt-BR:
       skipped:
         one: "1 transferência ficou como estava: transferências não têm categoria."
         other: "%{count} transferências ficaram como estavam: transferências não têm categoria."
-      summary: "%{rows}, saldo %{net}."
-      summary_spent: "%{rows}, gasto %{spent}."
+      summary: "%{rows}."
+      spent: Gasto
       title: Lançamentos
       uncategorized: Sem categoria
     show:

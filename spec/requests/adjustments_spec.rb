@@ -49,7 +49,7 @@ RSpec.describe "Adjusting a transaction", :db, type: :request do
     expect(food_in_september).to eq(format("%.2f", (33_914 - 1_000) / 100.0))
 
     get "/transactions", month: "2026-09", kind: "spending", category: db[:categories].where(name: "Alimentação").get(:id).to_s
-    expect(last_response.body).to include("spent R$ #{format("%.2f", (33_914 - 1_000) / 100.0)}.", "reimbursed R$ 10.00")
+    expect(last_response.body).to include("Spent<strong>R$ #{format("%.2f", (33_914 - 1_000) / 100.0)}</strong>", "reimbursed R$ 10.00")
   end
 
   it "counts the real amount when it changed, with the row's own sign" do

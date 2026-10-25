@@ -126,7 +126,7 @@ RSpec.describe "Importing statements", :db, type: :request do
 
     get "/transactions", account:, month: "2026-07"
     body = last_response.body
-    expect(body).to include("16 rows, net #{Tally::Money.new(net).format("en")}", "Page 1 of 4")
+    expect(body).to include("16 rows.", "Balance<strong>#{Tally::Money.new(net).format("en")}</strong>", "Page 1 of 4")
     expect(body).to include(%(href="/transactions?account=#{account}&amp;month=2026-07&amp;page=2">Next))
     expect(body).not_to include("Previous")
     expect(rows.call(body)).to eq(5)

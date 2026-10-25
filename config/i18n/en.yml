@@ -438,12 +438,16 @@ en:
         purchase: "Purchase: %{value}"
         trip: "Trip: %{value}"
       ask: "Change the category of %{rows} to %{category}?"
+      balance: Balance
       change_category: Change category
       changed: "Changed the category of %{rows}."
       clear: Clear filters
       clear_search: Clear search
       drop: Remove this filter
       empty: No transactions.
+      in_transfers: "%{amount} in transfers"
+      money_in: Money in
+      money_out: Money out
       no_match: No transactions match these filters.
       kinds:
         income: Income
@@ -460,8 +464,8 @@ en:
       skipped:
         one: "1 transfer left as it was: transfers have no category."
         other: "%{count} transfers left as they were: transfers have no category."
-      summary: "%{rows}, net %{net}."
-      summary_spent: "%{rows}, spent %{spent}."
+      summary: "%{rows}."
+      spent: Spent
       title: Transactions
       uncategorized: No category
     show:
