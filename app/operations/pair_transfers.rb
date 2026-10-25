@@ -18,7 +18,7 @@ module Tally
     # - A Pix to Nubank that paid another household person's Nubank card bill pairs with
     #   the payment on that card (issue #158).
     class PairTransfers < Tally::Operation
-      include Deps["repos.account_repo", "repos.transaction_repo"]
+      include Deps["repos.account_repo", "repos.transaction_repo", "operations.pair_household_bills"]
 
       # @param touched_ids [Array<Integer>] rows whose amount, date or kind may have
       #   changed since they were paired; their transfers are checked first
@@ -27,7 +27,7 @@ module Tally
         currencies = account_repo.all.to_h { [_1.id, _1.currency] }
         find_counter_accounts
         touched_ids.each_slice(500) { |ids| transaction_repo.rows(ids).each { reconcile(_1, currencies) } }
-        pair_all(currencies) + pay_household_bills
+        pair_all(currencies) + step(pair_household_bills.call)
       end
 
       private
@@ -96,20 +96,6 @@ module Tally
         end
 
         created
-      end
-
-      # A Pix to Nubank that paid someone else of the household's card bill (issue #158):
-      # money sent to them, paired with the payment on their card.
-      def pay_household_bills
-        transaction_repo.unpaired_card_payments.count do |payment|
-          pix = transaction_repo.bill_pix(payment) or next false
-          pix_id = pix[:id]
-
-          transaction_repo.update(pix_id, kind: "transfer", counter_account_id: payment[:account_id])
-          transaction_repo.set_category(pix_id, category_id: nil, category_source: "none")
-          transaction_repo.update(payment[:id], counter_account_id: pix[:account_id])
-          transaction_repo.create_transfer(occurred_on: [pix[:occurred_on], payment[:occurred_on]].min, leg_ids: [pix_id, payment[:id]])
-        end
       end
 
       def partner(row, currencies)
