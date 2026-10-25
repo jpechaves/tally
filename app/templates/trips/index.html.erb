@@ -20,12 +20,5 @@
   <% end %>
 
   <h2><%= t("trips.index.new") %></h2>
-  <form action="/trips" method="post">
-    <p><label><%= t("trips.index.name") %><br><input name="name" size="40" required></label></p>
-    <p><label><%= t("trips.index.starts_on") %><br><input type="date" name="starts_on" required></label></p>
-    <p><label><%= t("trips.index.ends_on") %><br><input type="date" name="ends_on" required></label></p>
-    <p><%= t("trips.index.accounts") %><br>
-      <% accounts.each do |account| %><label><input type="checkbox" name="account_ids[]" value="<%= account.id %>"> <%= account.name %></label> <% end %></p>
-    <button type="submit" class="primary"><%= t("common.add") %></button>
-  </form>
+  <%= render "trips/form", action: "/trips", trip: nil, button: t("common.add"), account_groups: account_groups %>
 </main>

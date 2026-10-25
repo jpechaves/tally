@@ -1,0 +1,19 @@
+<form action="<%= action %>" method="post">
+  <p><label><%= t("trips.index.name") %><br><input name="name" size="40" required value="<%= trip && trip[:name] %>"></label></p>
+  <p><label><%= t("trips.index.starts_on") %><br><input type="date" name="starts_on" required value="<%= trip && trip[:starts_on] %>"></label></p>
+  <p><label><%= t("trips.index.ends_on") %><br><input type="date" name="ends_on" required value="<%= trip && trip[:ends_on] %>"></label></p>
+  <fieldset class="checks">
+    <legend><%= t("trips.index.accounts") %></legend>
+    <p class="note"><%= t("trips.index.accounts_note") %></p>
+    <% account_groups.each do |person, accounts| %>
+      <fieldset>
+        <% if account_groups.size > 1 %><legend><%= person %></legend><% end %>
+        <% accounts.each do |account| %>
+          <label><input type="checkbox" name="account_ids[]" value="<%= account.id %>"<%= " checked" if trip ? trip[:account_ids].include?(account.id) : Tally::Views::TripForm.usual?(account) %>> <%= account.name %></label>
+        <% end %>
+      </fieldset>
+    <% end %>
+    <label><input type="checkbox" name="all_accounts" value="1"<%= " checked" if trip && trip[:account_ids].empty? %>> <%= t("trips.index.all_accounts") %></label>
+  </fieldset>
+  <button type="submit" class="primary"><%= button %></button>
+</form>

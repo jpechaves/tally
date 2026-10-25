@@ -4,8 +4,9 @@ module Tally
   module Views
     module Trips
       class Show < Tally::View
-        include Deps["repos.account_repo", "repos.transaction_repo", "repos.trip_repo"]
+        include Deps["repos.account_repo", "repos.person_repo", "repos.transaction_repo", "repos.trip_repo"]
         include Tally::Views::TripCosts
+        include Tally::Views::TripForm
 
         expose :trip, decorate: false
 

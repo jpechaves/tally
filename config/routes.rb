@@ -45,6 +45,7 @@ module Tally
     post "/trips", to: "trips.create"
     post "/trips/rows", to: "trips.choose", as: :trip_rows
     get "/trips/:id", to: "trips.show", as: :trip
+    post "/trips/:id", to: "trips.update"
     post "/trips/:id/delete", to: "trips.delete", as: :delete_trip
     get "/home-bills", to: "home_bills.index", as: :home_bills
     post "/home-bills", to: "home_bills.create"

@@ -2,10 +2,11 @@
 
 Sidebar: **Overview › Trips**.
 
-1. Under **New trip**, type a name, the **First day** and **Last day**. Tick accounts to look in, or none for all.
+1. Under **New trip**, type a name, the **First day** and **Last day**. Cards and foreign-currency accounts come ticked; change them, or tick **All accounts**.
 2. Press **Add**. Every row between those dates is in the trip.
 3. Open the trip. **Take out** a row that isn't part of it; **Put back** undoes it.
-4. For a row from another date (a flight bought weeks before), open it and press **Add to trip**.
+4. **Edit trip** at the bottom changes the name, dates or accounts; rows you added or took out stay that way.
+5. For a row from another date (a flight bought weeks before), open it and press **Add to trip**.
 
 ![Trip](../images/en/trip.png)
 

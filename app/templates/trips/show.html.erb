@@ -68,6 +68,11 @@
     </table></div>
   <% end %>
 
+  <details class="flow">
+    <summary><%= t("trips.show.edit") %></summary>
+    <%= render "trips/form", action: "/trips/#{trip[:id]}", trip: trip, button: t("common.save"), account_groups: account_groups %>
+  </details>
+
   <form action="/trips/<%= trip[:id] %>/delete" method="post" data-confirm="<%= t("trips.show.confirm_delete") %>">
     <button type="submit"><%= t("trips.show.delete") %></button>
   </form>

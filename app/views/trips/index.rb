@@ -4,12 +4,9 @@ module Tally
   module Views
     module Trips
       class Index < Tally::View
-        include Deps["repos.account_repo", "repos.transaction_repo", "repos.trip_repo"]
+        include Deps["repos.account_repo", "repos.person_repo", "repos.transaction_repo", "repos.trip_repo"]
         include Tally::Views::TripCosts
-
-        expose :accounts do
-          account_repo.all
-        end
+        include Tally::Views::TripForm
 
         # Each trip with what it adds up to.
         expose :trips, decorate: false do
