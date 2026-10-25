@@ -19,6 +19,21 @@ RSpec.describe "Account and category totals", :db do
       .to eq([{rows: 1, balance_cents: 10_000}])
   end
 
+  it "anchors an account's balance on the newest balance check" do
+    account = db[:accounts].insert(name: "Conta Exemplo", kind: "checking", opening_balance_cents: 12_345)
+    %w[2026-09-10 2026-10-20].each do |day|
+      db[:transactions].insert(account_id: account, occurred_on: day, amount_cents: -2_345, kind: "purchase",
+        description: "Loja", raw_description: "Loja", external_id: "loja-#{day}")
+    end
+    checks = Hanami.app["repos.balance_check_repo"]
+    checks.add(account_id: account, checked_on: "2026-10-01", balance_cents: 216_102)
+    checks.add(account_id: account, checked_on: "2026-10-01", balance_cents: 216_000)
+
+    entry = Hanami.app["repos.account_repo"].with_balances(checks.by_account).first
+    expect(entry.slice(:rows, :balance_cents)).to eq(rows: 2, balance_cents: 213_655)
+    expect(entry[:checks].map(&:balance_cents)).to eq([216_000])
+  end
+
   it "knows when there are no categories, and counts nothing for one no row uses" do
     categories = Hanami.app["repos.category_repo"]
     expect(categories).to be_empty

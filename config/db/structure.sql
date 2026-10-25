@@ -323,6 +323,14 @@ CREATE TABLE `purchase_adjustments`(
   CONSTRAINT `purchase_adjustments_kind` CHECK(kind IN('canceled', 'reimbursed', 'amount_changed')),
   CONSTRAINT `purchase_adjustments_amount` CHECK((kind = 'canceled') =(amount_cents IS NULL) AND(amount_cents IS NULL OR amount_cents > 0))
 ) STRICT;
+CREATE TABLE `balance_checks`(
+  `id` integer NOT NULL PRIMARY KEY AUTOINCREMENT,
+  `account_id` integer NOT NULL REFERENCES `accounts` ON DELETE CASCADE,
+  `checked_on` text NOT NULL,
+  `balance_cents` integer NOT NULL,
+  `created_at` text DEFAULT((strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))) NOT NULL,
+  UNIQUE(`account_id`, `checked_on`)
+) STRICT;
 INSERT INTO schema_migrations (filename) VALUES
 ('20261015000000_create_accounts.rb'),
 ('20261015100000_create_import_tables.rb'),
@@ -338,4 +346,5 @@ INSERT INTO schema_migrations (filename) VALUES
 ('20261025000000_create_home_bills.rb'),
 ('20261026000000_create_people.rb'),
 ('20261027120000_home_bill_payers.rb'),
-('20261029000000_create_purchase_adjustments.rb');
+('20261029000000_create_purchase_adjustments.rb'),
+('20261030000000_create_balance_checks.rb');

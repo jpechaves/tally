@@ -43,15 +43,18 @@ module Tally
         account.id if account && account.id != from
       end
 
-      # Every account with its balance: opening balance plus the sum of its transactions.
-      def with_balances
-        balances = transactions.dataset.unordered.group_and_count(:account_id)
-          .select_append { sum(:amount_cents).as(:sum_cents) }
-          .to_h { [_1[:account_id], _1] }
+      # Every account with its row count and balance (Tally::Balances): from the newest
+      # balance check, or the opening balance plus the sum of its transactions.
+      # @param checks [Hash] account id => its checks, oldest first (BalanceCheckRepo#by_account)
+      def with_balances(checks = {})
+        days = transactions.dataset.unordered.group_and_count(:account_id, :occurred_on)
+          .select_append { sum(:amount_cents).as(:sum_cents) }.all.group_by { _1[:account_id] }
 
         all.map do |account|
-          stats = balances.fetch(account.id, {count: 0, sum_cents: 0})
-          {account:, rows: stats[:count], balance_cents: account.opening_balance_cents + stats[:sum_cents].to_i}
+          by_day = days.fetch(account.id, []).to_h { [_1[:occurred_on], _1[:sum_cents].to_i] }
+          balance = Tally::Balances.call(checks.fetch(account.id, []), by_day)
+          cents = balance.checks.empty? ? account.opening_balance_cents + balance.balance_cents : balance.balance_cents
+          {account:, rows: days.fetch(account.id, []).sum { _1[:count] }, balance_cents: cents, checks: balance.checks}
         end
       end
     end

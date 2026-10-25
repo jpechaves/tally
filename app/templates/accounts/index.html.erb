@@ -9,8 +9,13 @@
           <td><a href="/transactions?account=<%= account.id %>"><%= account.name %></a> · <a class="note" href="/accounts/<%= account.id %>/report"><%= t("accounts.index.report") %></a></td>
           <td><%= status_label(:account, account.kind) %><%= account.mirror_transfers == 1 ? " #{t("accounts.index.from_transfers")}" : "" %></td>
           <td class="num"><%= entry[:rows] %></td>
-          <td class="num"><%= money(entry[:balance_cents], account.currency) %></td>
+          <td class="num"><%= money(entry[:balance_cents], account.currency) %>
+            <% if (check = entry[:checks].last) %><div class="note"><%= t("accounts.index.checked_on", date: date(check.checked_on)) %></div><% end %>
+          </td>
           <td>
+            <% if (check = entry[:checks].last) && check.difference_cents&.nonzero? %>
+              <div class="warning"><%= t("accounts.index.balance_difference", difference: money(check.difference_cents, account.currency)) %></div>
+            <% end %>
             <% if account.template == "Itaú conta" && entry[:balance_cents].abs > tolerance_cents %>
               <span class="warning"><%= t("accounts.index.pass_through", tolerance: money(tolerance_cents)) %></span>
             <% end %>
@@ -23,6 +28,36 @@
     </tbody>
   </table></div>
   <p class="note"><%= t("accounts.index.note") %></p>
+
+  <h2 id="balances"><%= t("accounts.index.balances") %></h2>
+  <p><%= t("accounts.index.balances_intro") %></p>
+  <form action="/accounts/balance-checks" method="post" class="filters">
+    <select name="account_id" data-picker required aria-label="<%= t("accounts.index.account") %>">
+      <% accounts.each do |entry| %><option value="<%= entry[:account].id %>"><%= entry[:account].name %></option><% end %>
+    </select>
+    <input type="date" name="checked_on" required value="<%= Date.today.iso8601 %>" aria-label="<%= t("accounts.index.checked_day") %>">
+    <input name="balance" inputmode="decimal" size="12" required placeholder="<%= t("accounts.index.balance") %>" aria-label="<%= t("accounts.index.balance") %>">
+    <button type="submit"><%= t("accounts.index.check_balance") %></button>
+  </form>
+  <% checked = accounts.reject { _1[:checks].empty? } %>
+  <% unless checked.empty? %>
+    <div class="scroll"><table class="rows">
+      <thead><tr><th><%= t("accounts.index.account") %></th><th><%= t("accounts.index.checked_day") %></th><th class="num"><%= t("accounts.index.bank_balance") %></th><th class="num"><%= t("accounts.index.difference") %></th><th></th></tr></thead>
+      <tbody>
+        <% checked.each do |entry| %>
+          <% entry[:checks].reverse_each do |check| %>
+            <tr>
+              <td><%= entry[:account].name %></td>
+              <td><%= date(check.checked_on) %></td>
+              <td class="num"><%= money(check.balance_cents, entry[:account].currency) %></td>
+              <td class="num"><%= check.difference_cents ? money(check.difference_cents, entry[:account].currency) : "—" %></td>
+              <td><form action="/balance-checks/<%= check.id %>/delete" method="post"><button type="submit"><%= t("accounts.index.delete_check") %></button></form></td>
+            </tr>
+          <% end %>
+        <% end %>
+      </tbody>
+    </table></div>
+  <% end %>
 
   <h2 id="people"><%= t("accounts.index.people") %></h2>
   <p><%= t("accounts.index.people_intro") %></p>
