@@ -3,7 +3,7 @@
 module Tally
   class Routes < Hanami::Routes
     root to: "home.show"
-    get "/assets/:name", to: "assets.show", as: :asset, constraints: {name: /[a-z]+\.(css|js)/}
+    get "/assets/:name", to: "assets.show", as: :asset, constraints: {name: /[a-z]+\.(css|js|svg)/}
 
     post "/locale", to: "locale.update", as: :locale
     post "/theme", to: "theme.update", as: :theme

@@ -15,6 +15,11 @@ module Tally
         expose :trips, decorate: false do
           trip_repo.all.map { [_1, build_trip(_1)] }
         end
+
+        # Where every trip went.
+        expose :places, decorate: false do |trips|
+          Tally::Places.default.of(trips.flat_map { |_, result| result.rows })
+        end
       end
     end
   end

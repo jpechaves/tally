@@ -86,6 +86,28 @@ RSpec.describe "Trips", :db, type: :request do
     expect(last_response.body).not_to include("R$ 1,039.15")
   end
 
+  it "maps the places of each trip, and lists the ones not on the map" do
+    row(itau, "2026-03-13", 4_000, "CAFE EXEMPLO", location: "SANTIAGO")
+    row(itau, "2026-03-14", 2_000, "LOJA EXEMPLO", location: "VILA EXEMPLO")
+    row(global, "2026-03-15", 3_000, "Loja Exemplo Buenos Aires")
+    trip = create_trip
+
+    get "/trips/#{trip[:id]}"
+    body = last_response.body
+    expect(body).to include(%(<svg class="map"), "<title>Santiago</title>", "<title>Buenos Aires</title>", "Not on the map: HOTEL EXEMPLO, VILA EXEMPLO")
+
+    post "/trips", name: "Lisboa, jan/2026", starts_on: "2026-01-01", ends_on: "2026-01-05"
+    get "/trips"
+    expect(last_response.body).to include(%(<svg class="map"), "<title>Santiago</title>", "Not on the map: HOTEL EXEMPLO, VILA EXEMPLO")
+
+    get "/trips/#{db[:trips].order(:id).last[:id]}"
+    expect(last_response.body).not_to include(%(<svg class="map"), "Not on the map")
+
+    get "/assets/world.svg"
+    expect(last_response.headers).to include("Content-Type" => "image/svg+xml; charset=utf-8", "Cache-Control" => "max-age=604800")
+    expect(last_response.body).to include(%(<path id="world"))
+  end
+
   it "deletes a trip, and refuses bad dates, unknown trips and rows" do
     trip = create_trip
     post "/trips/#{trip[:id]}/delete"

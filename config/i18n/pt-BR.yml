@@ -728,6 +728,9 @@ pt-BR:
       starts_on: Primeiro dia
       title: Viagens
       total: Total
+    map:
+      missing: "Fora do mapa: %{places}"
+      title: Por onde passamos
     show:
       added: adicionado
       all_accounts: todas as contas

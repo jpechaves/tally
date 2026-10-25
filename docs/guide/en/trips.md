@@ -11,4 +11,6 @@ Sidebar: **Overview › Trips**.
 
 **Totals.** One total across accounts, then **By account**. A card purchase in installments counts whole. Conta Global rows are shown **In another currency**, with the reais estimate at what the top-ups cost; top-ups don't count twice.
 
+**Map.** A dot for each city where an Itaú card or Conta Global purchase was made (Nubank doesn't say where). Hover a dot for its name; places it can't find are listed under the map.
+
 Trip rows still count in the monthly [report](report.md), which can hide them.

@@ -71,7 +71,7 @@ module Tally
           .left_join(Sequel[:categories].as(:parents), id: Sequel[:categories][:parent_id])
           .select(
             *%i[id account_id occurred_on purchased_on kind description counterparty_id category_id
-              installment_number installment_total purchase_key].map { Sequel[:transactions][_1] },
+              installment_number installment_total purchase_key location].map { Sequel[:transactions][_1] },
             Sequel[:accounts][:name].as(:account_name),
             Sequel[:accounts][:currency],
             Tally::DB::Repo.counterparty_label.as(:counterparty_name),
