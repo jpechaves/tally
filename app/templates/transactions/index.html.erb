@@ -50,8 +50,19 @@
     <p><%= filter.any? ? t("transactions.index.no_match") : t("transactions.index.empty") %></p>
   <% else %>
     <% count = t("common.row_count", count: totals[:rows]) %>
-    <p><%= filter.spending? ? t("transactions.index.summary_spent", rows: count, spent: money_each(totals[:net].transform_values(&:-@))) : t("transactions.index.summary", rows: count, net: money_each(totals[:net])) %><% if filter.q %>
+    <p><%= t("transactions.index.summary", rows: count) %><% if filter.q %>
       <a href="<%= filter.with(q: nil).path %>"><%= t("transactions.index.clear_search") %></a><% end %></p>
+    <div class="cards">
+      <% %i[out in].each do |side| %>
+        <div><%= t("transactions.index.money_#{side}") %><strong><%= money_each(totals[side]) %></strong><% if totals[:"transfers_#{side}"].values.any?(&:nonzero?) %>
+          <span class="note"><%= t("transactions.index.in_transfers", amount: money_each(totals[:"transfers_#{side}"])) %></span><% end %></div>
+      <% end %>
+      <% if filter.spending? %>
+        <div><%= t("transactions.index.spent") %><strong><%= money_each(totals[:net].transform_values(&:-@)) %></strong></div>
+      <% else %>
+        <div><%= t("transactions.index.balance") %><strong><%= money_each(totals[:net]) %></strong></div>
+      <% end %>
+    </div>
     <%= render "shared/pages", page: pagination, path: filter.pages(back: return_to) %>
     <form action="/transactions/category" method="post" id="recategorize" class="filters" data-total="<%= totals[:rows] %>"
       data-ask="<%= t("transactions.index.ask", rows: "%{rows}", category: "%{category}") %>" data-one="<%= t("common.row_count", count: 1) %>" data-other="<%= t("common.row_count")[:other] %>">

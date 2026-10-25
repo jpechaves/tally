@@ -53,16 +53,29 @@ module Tally
         scope.order(*NEWEST_FIRST).limit(limit, offset).all
       end
 
-      # How many rows match the filter, and their net in each currency, across all pages, as
-      # the rows count after your adjustments.
-      # @return [Hash] rows:, net: {"BRL" => cents, "USD" => cents}, reais first
+      # How many rows match the filter and, in each currency, across all pages, as the rows
+      # count after your adjustments: what went out and came in, the transfers among them
+      # (a card bill's payment, money between your accounts), and the net.
+      # @return [Hash] rows:, out:, in:, transfers_out:, transfers_in:, net:, each sum a
+      #   {"BRL" => cents, "USD" => cents} hash, reais first
       def totals(filter = Tally::TransactionFilter.new)
         scope = filtered(transactions.dataset.unordered, filter)
-        net = Tally::Adjustments.join(scope.join(:accounts, id: TRANSACTIONS[:account_id]))
+        amount = Tally::Adjustments.counted_amount
+        transfer = {TRANSACTIONS[:kind] => "transfer"}
+        sums = {
+          out: [amount < 0], in: [amount > 0],
+          transfers_out: [amount < 0, transfer], transfers_in: [amount > 0, transfer]
+        }.transform_values { |conditions| Sequel.function(:sum, Sequel.case([[Sequel.&(*conditions), amount]], 0)) }
+        groups = Tally::Adjustments.join(scope.join(:accounts, id: TRANSACTIONS[:account_id]))
           .group(ACCOUNTS[:currency])
-          .select(ACCOUNTS[:currency], Sequel.function(:sum, Tally::Adjustments.counted_amount).as(:cents))
-          .to_h { [_1[:currency], _1[:cents]] }
-        {rows: scope.count, net: net.sort_by { |currency, _| (currency == Tally::Money::DEFAULT_CURRENCY) ? "" : currency }.to_h}
+          .select(ACCOUNTS[:currency], *sums.map { |name, sum| sum.as(name) })
+          .all.sort_by { (_1[:currency] == Tally::Money::DEFAULT_CURRENCY) ? "" : _1[:currency] }
+        totals = (sums.keys + [:net]).to_h { |name| [name, {}] }
+        groups.each do |group|
+          sums.each_key { |name| totals[name][group[:currency]] = group[name] }
+          totals[:net][group[:currency]] = group[:out] + group[:in]
+        end
+        {rows: scope.count, **totals}
       end
 
       # Months that have rows, newest first ("2026-09", ...), in one account if given.

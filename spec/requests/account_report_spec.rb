@@ -43,7 +43,7 @@ RSpec.describe "An account's own report", :db, type: :request do
   it "has the same numbers as the transactions it links to" do
     get "/transactions", account: account_id.to_s, month: "2026-07", kind: "spending"
 
-    expect(last_response.body).to include("spent US$ 119.95.")
+    expect(last_response.body).to include("Spent<strong>US$ 119.95</strong>")
   end
 
   it "is linked from the accounts page and the main report" do

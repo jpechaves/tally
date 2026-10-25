@@ -19,14 +19,14 @@ RSpec.describe "The dollar account", :db, type: :request do
     get "/transactions", account: account_id("Nubank Conta Global").to_s
 
     body = last_response.body
-    expect(body).to include("10 rows, net US$ 113.04.")
+    expect(body).to include("10 rows.", "Balance<strong>US$ 113.04</strong>")
     expect(body).to include("-US$ 52.84", "GBP 41.20 · fee US$ 0.19")
   end
 
   it "never adds dollars to reais" do
     get "/transactions", month: "2026-07"
 
-    expect(last_response.body).to match(/net R\$ [\d,.]+ \+ US\$ 108\.79\./)
+    expect(last_response.body).to match(%r{Balance<strong>R\$ [\d,.]+ \+ US\$ 108\.79</strong>})
   end
 
   it "shows the account's balance in dollars" do

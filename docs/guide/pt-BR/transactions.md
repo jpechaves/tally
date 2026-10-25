@@ -6,6 +6,8 @@ Menu: **Dados › Lançamentos**.
 
 **Filtrar.** Escolha conta, mês, categoria ou tipo e aperte **Mostrar**. **Limpar filtros** volta tudo. Links do relatório e de outras páginas abrem esta lista já filtrada.
 
+**Totais.** **Saídas**, **Entradas** e o **Saldo** entre elas somam todos os resultados, não só esta página. Transferências entram nos dois lados e aparecem embaixo de cada um; por isso a fatura paga pela conta aparece como entrada no cartão.
+
 **Buscar.** Digite em **Buscar descrição, nota ou valor**. O texto ignora acentos e maiúsculas. Um número como `45,90` acha esse valor exato, gasto ou recebido.
 
 **Um lançamento.** Clique na categoria da linha e escolha outra. Salva na hora.

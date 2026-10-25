@@ -23,8 +23,18 @@ RSpec.describe "Filtering transactions", :db, type: :request do
 
     body = last_response.body
     expect(descriptions(body)).to contain_exactly("MERCADO EXEMPLO", "SUPERMARKET EX")
-    expect(body).to include("2 rows, net -R$ 247.84.")
+    expect(body).to include("2 rows.", "Balance<strong>-R$ 247.84</strong>")
     expect(body).to include(%(<option value="#{category_id("Supermercado")}" selected>Groceries</option>))
+  end
+
+  it "splits the total into money out, money in and the balance, showing the transfers in each" do
+    get "/transactions", account: db[:accounts].where(name: "Nubank cartão").get(:id).to_s, month: "2026-07"
+
+    body = last_response.body
+    expect(body).to include("5 rows.")
+    expect(body).to include("Money out<strong>-R$ 1,658.00</strong>", "Money in<strong>R$ 1,765.75</strong>",
+      %(<span class="note">R$ 1,765.75 in transfers</span>), "Balance<strong>R$ 107.75</strong>")
+    expect(body).not_to include("-R$ 0.00 in transfers")
   end
 
   it "takes in a parent category's children" do
@@ -43,7 +53,7 @@ RSpec.describe "Filtering transactions", :db, type: :request do
 
   it "totals spending the way the report does" do
     get "/transactions", category: category_id("Alimentação").to_s, month: "2026-09", kind: "spending"
-    expect(last_response.body).to include("3 rows, spent R$ 339.14.")
+    expect(last_response.body).to include("3 rows.", "Spent<strong>R$ 339.14</strong>")
 
     get "/report", month: "2026-09"
     expect(last_response.body).to match(%r{>Food</a></td>\s*<td class="num">R\$ 339\.14</td>})
@@ -98,7 +108,7 @@ RSpec.describe "Report rows link to their transactions", :db, type: :request do
 
       lines.each do |href, amount, rows|
         get CGI.unescapeHTML(href)
-        expect([href, last_response.body]).to match([href, include("#{rows} row#{"s" unless rows == "1"}, spent #{amount}.")])
+        expect([href, last_response.body]).to match([href, include("#{rows} row#{"s" unless rows == "1"}.", "Spent<strong>#{amount}</strong>")])
       end
       lines.size
     end
@@ -112,14 +122,14 @@ RSpec.describe "Report rows link to their transactions", :db, type: :request do
 
     get CGI.unescapeHTML(href)
     body = last_response.body
-    expect(body).to include("2 rows, spent R$ 460.00.", %(<span class="badge">Payee: RESTAURANTE EXEMPLO))
+    expect(body).to include("2 rows.", "Spent<strong>R$ 460.00</strong>", %(<span class="badge">Payee: RESTAURANTE EXEMPLO))
     expect(body).to include(%(<input type="hidden" name="payee" value="counterparty:))
     expect(body).to include(%(href="/transactions?month=2026-12&amp;kind=spending" title="Remove this filter"))
   end
 
   it "links rows paid without a counterparty by their description" do
     get "/transactions", payee: "description:cobranca exemplo com virgula"
-    expect(last_response.body).to include("1 row, net -R$ 12.34.", "Payee: Cobrança exemplo, com vírgula")
+    expect(last_response.body).to include("1 row.", "Balance<strong>-R$ 12.34</strong>", "Payee: Cobrança exemplo, com vírgula")
   end
 
   it "links a nature, including rows with none" do
@@ -127,7 +137,7 @@ RSpec.describe "Report rows link to their transactions", :db, type: :request do
     expect(last_response.body).to include("Nature: no nature")
 
     get "/transactions", nature: "fixed", month: "2026-09"
-    expect(last_response.body).to include("2 rows, net -R$ 52.50.", "Nature: fixed")
+    expect(last_response.body).to include("2 rows.", "Balance<strong>-R$ 52.50</strong>", "Nature: fixed")
   end
 end
 
@@ -172,7 +182,7 @@ RSpec.describe "Installments link to their purchase", :db, type: :request do
       get "/transactions", purchase: id.to_s
       body = last_response.body
       expect(body.scan(%r{<td class="details">(\d+/6)}).flatten).to eq(%w[2/6 1/6])
-      expect(body).to include("2 rows, net -R$ 2,100.00.")
+      expect(body).to include("2 rows.", "Balance<strong>-R$ 2,100.00</strong>")
       expect(body).to include("Left to pay from Aug 2026: 4 × R$ 1,050.00 = R$ 4,200.00, the last one in Nov 2026.")
     end
   end
@@ -287,7 +297,7 @@ RSpec.describe "Searching transactions", :db, type: :request do
 
     body = last_response.body
     expect(body).to include(%(<input type="search" name="q" value="exemplo" placeholder="Search description, note or amount"))
-    expect(body).to include("3 rows, net", %(<a href="/transactions?month=2026-09&amp;category=none">Clear search</a>))
+    expect(body).to include("3 rows.", %(<a href="/transactions?month=2026-09&amp;category=none">Clear search</a>))
     expect(body).to include(%(<input type="hidden" name="q" value="exemplo">))
     expect(body).to include(%(<input type="checkbox" name="all" value="1" data-check-all="recategorize"> Select all 3 results))
     expect(body).to include(%(data-ask="Change the category of %{rows} to %{category}?"))
