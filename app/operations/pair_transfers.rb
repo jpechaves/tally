@@ -103,11 +103,12 @@ module Tally
       def pay_household_bills
         transaction_repo.unpaired_card_payments.count do |payment|
           pix = transaction_repo.bill_pix(payment) or next false
+          pix_id = pix[:id]
 
-          transaction_repo.update(pix[:id], kind: "transfer", counter_account_id: payment[:account_id])
-          transaction_repo.set_category(pix[:id], category_id: nil, category_source: "none")
+          transaction_repo.update(pix_id, kind: "transfer", counter_account_id: payment[:account_id])
+          transaction_repo.set_category(pix_id, category_id: nil, category_source: "none")
           transaction_repo.update(payment[:id], counter_account_id: pix[:account_id])
-          transaction_repo.create_transfer(occurred_on: [pix[:occurred_on], payment[:occurred_on]].min, leg_ids: [pix[:id], payment[:id]])
+          transaction_repo.create_transfer(occurred_on: [pix[:occurred_on], payment[:occurred_on]].min, leg_ids: [pix_id, payment[:id]])
         end
       end
 
