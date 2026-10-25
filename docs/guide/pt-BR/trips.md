@@ -6,7 +6,7 @@ Menu: **Visão geral › Viagens**.
 2. Aperte **Adicionar**. Todo lançamento entre essas datas entra na viagem.
 3. Abra a viagem. Aperte **Tirar** num lançamento que não faz parte; **Devolver** desfaz.
 4. **Editar viagem**, no fim da página, muda o nome, as datas ou as contas; o que você adicionou ou tirou continua assim.
-5. Para um lançamento de outra data (uma passagem comprada semanas antes), abra-o e aperte **Adicionar à viagem**.
+5. Para um lançamento de outra data (uma passagem comprada semanas antes), abra-o e aperte **Adicionar à viagem**. Ou veja as **Sugestões** da viagem: lançamentos dos 60 dias antes dela em outra moeda, de uma loja que já está na viagem, em Viagens, ou com uma das **Palavras de viagem** (a lista fica no fim de Viagens). **Adicionar** traz para a viagem; **Tirar** esconde.
 
 ![Viagem](../images/pt-BR/trip.png)
 

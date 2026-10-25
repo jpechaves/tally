@@ -6,7 +6,8 @@
 # after an importer change.
 #
 # Home bills, their payments and receipts are kept (Tally::HomeBillsCopy): they are copied
-# back from the backup, and the receipt files in storage/receipts are never touched.
+# back from the backup, and the receipt files in storage/receipts are never touched. So is
+# the travel list of trip suggestions (Tally::TravelWordsCopy).
 #
 # Before deleting anything it copies the database next to itself
 # (db/tally.sqlite -> db/tally-backup-20261016-143000.sqlite) and prints where the copy went.
@@ -25,6 +26,7 @@ require "hanami/db/testing"
 require "sqlite3"
 require "uri"
 require_relative "../lib/tally/home_bills_copy"
+require_relative "../lib/tally/travel_words_copy"
 
 ROOT = File.expand_path("..", __dir__)
 PI_MODEL_FILE = "/proc/device-tree/model"
@@ -56,7 +58,7 @@ if File.exist?(path)
     db = SQLite3::Database.new(path, readonly: true)
     rows = db.get_first_value("SELECT count(*) FROM sqlite_master WHERE name = 'transactions'").zero? ? 0 : db.get_first_value("SELECT count(*) FROM transactions")
     db.close
-    puts "This deletes everything in #{shown} (#{env}): #{rows} transactions, your categories, rules, plans and budgets. Home bills and their receipts are kept."
+    puts "This deletes everything in #{shown} (#{env}): #{rows} transactions, your categories, rules, plans and budgets. Home bills, their receipts and the travel words are kept."
     puts "A copy is kept next to it first. Stop bin/dev before going on."
     print 'Type "yes" to reset it: '
     answer = $stdin.gets.to_s.strip
@@ -79,4 +81,6 @@ system(*hanami, "migrate", "--no-dump", "--skip-test-db", exception: true)
 system(*hanami, "seed", "--skip-test-db", out: File::NULL, exception: true)
 bills = backup ? Tally::HomeBillsCopy.call(from: backup, to: path) : 0
 puts "Home bills kept: #{bills}." if bills.positive?
+words = backup && Tally::TravelWordsCopy.call(from: backup, to: path)
+puts "Travel words kept: #{words}." if words
 puts "#{shown} is empty again, with the starting categories. Import your statements to fill it."

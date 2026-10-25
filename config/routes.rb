@@ -44,6 +44,8 @@ module Tally
     get "/trips", to: "trips.index", as: :trips
     post "/trips", to: "trips.create"
     post "/trips/rows", to: "trips.choose", as: :trip_rows
+    post "/trips/words", to: "trips.add_word", as: :travel_words
+    post "/trips/words/:id/delete", to: "trips.delete_word", as: :delete_travel_word
     get "/trips/:id", to: "trips.show", as: :trip
     post "/trips/:id", to: "trips.update"
     post "/trips/:id/delete", to: "trips.delete", as: :delete_trip

@@ -103,6 +103,40 @@ RSpec.describe "Trips", :db, type: :request do
     expect(last_response.status).to eq(404)
   end
 
+  it "suggests purchases from before the trip, from the travel list kept on the trips page" do
+    trip = create_trip(account_ids: [nubank.to_s], all_accounts: nil)
+    get "/trips/#{trip[:id]}"
+    expect(last_response.body).not_to include("Suggestions")
+
+    words = Hanami.app["repos.travel_word_repo"]
+    2.times { words.seed }
+    expect(db[:travel_words].count).to eq(9)
+    db[:travel_words].delete
+
+    post "/trips/words", word: " LATAM "
+    expect(last_response.location).to end_with("/trips")
+    post "/trips/words", word: "látam"
+    expect(db[:travel_words].select_map(:word)).to eq(["LATAM"])
+    post "/trips/words", word: " "
+    expect(last_response.status).to eq(422)
+    get "/trips"
+    expect(last_response.body).to include("Travel words", "LATAM", %(action="/trips/words/#{db[:travel_words].get(:id)}/delete"))
+
+    get "/trips/#{trip[:id]}"
+    body = last_response.body
+    expect(body).to include("Suggestions", "LATAM AIR", %(<button type="submit" name="included" value="1">Add</button>))
+    expect(body.scan("LATAM AIR").size).to eq(1)
+
+    post "/trips/rows", trip_id: trip[:id], transaction_id: flight, included: "0"
+    get "/trips/#{trip[:id]}"
+    expect(last_response.body).not_to include("Suggestions")
+
+    post "/trips/words/#{db[:travel_words].get(:id)}/delete"
+    expect(db[:travel_words].count).to eq(0)
+    post "/trips/words/999/delete"
+    expect(last_response.status).to eq(404)
+  end
+
   it "keeps to the trip's accounts, takes rows out and puts them back" do
     trip = create_trip(account_ids: [nubank.to_s], all_accounts: nil)
     get "/trips/#{trip[:id]}"

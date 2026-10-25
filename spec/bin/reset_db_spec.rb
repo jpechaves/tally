@@ -22,7 +22,7 @@ RSpec.describe "bin/reset-db" do
   end
 
   # One example: each reset boots the app three times.
-  it "asks first, backs the database up, then recreates it with the schema and the starting categories, keeping home bills" do
+  it "asks first, backs the database up, then recreates it with the schema and the starting categories, keeping home bills and travel words" do
     output, status = reset("--force")
     expect(status).to be_success, output
     query("INSERT INTO accounts (name, institution, kind) VALUES ('Conta exemplo', 'nubank', 'checking')")
@@ -33,6 +33,7 @@ RSpec.describe "bin/reset-db" do
     expect(query("SELECT count(*) FROM accounts")).to eq(1)
 
     query("INSERT INTO home_bills (name, due_day) VALUES ('Energia', 10)")
+    query("DELETE FROM travel_words WHERE word = 'Gol'")
 
     output, status = reset(input: "yes\n")
     expect(status).to be_success, output
@@ -44,6 +45,7 @@ RSpec.describe "bin/reset-db" do
     expect(query("SELECT count(*) FROM categories")).to be_positive
     expect(output).to include("Home bills kept: 1.")
     expect(query("SELECT name FROM home_bills")).to eq("Energia")
+    expect(output).to include("Travel words kept: 8.")
   end
 
   it "refuses to run in production, and --force outside development" do

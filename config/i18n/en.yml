@@ -98,6 +98,7 @@ en:
     invalid_receipt: A receipt is a JPEG, PNG or PDF of up to 10 MB.
     invalid_target: Enter how much to save each month, like 1500.00.
     invalid_trip: A trip needs a name, and a first day on or before its last.
+    invalid_travel_word: Type a word or a merchant name.
     trip_accounts: Pick the accounts the trip looks in, or All accounts.
     missing_key: Missing suggestion key.
     month_and_category: Pick a month and a spending category.
@@ -770,6 +771,11 @@ en:
       starts_on: First day
       title: Trips
       total: Total
+      word: Word or merchant
+      words: Travel words
+      words_note: >-
+        A trip suggests rows from before it whose description or merchant has one of these
+        words, ignoring case and accents.
     map:
       missing: "Not on the map: %{places}"
       title: Where we went
@@ -784,6 +790,9 @@ en:
       future:
         one: "1 installment to come: %{amount}"
         other: "%{count} installments to come: %{amount}"
+      installments:
+        one: 1 installment
+        other: "%{count} installments"
       in_reais: "%{amount} at what the top-ups cost"
       intro: >-
         A card purchase in installments counts whole, with the installments not on a bill yet.
@@ -792,6 +801,11 @@ en:
       iof: "IOF: %{amount}"
       put_back: Put back
       rows: Rows
+      suggestions: Suggestions
+      suggestions_note: >-
+        Bought in the %{days} days before the trip and probably part of it: in another currency,
+        on the travel words list, from a merchant already on the trip, or in Travel. Add brings it
+        in; Take out hides it.
       take_out: Take out
       taken_out: Taken out
       total: Total

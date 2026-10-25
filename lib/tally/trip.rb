@@ -15,6 +15,13 @@ module Tally
     Future = Data.define(:description, :count, :cents)
 
     IOF = /\bIOF\b/i
+    # Nubank's IOF row names the purchase it is for.
+    IOF_OF = /\AIOF de "(.+)"\z/
+
+    # How far before a trip its suggestions look (issue #165).
+    DAYS_BEFORE = 60
+    # The category, or parent category, of travel spending.
+    TRAVEL = "Viagens"
 
     attr_reader :rows, :future
 
@@ -23,12 +30,15 @@ module Tally
     # @param rows [Array<Hash>] InsightRepo#trip_rows
     # @param installments [Array<Hash>] InsightRepo#installment_rows
     # @param costs [Hash] account id => TopUps::Cost, for accounts in another currency
-    def initialize(trip, rows, installments: [], costs: {})
+    # @param words [Array<String>] the travel list (TravelWordRepo), for #suggestions
+    def initialize(trip, rows, installments: [], costs: {}, words: [])
       @trip = trip
       @costs = costs
-      purchases = InstallmentCalendar.series(installments).select { |series| purchase?(series) }
-      singles = rows.select { Insights.spending?(_1) && _1[:installment_total].nil? && chosen?(_1) }
-      @rows = (singles + purchases.flatten).sort_by { [_1[:occurred_on], _1[:id]] }
+      @words = words.map { " #{Search.fold(_1)} " }
+      @series = InstallmentCalendar.series(installments)
+      purchases = @series.select { |series| purchase?(series) }
+      @singles = rows.select { Insights.spending?(_1) && _1[:installment_total].nil? }
+      @rows = (@singles.select { chosen?(_1) } + purchases.flatten).sort_by { [_1[:occurred_on], _1[:id]] }
       # Keyed by the purchase's latest installment.
       @to_come = purchases.map { InstallmentCalendar::Purchase.of(_1) }.select { _1.left.positive? }.to_h { [_1.id, _1] }
       @future = @to_come.values.map { Future.new(description: _1.description, count: _1.left, cents: _1.cents * _1.left) }
@@ -74,12 +84,32 @@ module Tally
       end
     end
 
+    # Rows bought in the DAYS_BEFORE days before the trip, in any account, that look like part
+    # of it and that you haven't chosen yet, money out only: in another currency (or with its IOF), on the
+    # travel list, from a merchant already on the trip, or in the Viagens category. A card
+    # purchase is suggested once, as its first installment. Taking one out hides it.
+    def suggestions
+      window = (Date.iso8601(@trip[:starts_on]) - DAYS_BEFORE).iso8601...@trip[:starts_on]
+      merchants = rows.filter_map { _1[:counterparty_id] }.to_set
+      iofs = @singles.filter_map { [_1[:account_id], $1] if IOF_OF =~ _1[:description] }.to_set
+      candidates = @singles + @series.select { |series| series.none? { @trip[:choices].key?(_1[:id]) } }.map(&:first)
+      candidates.select { _1[:amount_cents].negative? && window.cover?(bought(_1)) && !@trip[:choices].key?(_1[:id]) && travel?(_1, merchants, iofs) }
+        .sort_by { [bought(_1), _1[:id]] }
+    end
+
     private
+
+    def bought(row) = row[:purchased_on] || row[:occurred_on]
 
     def in_range?(row)
       accounts = @trip[:account_ids]
-      (@trip[:starts_on]..@trip[:ends_on]).cover?(row[:purchased_on] || row[:occurred_on]) &&
-        (accounts.empty? || accounts.include?(row[:account_id]))
+      (@trip[:starts_on]..@trip[:ends_on]).cover?(bought(row)) && (accounts.empty? || accounts.include?(row[:account_id]))
+    end
+
+    def travel?(row, merchants, iofs)
+      row[:currency] != Money::DEFAULT_CURRENCY || IOF.match?(row[:description]) || iofs.include?([row[:account_id], row[:description]]) ||
+        merchants.include?(row[:counterparty_id]) || [row[:category_name], row[:parent_name]].include?(TRAVEL) ||
+        [row[:description], row[:counterparty_name]].any? { |text| @words.any? { " #{Search.fold(text)} ".include?(_1) } }
     end
 
     def chosen?(row) = @trip[:choices].fetch(row[:id]) { in_range?(row) }

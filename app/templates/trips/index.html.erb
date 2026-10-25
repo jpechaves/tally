@@ -21,4 +21,21 @@
 
   <h2><%= t("trips.index.new") %></h2>
   <%= render "trips/form", action: "/trips", trip: nil, button: t("common.add"), account_groups: account_groups %>
+
+  <h2><%= t("trips.index.words") %></h2>
+  <p class="note"><%= t("trips.index.words_note") %></p>
+  <% unless travel_words.empty? %>
+    <div class="scroll"><table class="rows">
+      <tbody>
+        <% travel_words.each do |word| %>
+          <tr><td><%= word[:word] %></td>
+            <td><form action="/trips/words/<%= word[:id] %>/delete" method="post"><button type="submit"><%= t("common.remove") %></button></form></td></tr>
+        <% end %>
+      </tbody>
+    </table></div>
+  <% end %>
+  <form action="/trips/words" method="post" class="filters">
+    <input name="word" maxlength="100" required aria-label="<%= t("trips.index.word") %>" placeholder="<%= t("trips.index.word") %>">
+    <button type="submit"><%= t("common.add") %></button>
+  </form>
 </main>

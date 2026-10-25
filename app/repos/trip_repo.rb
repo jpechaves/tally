@@ -4,7 +4,7 @@ module Tally
   module Repos
     # Trips, their accounts and your choices of rows (Tally::Trip).
     class TripRepo < Tally::DB::Repo
-      include Deps["repos.insight_repo"]
+      include Deps["repos.insight_repo", "repos.travel_word_repo"]
 
       # Newest first, as Tally::Trip wants them: account_ids and choices included.
       def all = trips.dataset.order(Sequel.desc(:starts_on), Sequel.desc(:id)).all.map { with_choices(_1) }
@@ -45,11 +45,13 @@ module Tally
           .insert(trip_id:, transaction_id:, included: included ? 1 : 0)
       end
 
+      # From Trip::DAYS_BEFORE days before it, for its suggestions.
       # @param costs [Hash] account id => TopUps::Cost
       def build(trip, costs: {})
         added = trip[:choices].select { |_, included| included }.keys
-        Tally::Trip.new(trip, insight_repo.trip_rows(starts_on: trip[:starts_on], ends_on: trip[:ends_on], ids: added),
-          installments: insight_repo.installment_rows, costs:)
+        from = (Date.iso8601(trip[:starts_on]) - Tally::Trip::DAYS_BEFORE).iso8601
+        Tally::Trip.new(trip, insight_repo.trip_rows(starts_on: from, ends_on: trip[:ends_on], ids: added),
+          installments: insight_repo.installment_rows, costs:, words: travel_word_repo.words)
       end
 
       # Ids of the rows of every trip, for the report's "hide trips".
