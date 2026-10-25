@@ -57,6 +57,25 @@
     </tbody>
   </table></div>
 
+  <% unless result.suggestions.empty? %>
+    <h2><%= t("trips.show.suggestions") %></h2>
+    <p class="note"><%= t("trips.show.suggestions_note", days: Tally::Trip::DAYS_BEFORE) %></p>
+    <div class="scroll"><table class="rows">
+      <tbody>
+        <% result.suggestions.each do |row| %>
+          <tr>
+            <td><%= date(row[:purchased_on] || row[:occurred_on]) %></td>
+            <td><a href="<%= transaction_path(row[:id]) %>"><%= row[:description] %></a><% if row[:installment_total] %> <span class="badge"><%= t("trips.show.installments", count: row[:installment_total]) %></span><% end %></td>
+            <td><%= row[:account_name] %></td>
+            <td class="num"><%= money(-row[:amount_cents], row[:currency]) %></td>
+            <td><form action="/trips/rows" method="post"><input type="hidden" name="trip_id" value="<%= trip[:id] %>"><input type="hidden" name="transaction_id" value="<%= row[:id] %>">
+              <button type="submit" name="included" value="1"><%= t("common.add") %></button> <button type="submit" name="included" value="0"><%= t("trips.show.take_out") %></button></form></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table></div>
+  <% end %>
+
   <% unless taken_out.empty? %>
     <h2><%= t("trips.show.taken_out") %></h2>
     <div class="scroll"><table class="rows">

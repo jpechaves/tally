@@ -110,6 +110,7 @@ pt-BR:
     invalid_receipt: O comprovante é um JPEG, PNG ou PDF de até 10 MB.
     invalid_target: Informe quanto guardar por mês, como 1.500,00.
     invalid_trip: Uma viagem precisa de um nome, e de um primeiro dia igual ou anterior ao último.
+    invalid_travel_word: Digite uma palavra ou o nome de uma loja.
     trip_accounts: Escolha as contas onde a viagem procura, ou Todas as contas.
     missing_key: Falta a chave da sugestão.
     month_and_category: Escolha um mês e uma categoria de despesa.
@@ -783,6 +784,11 @@ pt-BR:
       starts_on: Primeiro dia
       title: Viagens
       total: Total
+      word: Palavra ou loja
+      words: Palavras de viagem
+      words_note: >-
+        Uma viagem sugere lançamentos de antes dela cuja descrição ou loja tem uma destas
+        palavras, sem ligar para maiúsculas ou acentos.
     map:
       missing: "Fora do mapa: %{places}"
       title: Por onde passamos
@@ -797,6 +803,9 @@ pt-BR:
       future:
         one: "1 parcela por vir: %{amount}"
         other: "%{count} parcelas por vir: %{amount}"
+      installments:
+        one: 1 parcela
+        other: "%{count} parcelas"
       in_reais: "%{amount} pelo custo das recargas"
       intro: >-
         Uma compra parcelada no cartão conta inteira, com as parcelas que ainda não estão numa
@@ -805,6 +814,11 @@ pt-BR:
       iof: "IOF: %{amount}"
       put_back: Devolver
       rows: Lançamentos
+      suggestions: Sugestões
+      suggestions_note: >-
+        Comprados nos %{days} dias antes da viagem e provavelmente parte dela: em outra moeda,
+        com uma palavra de viagem, de uma loja que já está na viagem, ou em Viagens. Adicionar
+        traz para a viagem; Tirar esconde.
       take_out: Tirar
       taken_out: Tirados
       total: Total

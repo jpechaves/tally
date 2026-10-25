@@ -15,8 +15,8 @@ RSpec.describe Tally::Trip do
       category_id: 61, category_name: "Passagens", parent_id: 6, parent_name: "Viagem", **itau)
   end
 
-  def build(rows, installments: [], costs: {3 => cost}, **choices)
-    described_class.new(trip.merge(**choices), rows, installments:, costs:)
+  def build(rows, installments: [], costs: {3 => cost}, words: [], **choices)
+    described_class.new(trip.merge(**choices), rows, installments:, costs:, words:)
   end
 
   it "adds up the issue's example: a flight in installments, dollars at the top-up rate, a car and its IOF" do
@@ -66,5 +66,33 @@ RSpec.describe Tally::Trip do
     result = build(rows, installments: flights, choices: {rows[1][:id] => false, flights[1][:id] => false})
     expect(result.ids).to eq([rows[0][:id]])
     expect(result.future).to be_empty
+  end
+
+  it "suggests rows from the 60 days before that look like the trip: in another currency, a travel word, a merchant of the trip, the Viagens category" do
+    apple = {counterparty_id: 9, counterparty_name: "Apple"}
+    agency = {purchased_on: "2026-02-01", installment_total: 6, description: "AGENCIA VIAGEM EXEMPLO"}
+    agency = [row("2026-02-05", -300.00, "", installment_number: 1, **agency, **itau), row("2026-03-05", -300.00, "", installment_number: 2, **agency, **itau)]
+    old = [row("2025-11-01", -300.00, "", installment_number: 1, purchased_on: "2025-11-01", installment_total: 2, description: "Booking.com Old", **itau)]
+    rows = [
+      row("2026-03-12", -50.00, "APPLE STORE", **apple), # on the trip
+      row("2026-03-09", -900.00, "APPLE.COM/BR", **apple),
+      row("2026-03-01", -80.00, "LOJA ONLINE"),
+      row("2026-03-01", -2.80, "IOF de \"LOJA ONLINE\"", kind: "fee"),
+      row("2026-02-20", -40.00, "MUSEU EXEMPLO", **global),
+      row("2026-02-15", -700.00, "Booking.com Hotel"),
+      row("2026-02-14", -200.00, "SEGURO EXEMPLO", category_name: "Viagens"),
+      row("2026-02-13", -100.00, "MALAS EXEMPLO", category_name: "Bagagem", parent_name: "Viagens"),
+      row("2026-02-12", -60.00, "GOLDEN MERCADO"),
+      row("2026-02-11", -30.00, "LOJA ONLINE", account_id: 2),
+      row("2026-01-05", -500.00, "BOOKING.COM ANTIGO"),
+      row("2026-02-10", 700.00, "BOOKING.COM ESTORNO", kind: "refund", amount_cents: 70_000)
+    ]
+
+    result = build(rows, installments: agency + old, words: ["Booking", "Agência viagem", "Gol"])
+    expect(result.suggestions.map { _1[:description] }).to eq(["AGENCIA VIAGEM EXEMPLO", "MALAS EXEMPLO", "SEGURO EXEMPLO", "Booking.com Hotel",
+      "MUSEU EXEMPLO", "LOJA ONLINE", "IOF de \"LOJA ONLINE\"", "APPLE.COM/BR"])
+
+    taken_out = build(rows, installments: agency, words: ["Booking"], choices: {agency[1][:id] => false, rows[1][:id] => false})
+    expect(taken_out.suggestions.map { _1[:description] }).not_to include("AGENCIA VIAGEM EXEMPLO", "APPLE.COM/BR")
   end
 end

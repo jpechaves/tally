@@ -6,7 +6,7 @@ Sidebar: **Overview › Trips**.
 2. Press **Add**. Every row between those dates is in the trip.
 3. Open the trip. **Take out** a row that isn't part of it; **Put back** undoes it.
 4. **Edit trip** at the bottom changes the name, dates or accounts; rows you added or took out stay that way.
-5. For a row from another date (a flight bought weeks before), open it and press **Add to trip**.
+5. For a row from another date (a flight bought weeks before), open it and press **Add to trip**. Or look under **Suggestions** on the trip: rows from the 60 days before it in another currency, from a merchant already on the trip, in Travel, or with a word from **Travel words** (edit the list at the bottom of Trips). **Add** brings one in; **Take out** hides it.
 
 ![Trip](../images/en/trip.png)
 

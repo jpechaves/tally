@@ -331,6 +331,10 @@ CREATE TABLE `balance_checks`(
   `created_at` text DEFAULT((strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))) NOT NULL,
   UNIQUE(`account_id`, `checked_on`)
 ) STRICT;
+CREATE TABLE `travel_words`(
+  `id` integer NOT NULL PRIMARY KEY AUTOINCREMENT,
+  `word` text NOT NULL UNIQUE
+) STRICT;
 INSERT INTO schema_migrations (filename) VALUES
 ('20261015000000_create_accounts.rb'),
 ('20261015100000_create_import_tables.rb'),
@@ -347,4 +351,5 @@ INSERT INTO schema_migrations (filename) VALUES
 ('20261026000000_create_people.rb'),
 ('20261027120000_home_bill_payers.rb'),
 ('20261029000000_create_purchase_adjustments.rb'),
-('20261030000000_create_balance_checks.rb');
+('20261030000000_create_balance_checks.rb'),
+('20261031000000_create_travel_words.rb');
