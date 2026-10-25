@@ -478,8 +478,8 @@ pt-BR:
       all_categories: Todas as categorias
       all_kinds: Todos os tipos
       all_months: Todos os meses
+      all_natures: Todas as naturezas
       carried:
-        nature: "Natureza: %{value}"
         payee: "Favorecido: %{value}"
         person: "Pessoa: %{value}"
         purchase: "Compra: %{value}"

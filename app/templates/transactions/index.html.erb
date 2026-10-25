@@ -26,6 +26,12 @@
         <option value="<%= value %>"<%= " selected" if value == filter.kind %>><%= t("transactions.index.kinds.#{value}") %></option>
       <% end %>
     </select>
+    <select name="nature" data-picker>
+      <option value=""><%= t("transactions.index.all_natures") %></option>
+      <% Tally::TransactionFilter::NATURES.each do |value| %>
+        <option value="<%= value %>"<%= " selected" if value == filter.nature %>><%= nature_label(value) %></option>
+      <% end %>
+    </select>
     <% filter.carried.each do |key, value| %><input type="hidden" name="<%= key %>" value="<%= value %>"><% end %>
     <%= render "transactions/back", back: {back: return_to}.compact %>
     <button type="submit"><%= t("common.show") %></button>

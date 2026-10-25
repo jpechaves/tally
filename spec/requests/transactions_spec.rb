@@ -132,12 +132,15 @@ RSpec.describe "Report rows link to their transactions", :db, type: :request do
     expect(last_response.body).to include("1 row.", "Balance<strong>-R$ 12.34</strong>", "Payee: Cobrança exemplo, com vírgula")
   end
 
-  it "links a nature, including rows with none" do
+  it "picks a nature in the filter bar, including rows with none" do
     get "/transactions", nature: "unset", month: "2026-09", kind: "spending"
-    expect(last_response.body).to include("Nature: no nature")
+    expect(last_response.body).to include(%(<option value="unset" selected>no nature</option>))
 
     get "/transactions", nature: "fixed", month: "2026-09"
-    expect(last_response.body).to include("2 rows.", "Balance<strong>-R$ 52.50</strong>", "Nature: fixed")
+    body = last_response.body
+    expect(body).to include("2 rows.", "Balance<strong>-R$ 52.50</strong>", %(<select name="nature" data-picker>),
+      %(<option value="">All natures</option>), %(<option value="fixed" selected>fixed</option>))
+    expect(body).not_to include(%(<span class="badge">Nature))
   end
 end
 

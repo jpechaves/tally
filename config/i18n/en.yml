@@ -467,8 +467,8 @@ en:
       all_categories: All categories
       all_kinds: All kinds
       all_months: All months
+      all_natures: All natures
       carried:
-        nature: "Nature: %{value}"
         payee: "Payee: %{value}"
         person: "Person: %{value}"
         purchase: "Purchase: %{value}"
