@@ -507,7 +507,7 @@ Set for every connection in `config/providers/db.rb` (milestone 1), and shown on
 | `synchronous` | `FULL` | Writes are rare, so pay for durability on an SD card that may lose power. |
 | `busy_timeout` | `5000` | Wait instead of failing on concurrent writes. |
 
-Plus a **nightly backup** (`sqlite3 … ".backup"`, the newest 5 kept, copied off the SD card), a **weekly `PRAGMA integrity_check`** shown on the home page if it fails, and the original statement files kept in `storage/imports/` so the database can be rebuilt from them. Home bill receipts live in `storage/receipts/` (§8.9) and are copied off daily with rsync.
+Plus a **nightly backup** (`sqlite3 … ".backup"`, the newest 5 kept, copied off the SD card), a **`PRAGMA integrity_check`** on every copy, shown on the Backups page and the home page if it fails or the newest copy is old, and the original statement files kept in `storage/imports/` so the database can be rebuilt from them. Home bill receipts live in `storage/receipts/` (§8.9) and are copied off daily with rsync.
 
 ## 10. Running on the Pi Zero 2 W
 
@@ -529,7 +529,7 @@ The Pi is headless and reached only over SSH. Deploys go from the laptop with pl
   shared/
     db/tally.sqlite    the live database
     storage/           imports/ and receipts/ (§8.9)
-    backups/           nightly-*.sqlite and pre-deploy-*.sqlite, the newest 5 of each
+    backups/           nightly-*.sqlite and pre-deploy-*.sqlite, the newest 5 of each, and log.jsonl (one line per run)
     bundle/            installed gems, shared by the releases
   tally.env            production settings (HANAMI_ENV, port, paths, basic auth); written once, yours to edit
   ruby.env             PATH to mise's Ruby and the Bundler settings; rewritten by setup
@@ -548,6 +548,8 @@ The host defaults to `$TALLY_HOST`, else `pi@pihole.local`. The Pi user needs pa
 ### 10.3 Backups
 
 `tally-backup.timer` runs `deploy/pi/backup.sh` at 03:30 (or at boot if the Pi was off): SQLite's online `.backup`, then `PRAGMA integrity_check` on the copy, keeping the newest 5 of each kind (`TALLY_BACKUP_KEEP` in `tally.env` changes it). A failed check fails the unit (`systemctl --failed`). Each deploy takes a `pre-deploy` copy before migrating. Off the SD card they go with `bin/pull-backup`, along with the receipts and imported files.
+
+Each run also appends one JSON line to `backups/log.jsonl` (UTC time, kind, file, size, and `ok` or what went wrong; the last 100 lines kept). A copy that fails the backup or the check is deleted, so the folder only holds good copies. The app finds the folder through `BACKUP_DIR` (`setup.sh` writes it into `tally.env`, adding it to an older one) and reads it with `Tally::Backups` (issue #137): the **Backups** page (`/backups`, under Data) shows the last run and its check, and the copies newest first with their kind, time and size. When the last run failed, or the newest copy is older than 36 hours (or there is none), the page and the home page show a warning linking there. Downloading a copy (`GET /backups/<file>`, only names the folder lists) follows the export rule below (`Tally::DatabaseExport.allowed?`), otherwise 403. Nothing runs in the background: the page lists one folder and reads a 100-line file. With `BACKUP_DIR` blank (development) the page explains how backups work on the Pi and home shows nothing.
 
 A copy can also be downloaded from the browser: **Download the database** on the Debug info page (`/debug`, issue #136) runs `VACUUM INTO` a temp file (a consistent snapshot even mid-write in WAL mode), checks it with `PRAGMA integrity_check` and sends it as `tally-YYYYMMDD-HHMMSS.sqlite` in local time (`Tally::DatabaseExport`). Only the database, not `storage/`. The file holds every transaction, so the button shows and `POST /debug/export` answers only when basic auth is on (both `BASIC_AUTH_*` set) or `ALLOW_EXPORT_WITHOUT_LOGIN=true` (`Tally::DatabaseExport.allowed?`); otherwise the page says why and the route answers 403. Loading a file back from the browser is #139.
 
@@ -656,7 +658,7 @@ Only after version 1 is correct and in daily use. Each one only **suggests**; no
 - **Trips** (issue #75): done. See §8.8.
 - **Home bills** (issue #113): done. See §8.9.
 - **Household** (issue #21): people, accounts by owner, Pix between people paired or shown as unmatched, and the household / person switch (§6.1).
-- **Milestone 8 (Pi deployment)**: in progress (issue #23). `bin/pi-setup`, `bin/deploy`, `bin/pull-backup`, the `tally` service and the nightly backup with an integrity check, and a database download on the Debug info page (#136) (§10). Left: measuring memory and response times on the Zero 2 W with real-sized data, and showing a failed integrity check on the home page.
+- **Milestone 8 (Pi deployment)**: in progress (issue #23). `bin/pi-setup`, `bin/deploy`, `bin/pull-backup`, the `tally` service and the nightly backup with an integrity check, a database download on the Debug info page (#136), and the Backups page with a home warning for a failed or old backup (#137) (§10). Left: measuring memory and response times on the Zero 2 W with real-sized data.
 
 ## 17. Public repository: keeping personal data out
 

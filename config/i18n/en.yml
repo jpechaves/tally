@@ -38,6 +38,7 @@ en:
     light: Light theme
     nav:
       accounts: Accounts
+      backups: Backups
       budgets: Budgets
       categories: Categories
       counterparties: Counterparties
@@ -152,6 +153,28 @@ en:
       learned: learned
       manual: manual
       seed: seed
+
+  backups:
+    failed: "The last backup failed: %{check}"
+    stale: No backup in the last 36 hours. Check the tally-backup timer on the Pi.
+    kinds:
+      nightly: Nightly
+      pre-deploy: Before a deploy
+    index:
+      check_failed: "check failed: %{check}"
+      check_ok: Integrity check passed
+      copies: Copies
+      date: Date
+      downloads_off: Downloads need the login on (BASIC_AUTH_USERNAME and BASIC_AUTH_PASSWORD set), because each copy holds every transaction. ALLOW_EXPORT_WITHOUT_LOGIN=true allows them without one.
+      file: File
+      folder: Folder
+      keep_html: The Pi keeps the newest 5 of each kind (<code>TALLY_BACKUP_KEEP</code> changes it). Copy them off the SD card with <code>bin/pull-backup</code>.
+      kind: Kind
+      last_run: Last backup
+      no_copies: No copies in the folder yet.
+      none_html: There are no backups on this machine. On the Pi, a copy of the database is made every night at 03:30 and before each deploy, and <code>BACKUP_DIR</code> points here to them.
+      size: Size
+      title: Backups
 
   debug:
     show:

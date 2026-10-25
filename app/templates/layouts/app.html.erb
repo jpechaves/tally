@@ -21,7 +21,7 @@
         <% [
           [:overview, [["/", :home], ["/report", :report], ["/cuts", :cuts], ["/subscriptions", :subscriptions], ["/home-bills", :"home-bills"], ["/installments", :installments], ["/trips", :trips]]],
           [:planning, [["/plan", :plan], ["/budgets", :budgets]]],
-          [:data, [["/transactions", :transactions], ["/accounts", :accounts], ["/imports", :imports]]],
+          [:data, [["/transactions", :transactions], ["/accounts", :accounts], ["/imports", :imports], ["/backups", :backups]]],
           [:organize, [["/review", :review], ["/categories", :categories], ["/rules", :rules], ["/counterparties", :counterparties]]]
         ].each do |group, links| %>
           <details class="nav-group" data-group="<%= group %>" open>

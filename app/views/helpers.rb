@@ -68,6 +68,11 @@ module Tally
         value.to_s.tr(".", Tally::Money.decimal_mark(locale))
       end
 
+      # 1_572_864 -> "1,5 MB" ("1.5 MB" in English).
+      def file_size(bytes)
+        "#{number((bytes / 1_048_576.0).round(1))} MB"
+      end
+
       # "2026-09-02" -> "02/09/2026" / "Sep 2, 2026"; blank for nil.
       def date(text)
         text.nil? ? "" : l(Date.iso8601(text.to_s[0, 10]), format: :day)

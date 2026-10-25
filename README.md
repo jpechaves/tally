@@ -74,6 +74,7 @@ Settings come from environment variables, loaded from `.env` files in developmen
 | `DATABASE_URL` | `sqlite://db/tally.sqlite` | Use a path under `data/` for the live database. |
 | `BASIC_AUTH_USERNAME`, `BASIC_AUTH_PASSWORD` | unset | Optional login, in every environment. Both empty: no login (production logs a warning at boot). Both set: the browser asks for them. Only one set: the app answers 503. |
 | `ALLOW_EXPORT_WITHOUT_LOGIN` | `false` | `true` lets the Debug info page download the database even with no login. Without it, the download needs both `BASIC_AUTH_*` set. |
+| `BACKUP_DIR` | unset | The folder of database backups for the Backups page and the home warning. `bin/pi-setup` sets it on the Pi (`~/tally/shared/backups`); unset elsewhere. |
 | `HANAMI_MAX_THREADS` | `2` | Puma threads; 2 suits the Pi Zero 2 W. |
 | `IMPORT_STORAGE_DIR` | `storage/imports` | Where each imported file is kept, named by its SHA-256. Gitignored. |
 | `RECEIPT_STORAGE_DIR` | `storage/receipts` | Where home bill receipts are kept, named by their SHA-256. Gitignored. Back it up with the database (for example `rsync -a storage/receipts/ backup-host:tally/receipts/` daily). |

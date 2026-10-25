@@ -25,4 +25,4 @@ Páginas curtas, uma por tela. Cada uma diz para que serve a tela, onde ela fica
 - [Plano de economia](plan.md) · [Orçamentos](budgets.md)
 
 **Mantendo no ar**
-- [Configurações, login, informações de debug e a proteção de privacidade](settings.md)
+- [Configurações, login, informações de debug, backups e a proteção de privacidade](settings.md)

@@ -32,6 +32,11 @@ module Tally
           totals.drop_while { _1[:income_cents].zero? && _1[:spending_cents].zero? }
         end
 
+        # A failed or old backup on the Pi (issue #137); nil where there are none.
+        expose(:backup_dir) { Tally::Backups.dir }
+        expose(:backup_status) { |backup_dir| Tally::Backups.status(backup_dir) if backup_dir }
+        expose(:backup_run, decorate: false) { |backup_dir| Tally::Backups.last_run(backup_dir) if backup_dir }
+
         expose :top_categories, decorate: false do |report|
           report ? report.categories.first(TOP_CATEGORIES) : []
         end

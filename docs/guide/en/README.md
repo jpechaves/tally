@@ -25,4 +25,4 @@ Short pages, one per screen. Each one says what the screen is for, where it is, 
 - [Savings plan](plan.md) · [Budgets](budgets.md)
 
 **Running it**
-- [Settings, login, debug info and the privacy guard](settings.md)
+- [Settings, login, debug info, backups and the privacy guard](settings.md)

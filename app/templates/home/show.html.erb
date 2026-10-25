@@ -2,6 +2,7 @@
   <h1><%= t("home.show.title") %></h1>
   <%= render "shared/person_switch", path: "/", people: people, person: person, month: nil %>
   <%= render "shared/unmatched", count: unmatched_rows %>
+  <%= render "shared/backup_warning", status: backup_status, run: backup_run, link: true %>
   <% if report.nil? %>
     <p><%= t("home.show.intro_html") %></p>
   <% else %>
