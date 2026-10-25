@@ -6,7 +6,7 @@ IFS=$'\n\t'
 # copies with the same name, 5 by default (TALLY_BACKUP_KEEP in ~/tally/tally.env). Run
 # nightly by tally-backup.timer ("nightly") and before each migration by bin/deploy
 # ("pre-deploy"). bin/pull-backup copies them off the SD card. Each run adds a line to
-# log.jsonl (the last 100 kept), which the app's Backups page and home warning read.
+# log.jsonl (the last 100 kept), which the app's Debug info page and home warning read.
 #
 # Usage: backup.sh [name]    reads DATABASE_URL from the environment
 

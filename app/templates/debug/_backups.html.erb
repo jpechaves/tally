@@ -1,0 +1,32 @@
+<%# The Pi's database backups (issue #137); the home warning links here. %>
+<h2 id="backups"><%= t("backups.title") %></h2>
+<% if dir.nil? %>
+  <p class="note"><%= t("backups.none_html") %></p>
+<% else %>
+  <%= render "shared/backup_warning", status: status, run: last_run, link: false %>
+  <% if last_run %>
+    <div class="cards">
+      <div><%= t("backups.last_run") %><strong><%= timestamp(last_run.time.iso8601) %></strong>
+        <span class="note"><%= t("backups.kinds.#{last_run.kind}", default: last_run.kind) %> · <%= last_run.ok? ? t("backups.check_ok") : t("backups.check_failed", check: last_run.check) %></span></div>
+    </div>
+  <% end %>
+  <% if copies.empty? %>
+    <p class="note"><%= t("backups.no_copies") %></p>
+  <% else %>
+    <div class="scroll"><table>
+      <thead><tr><th><%= t("backups.date") %></th><th><%= t("backups.kind") %></th><th><%= t("backups.file") %></th><th class="num"><%= t("backups.size") %></th></tr></thead>
+      <tbody>
+        <% copies.each do |copy| %>
+          <tr>
+            <td><%= timestamp(copy.time.utc.iso8601) %></td>
+            <td><%= t("backups.kinds.#{copy.kind}", default: copy.kind) %></td>
+            <td><% if downloads_on %><a href="/debug/backups/<%= copy.file %>" download><%= copy.file %></a><% else %><%= copy.file %><% end %></td>
+            <td class="num"><%= file_size(copy.bytes) %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table></div>
+  <% end %>
+  <% unless downloads_on %><p class="note"><%= t("backups.downloads_off") %></p><% end %>
+  <p class="note"><%= t("backups.folder") %> <code><%= dir %></code>. <%= t("backups.keep_html") %></p>
+<% end %>

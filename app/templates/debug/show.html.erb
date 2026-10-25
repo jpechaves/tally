@@ -15,4 +15,5 @@
   <% else %>
     <p class="note"><%= t("debug.show.export_off") %></p>
   <% end %>
+  <%= render "debug/backups", dir: backup_dir, copies: copies, last_run: last_run, status: backup_status, downloads_on: export_on %>
 </main>

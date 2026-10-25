@@ -73,7 +73,7 @@ BACKUP_DIR=$shared/backups
 ENV
   chmod 600 "$base/tally.env"
 fi
-# Added after the first installs: where the Backups page finds the copies.
+# Added after the first installs: where Debug info finds the backups.
 grep -q '^BACKUP_DIR=' "$base/tally.env" || echo "BACKUP_DIR=$shared/backups" >>"$base/tally.env"
 
 announce "Installing the tally service and the nightly backup..."

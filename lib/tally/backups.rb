@@ -4,9 +4,9 @@ require "json"
 require "time"
 
 module Tally
-  # The Pi's database backups, for the Backups page and the home warning (issue #137,
-  # docs/architecture.md, section 10.3). deploy/pi/backup.sh writes the copies into one
-  # folder (BACKUP_DIR) and one line per run to its log.jsonl; this only reads them.
+  # The Pi's database backups, for the Backups section of the Debug info page and the home
+  # warning (issue #137, docs/architecture.md, section 10.3). deploy/pi/backup.sh writes the
+  # copies into one folder (BACKUP_DIR) and one line per run to its log.jsonl; this only reads them.
   module Backups
     STALE_AFTER = 36 * 3600
     LOG = "log.jsonl"

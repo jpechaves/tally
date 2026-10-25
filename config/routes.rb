@@ -9,8 +9,7 @@ module Tally
     post "/theme", to: "theme.update", as: :theme
     get "/debug", to: "debug.show", as: :debug
     post "/debug/export", to: "debug.export", as: :debug_export
-    get "/backups", to: "backups.index", as: :backups
-    get "/backups/:file", to: "backups.show", as: :backup, constraints: {file: /[a-z-]+-\d{8}-\d{6}\.sqlite/}
+    get "/debug/backups/:file", to: "debug.backup", as: :backup, constraints: {file: /[a-z-]+-\d{8}-\d{6}\.sqlite/}
 
     get "/imports", to: "imports.index", as: :imports
     post "/imports", to: "imports.create"

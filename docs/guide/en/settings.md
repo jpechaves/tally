@@ -22,7 +22,7 @@ Sidebar, bottom: **Debug info**. Shows the SQLite version and settings (journal 
 
 ## Backups
 
-Sidebar, Data: **Backups**. On the Pi, a copy of the database is made every night at 03:30 and before each deploy, and checked. The page shows the last one, whether its check passed, and the copies kept (the newest 5 of each kind). If the last backup failed, or there is none from the last 36 hours, the page and the home page show a red warning.
+Debug info, below the export: **Backups**. On the Pi, a copy of the database is made every night at 03:30 and before each deploy, and checked. It shows the last one, whether its check passed, and the copies kept (the newest 5 of each kind). If the last backup failed, or there is none from the last 36 hours, it and the home page show a red warning.
 
 Click a file to download it; like the database download, only with the login on or `ALLOW_EXPORT_WITHOUT_LOGIN=true`. To copy them all to your computer, run `bin/pull-backup`.
 

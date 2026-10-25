@@ -2,12 +2,12 @@
 
 module Tally
   module Actions
-    module Backups
+    module Debug
       # Downloads one backup copy. Like the database export, only behind the login unless a
       # setting allows it (Tally::DatabaseExport.allowed?), and only a file the folder lists.
-      class Show < Tally::Action
+      class Backup < Tally::Action
         def handle(request, response)
-          halt 403, t("backups.index.downloads_off") unless Tally::DatabaseExport.allowed?
+          halt 403, t("backups.downloads_off") unless Tally::DatabaseExport.allowed?
 
           dir = Tally::Backups.dir or halt(404)
           copy = Tally::Backups.copies(dir).find { _1.file == request.params[:file] } || halt(404)

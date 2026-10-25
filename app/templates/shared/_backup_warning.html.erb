@@ -1,5 +1,5 @@
-<%# A failed or old backup (Tally::Backups.status), on the Backups page and, linked, at home (issue #137). %>
+<%# A failed or old backup (Tally::Backups.status), in the Backups section of Debug info and, linked, at home (issue #137). %>
 <% text = (status == :failed) ? t("backups.failed", check: run.check) : t("backups.stale") %>
 <% unless status.nil? || status == :ok %>
-  <p class="warning"><% if link %><a href="/backups"><%= text %></a><% else %><%= text %><% end %></p>
+  <p class="warning"><% if link %><a href="/debug#backups"><%= text %></a><% else %><%= text %><% end %></p>
 <% end %>

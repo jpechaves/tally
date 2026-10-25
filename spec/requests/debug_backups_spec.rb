@@ -2,15 +2,19 @@
 
 require "tmpdir"
 
-RSpec.describe "Backups", type: :request do
+RSpec.describe "Backups on the Debug info page", type: :request do
   it "explains where backups come from when this machine has none" do
-    get "/backups"
+    get "/debug"
 
     expect(last_response.status).to eq(200)
-    expect(last_response.body).to include("<h1>Backups</h1>", %(<a href="/backups" aria-current="page">), "BACKUP_DIR")
+    expect(last_response.body).to include(%(<h2 id="backups">Backups</h2>), "BACKUP_DIR")
 
     get "/"
     expect(last_response.body).not_to include("No backup in the last", "The last backup failed")
+
+    allow(Hanami.app["settings"]).to receive(:allow_export_without_login).and_return(true)
+    get "/debug/backups/nightly-20261025-033000.sqlite"
+    expect(last_response.status).to eq(404)
   end
 
   context "with a backups folder" do
@@ -27,13 +31,13 @@ RSpec.describe "Backups", type: :request do
     end
 
     it "shows the last run and the copies, without download links while the login is off" do
-      get "/backups"
+      get "/debug"
 
       expect(last_response.body).to include("Oct 25, 2026 03:30", "nightly-20261025-033000.sqlite", @dir, "bin/pull-backup")
-      expect(last_response.body).to include("Integrity check passed", "Downloads need the login on")
-      expect(last_response.body).not_to include(%(href="/backups/nightly))
+      expect(last_response.body).to include("Integrity check passed", "Downloads follow the same rule as the export")
+      expect(last_response.body).not_to include(%(href="/debug/backups/nightly))
 
-      get "/backups/nightly-20261025-033000.sqlite"
+      get "/debug/backups/nightly-20261025-033000.sqlite"
       expect(last_response.status).to eq(403)
 
       get "/"
@@ -43,34 +47,34 @@ RSpec.describe "Backups", type: :request do
     it "downloads a copy when allowed, and only files from the folder" do
       allow(Hanami.app["settings"]).to receive(:allow_export_without_login).and_return(true)
 
-      get "/backups"
-      expect(last_response.body).to include(%(href="/backups/nightly-20261025-033000.sqlite"))
+      get "/debug"
+      expect(last_response.body).to include(%(href="/debug/backups/nightly-20261025-033000.sqlite"))
 
-      get "/backups/nightly-20261025-033000.sqlite"
+      get "/debug/backups/nightly-20261025-033000.sqlite"
       expect(last_response.status).to eq(200)
       expect(last_response.headers["Content-Disposition"]).to eq(%(attachment; filename="nightly-20261025-033000.sqlite"))
       expect(last_response.body).to start_with("SQLite format 3\0")
 
-      get "/backups/nightly-20261024-033000.sqlite"
+      get "/debug/backups/nightly-20261024-033000.sqlite"
       expect(last_response.status).to eq(404)
-      get "/backups/log.jsonl"
+      get "/debug/backups/log.jsonl"
       expect(last_response.status).to eq(404)
     end
 
     it "warns on the page and at home when the newest copy is old" do
       allow(Time).to receive(:now).and_return(now + 2 * 86_400)
 
-      get "/backups"
+      get "/debug"
       expect(last_response.body).to include(%(<p class="warning">No backup in the last 36 hours.))
 
       get "/"
-      expect(last_response.body).to include(%(<p class="warning"><a href="/backups">No backup in the last 36 hours.))
+      expect(last_response.body).to include(%(<p class="warning"><a href="/debug#backups">No backup in the last 36 hours.))
     end
 
     it "warns when the last check failed" do
       File.write(File.join(@dir, "log.jsonl"), %({"time":"2026-10-25T11:00:00Z","kind":"pre-deploy","file":"pre-deploy-20261025-080000.sqlite","bytes":0,"check":"row 3 missing from index"}\n), mode: "a")
 
-      get "/backups"
+      get "/debug"
       expect(last_response.body).to include("The last backup failed: row 3 missing from index")
 
       get "/"

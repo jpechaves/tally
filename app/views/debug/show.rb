@@ -23,6 +23,13 @@ module Tally
 
         # The export button shows only when the download is allowed (Actions::Debug::Export).
         expose(:export_on) { Tally::DatabaseExport.allowed? }
+
+        # The Pi's database backups (Tally::Backups): the last run, its check and the copies.
+        # Downloads follow the export rule above.
+        expose(:backup_dir) { Tally::Backups.dir }
+        expose(:copies, decorate: false) { |backup_dir| backup_dir ? Tally::Backups.copies(backup_dir) : [] }
+        expose(:last_run, decorate: false) { |backup_dir| Tally::Backups.last_run(backup_dir) if backup_dir }
+        expose(:backup_status) { |backup_dir| Tally::Backups.status(backup_dir) if backup_dir }
       end
     end
   end

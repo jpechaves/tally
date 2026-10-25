@@ -14,8 +14,8 @@ module Tally
     # holds every transaction. True lets it work without one (e.g. on a trusted home network).
     setting :allow_export_without_login, default: false, constructor: Types::Params::Bool
 
-    # Where the Pi keeps its database backups (deploy/pi/backup.sh), for the Backups page and
-    # the home warning. Blank (development) means there are none on this machine.
+    # Where the Pi keeps its database backups (deploy/pi/backup.sh), for the Backups section
+    # of the Debug info page and the home warning. Blank (development) means there are none.
     setting :backup_dir, default: nil, constructor: Types::String.optional
 
     # Where imported statement files are kept, named by their SHA-256, so any import can be
