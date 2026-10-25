@@ -93,12 +93,12 @@ RSpec.describe "Home bills", :db, type: :request do
 
     get "/home-bills"
     expect(last_response.body).to include(%(<a href="/home-bills?months=2" aria-current="page">2 months</a>), %(href="/home-bills/#{energy[:id]}"))
-    expect(last_response.body).not_to include("Jul 2026")
+    expect(last_response.body).not_to include("<th>Jul 2026</th>")
 
     get "/home-bills", months: "all"
-    expect(last_response.body).to include("Jul 2026", "Aug 2026", %(href="/home-bills/#{energy[:id]}?months=all"))
+    expect(last_response.body).to include("<th>Jul 2026</th>", "<th>Aug 2026</th>", %(href="/home-bills/#{energy[:id]}?months=all"))
     get "/home-bills", months: "1"
-    expect(last_response.body).not_to include("Sep 2026")
+    expect(last_response.body).not_to include("<th>Sep 2026</th>")
 
     get "/home-bills/#{energy[:id]}", months: "6"
     body = last_response.body
@@ -107,6 +107,24 @@ RSpec.describe "Home bills", :db, type: :request do
     expect(last_response.location).to end_with("/home-bills/#{energy[:id]}?months=6")
     post "/home-bills/#{energy[:id]}/payments/remove?months=6", month: "2026-07"
     expect(last_response.location).to end_with("/home-bills/#{energy[:id]}?months=6")
+  end
+
+  it "charts what was paid each month, for each bill and for all of them" do
+    get "/home-bills"
+    energy = create_bill(payee_key: "counterparty:#{energy_company}", payee_label: "Energia Exemplo")
+    internet = create_bill(name: "Internet", expected: "", payee_key: "")
+    get "/home-bills/#{internet[:id]}"
+    expect(last_response.body).not_to include("Paid each month")
+
+    pay("2026-09-09", 17_510, "ENERGIA EXEMPLO", counterparty_id: energy_company)
+    pay("2026-09-20", 1_000, "ENERGIA EXEMPLO", counterparty_id: energy_company)
+    post "/home-bills/#{internet[:id]}/payments", month: "2026-10", paid_on: "2026-10-10", amount: "99.90"
+
+    get "/home-bills/#{energy[:id]}"
+    expect(last_response.body).to include("Paid each month", "<title>Sep 2026 · Paid: R$ 185.10</title>", %(class="line s-expected dashed"))
+    get "/home-bills"
+    expect(last_response.body).to include("Paid for all bills each month", "<title>Sep 2026 · Paid: R$ 185.10</title>",
+      "<title>Oct 2026 · Paid: R$ 99.90</title>", "<td class=\"num\">R$ 99.90</td>")
   end
 
   it "doesn't offer a row again once it paid another month" do

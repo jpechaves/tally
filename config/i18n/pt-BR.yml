@@ -648,6 +648,12 @@ pt-BR:
       title: O que posso cortar?
 
   home_bills:
+    chart:
+      bill: Pago por mês
+      month: Mês
+      numbers: Ver os números
+      paid: Pago
+      total: Pago em todas as contas por mês
     day: dia %{day}
     due: vence em %{date}
     late: atrasada desde %{date}

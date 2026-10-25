@@ -40,6 +40,12 @@ module Tally
           **options).html_safe
       end
 
+      # Lines of amounts by month (Tally::Charts.lines).
+      def lines_chart(currency: Tally::Money::DEFAULT_CURRENCY, **options)
+        Tally::Charts.lines(format: ->(cents) { money(cents, currency) }, compact: ->(cents) { money_compact(cents, currency) },
+          **options).html_safe
+      end
+
       # A dot per place on the world map (Tally::Charts.map).
       def places_map(places) = Tally::Charts.map(places, title: t("trips.map.title")).html_safe
 

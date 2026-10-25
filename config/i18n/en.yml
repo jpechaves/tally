@@ -636,6 +636,12 @@ en:
       title: What can I cut?
 
   home_bills:
+    chart:
+      bill: Paid each month
+      month: Month
+      numbers: The numbers
+      paid: Paid
+      total: Paid for all bills each month
     day: day %{day}
     due: due on %{date}
     late: late since %{date}

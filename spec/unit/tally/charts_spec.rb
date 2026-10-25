@@ -102,4 +102,19 @@ RSpec.describe Tally::Charts do
       expect(view(place("A", 80, -179), place("B", -80, 179))).to eq("0 0 360 180")
     end
   end
+
+  it "draws a line per series, broken where a month has nothing, with a dot per value and a dashed reference" do
+    svg = described_class.lines(format: ->(v) { "R$ #{v}" }, compact: ->(v) { "R$ #{v / 100}" }, title: "Paid",
+      labels: %w[a b c d], highlight: 3,
+      series: [{name: "Paid", css: "s-spending", values: [300, 150, nil, 90]},
+        {name: "Expected", css: "s-expected", dashed: true, values: [200, 200, 200, 200]}])
+
+    expect(svg.scan(/<path [^>]+>/)).to eq([
+      %(<path class="line s-spending" d="M161.5,8.0L332.5,92.0"/>),
+      %(<path class="line s-expected dashed" d="M161.5,64.0L332.5,64.0L503.5,64.0L674.5,64.0"/>)
+    ])
+    expect(svg.scan("<circle").size).to eq(3)
+    expect(svg).to include("<title>d · Paid: R$ 90</title>", %(class="current">d</text>))
+    expect(svg).not_to include("Expected: R$")
+  end
 end
