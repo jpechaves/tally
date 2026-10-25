@@ -29,6 +29,12 @@ RSpec.describe Tally::HomeBills do
       expect(described_class.suggest(bill, "2026-10", rows)).to eq(rows[1])
     end
 
+    it "prefers the payee's row of the bill's own month, even far from a month-end due day" do
+      bill.merge!(due_day: 31, payee_key: "counterparty:7")
+      rows = [row("2026-07-08", -289.32, counterparty_id: 7), row("2026-08-11", -148.76, counterparty_id: 7)]
+      expect(described_class.suggest(bill, "2026-07", rows)).to eq(rows[0])
+    end
+
     it "without a payee, takes a spending row of its category near the expected amount" do
       bill[:category_id] = 21
       rows = [row("2026-10-09", -400.00, category_id: 21), row("2026-10-08", -175.00, category_id: 21),
@@ -44,9 +50,9 @@ RSpec.describe Tally::HomeBills do
     end
   end
 
-  it "offers rows from around the due day to pick from, nearest first" do
-    rows = [row("2026-09-20", -9.00), row("2026-10-08", -1.00), row("2026-10-11", -2.00), row("2026-10-20", -3.00),
-      row("2026-10-30", -9.00), row("2026-10-12", 9.00)]
-    expect(described_class.candidates(bill, "2026-10", rows).map { _1[:amount_cents] }).to eq([-200, -100, -300])
+  it "offers the month's own rows, then rows near the due day, nearest first" do
+    rows = [row("2026-09-20", -9.00), row("2026-09-30", -4.00), row("2026-10-08", -1.00), row("2026-10-11", -2.00),
+      row("2026-10-30", -3.00), row("2026-11-10", -9.00), row("2026-10-12", 9.00)]
+    expect(described_class.candidates(bill, "2026-10", rows).map { _1[:amount_cents] }).to eq([-200, -100, -300, -400])
   end
 end

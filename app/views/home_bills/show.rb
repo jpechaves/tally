@@ -23,11 +23,12 @@ module Tally
           home_bill_repo.linked(months.filter_map(&:payment))
         end
 
-        expose :rows, decorate: false do |months, linked|
+        # Rows from a month either side, minus those a payment of any nearby month already uses.
+        expose :rows, decorate: false do |bill, months|
           from, to = months.map(&:month).minmax
-          ids = linked.values
-          insight_repo.rows(from: Tally::Insights.previous_months(from, 1).first, to: Tally::Insights.next_months(to, 1).first)
-            .reject { ids.include?(_1[:id]) }
+          shown = Tally::Insights.previous_months(from, 2) + [from, to].uniq + Tally::Insights.next_months(to, 2)
+          ids = home_bill_repo.linked(home_bill_repo.payments([bill[:id]], shown).values).values
+          insight_repo.rows(from: shown[1], to: shown[-2]).reject { ids.include?(_1[:id]) }
         end
 
         # Who could have paid by hand; with only you, nobody to pick.

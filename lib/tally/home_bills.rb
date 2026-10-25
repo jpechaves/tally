@@ -37,17 +37,20 @@ module Tally
       end
     end
 
-    # Spending rows near the month's due day, nearest first, to pick the payment from.
+    # Spending rows of the bill's own month or near its due day, to pick the payment from:
+    # the month's own first, then nearest the due day. A bill due on the 31st and paid on
+    # the 8th is still that month's.
     # @param rows [Array<Hash>] InsightRepo#rows
     def candidates(bill, month, rows)
       due = Date.iso8601(due_on(month, bill[:due_day]))
       rows.filter_map do |row|
         days = (Date.iso8601(row[:occurred_on]) - due).abs
-        [days, row] if row[:amount_cents].negative? && days <= WINDOW_DAYS
+        own = row[:occurred_on].start_with?(month)
+        [[own ? 0 : 1, days], row] if row[:amount_cents].negative? && (own || days <= WINDOW_DAYS)
       end.sort_by(&:first).map(&:last)
     end
 
-    # The row that most likely paid the month: the payee's nearest the due day; without a
+    # The row that most likely paid the month: the payee's first candidate; without a
     # payee, one of its category (if it has one) near the expected amount.
     def suggest(bill, month, rows)
       near = candidates(bill, month, rows)

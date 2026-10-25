@@ -87,6 +87,15 @@ RSpec.describe "Home bills", :db, type: :request do
     expect(last_response.status).to eq(404)
   end
 
+  it "doesn't offer a row again once it paid another month" do
+    energy = create_bill(payee_key: "counterparty:#{energy_company}", payee_label: "Energia Exemplo")
+    early = pay("2026-09-01", 17_510, "ENERGIA EXEMPLO", counterparty_id: energy_company)
+    post "/home-bills/#{energy[:id]}/payments", month: "2026-08", transaction_id: early.to_s
+
+    get "/home-bills/#{energy[:id]}"
+    expect(last_response.body).not_to include(%(<option value="#{early}"))
+  end
+
   it "marks a month paid by hand, by you or whoever of the household paid" do
     energy = create_bill
     pay("2026-10-09", 5_000, "MERCADO EXEMPLO")
