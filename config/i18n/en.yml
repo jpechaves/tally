@@ -82,6 +82,7 @@ en:
     invalid_adjusted_amount: Enter the real amount, like 45.90.
     invalid_adjustment: Pick canceled, reimbursed or amount changed.
     invalid_amount: "Amounts look like -50.00 (spending is negative)."
+    invalid_balance_check: A balance check needs an account, a day and an amount like 2,161.02.
     invalid_field: Pick what to match and how.
     invalid_home_bill: A bill needs a name, a due day from 1 to 31, and an amount like 182.40 if you give one.
     invalid_kind: Pick expense or income.
@@ -285,6 +286,14 @@ en:
       account: Account
       add_person: Add
       balance: Balance
+      balance_difference: "%{difference} off since the check before: a statement row may be missing"
+      balances: Check balances
+      balances_intro: >-
+        Type the balance the bank shows for an account and the day it showed it. From then on the
+        balance here is that amount plus the rows after it, so it also counts what Tally never saw,
+        like what was there before the first statement or the yield in an investment. Checking again
+        later shows whether the rows in between add up.
+      bank_balance: Bank balance
       bill: Bill
       bill_total: Bill total
       check:
@@ -292,15 +301,21 @@ en:
         open: "open, %{paid} paid so far"
         unknown: payment not imported yet
         warning: "differs by %{difference}"
+      check_balance: Save
+      checked_day: Day
+      checked_on: "checked on %{date}"
       checks: Bill checks
+      delete_check: Delete
+      difference: Difference
       due: Due
       from_transfers: (from transfers)
       kind: Kind
       next_bill: next bill
       no_bills: No card bills imported yet.
       note: >-
-        Card balances only cover the bills imported so far. Itaú conta and Nubank RDB have no
-        statements: their balance is the sum of the transfers into and out of them.
+        Without a balance check, a balance is the sum of the rows imported so far: card balances only
+        cover the bills imported, and Itaú conta and Nubank RDB, which have no statements, only add up
+        the transfers into and out of them.
       paid: Paid
       paid_by: Paid by
       pass_through: The Pix sent to this account and the bills it paid differ by more than %{tolerance}.
@@ -636,6 +651,12 @@ en:
       title: What can I cut?
 
   home_bills:
+    chart:
+      bill: Paid each month
+      month: Month
+      numbers: The numbers
+      paid: Paid
+      total: Paid for all bills each month
     day: day %{day}
     due: due on %{date}
     late: late since %{date}

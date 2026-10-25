@@ -273,12 +273,19 @@ form.inline { margin-bottom: 0; }
 .chart svg.map use { fill: var(--hairline); stroke: var(--surface-1); stroke-width: 0.5; }
 .chart svg.map circle { fill: var(--accent); stroke: var(--canvas); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
 .chart svg.map g:hover circle { fill: var(--accent-hover); }
+.chart svg .line { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.chart svg .line.s-spending { stroke: var(--series-spending); }
+.chart svg .line.dashed { stroke: var(--ink-subtle); stroke-width: 1.5; stroke-dasharray: 4 4; }
+.chart svg .dot { stroke: var(--surface-1); stroke-width: 2; }
+.chart svg g:hover > .dot { opacity: 0.8; }
+.chart details { margin-top: 8px; }
 .chart svg .current { fill: var(--ink); font-weight: 600; }
 .legend { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0 0 8px; padding: 0; list-style: none; color: var(--ink-muted); font-size: 12.5px; }
 .legend li { display: flex; align-items: center; gap: 6px; margin: 0; }
 .swatch { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
 .s-spending { background: var(--series-spending); fill: var(--series-spending); }
 .s-income { background: var(--series-income); fill: var(--series-income); }
+.swatch.s-expected { height: 0; border-radius: 0; border-top: 2px dashed var(--ink-subtle); }
 
 /* Horizontal bars and meters, drawn in HTML so long labels wrap. */
 .bars { display: grid; grid-template-columns: minmax(120px, max-content) minmax(0, 1fr) max-content; gap: 8px 12px; align-items: center; margin: 0; }

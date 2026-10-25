@@ -3,6 +3,7 @@
   <h1><%= bill[:name] %></h1>
   <p class="note"><%= [category_name(bill[:category_name]), t("home_bills.day", day: bill[:due_day]), money(bill[:expected_cents]), bill[:payee_label]].reject { _1.to_s.empty? }.join(" · ") %></p>
 
+  <%= render "home_bills/chart", chart: chart, title: t("home_bills.chart.bill") %>
   <%= render "home_bills/span", path: "/home-bills/#{bill[:id]}", span: span %>
   <% kept = (span == Tally::HomeBills::DEFAULT_SPAN) ? nil : span %>
 

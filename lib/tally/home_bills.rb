@@ -26,6 +26,23 @@ module Tally
 
     def span(param) = SPANS.include?(param.to_s) ? param.to_s : DEFAULT_SPAN
 
+    # The months the charts show: the last twelve through this one, from the first
+    # imported row on.
+    def chart_months(today, first:) = months(today, "12").select { first.nil? || _1 >= first }
+
+    # What was paid toward a bill each month: everything spent with its payee that month
+    # (an early or extra installment too), or, without a payee, the payment linked to it.
+    # @param rows [Array<Hash>] InsightRepo#rows over the months
+    # @param payments [Hash] [bill id, month] => payment (HomeBillRepo#payments)
+    # @return [Array<Integer, nil>] cents for each month, nil when nothing was paid
+    def paid_by_month(bill, months, rows, payments)
+      return months.map { payments[[bill[:id], _1]]&.dig(:amount_cents) } unless bill[:payee_key]
+
+      spent = rows.select { _1[:amount_cents].negative? && Insights.payee_key(_1) == bill[:payee_key] }
+        .group_by { _1[:occurred_on][0, 7] }
+      months.map { spent[_1]&.sum { |row| -row[:amount_cents] } }
+    end
+
     # A bill's page, keeping a span other than the default.
     def path(id, span = DEFAULT_SPAN) = (span == DEFAULT_SPAN) ? "/home-bills/#{id}" : "/home-bills/#{id}?months=#{span}"
 

@@ -16,6 +16,8 @@ module Tally
 
     get "/accounts", to: "accounts.index", as: :accounts
     get "/accounts/:id/report", to: "accounts.report", as: :account_report
+    post "/accounts/balance-checks", to: "accounts.check_balance", as: :balance_checks
+    post "/balance-checks/:id/delete", to: "accounts.uncheck_balance", as: :delete_balance_check
     post "/people", to: "people.create", as: :people
     post "/people/:id", to: "people.update", as: :person
     get "/transactions", to: "transactions.index", as: :transactions

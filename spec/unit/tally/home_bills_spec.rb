@@ -20,6 +20,22 @@ RSpec.describe Tally::HomeBills do
     expect(described_class.months(today, "all")).to eq(%w[2026-01])
   end
 
+  it "charts the last twelve months, from the first imported row on" do
+    today = Date.new(2026, 10, 15)
+    expect(described_class.chart_months(today, first: nil)).to eq((1..12).map { (Date.new(2025, 11) >> (_1 - 1)).strftime("%Y-%m") })
+    expect(described_class.chart_months(today, first: "2026-08")).to eq(%w[2026-08 2026-09 2026-10])
+  end
+
+  it "adds up what went to the payee each month, or takes the linked payment without one" do
+    months = %w[2026-05 2026-06 2026-07]
+    rows = [row("2026-06-12", -3_048.23, counterparty_id: 7), row("2026-06-17", -1_221.95, counterparty_id: 7),
+      row("2026-07-06", -3_035.59, counterparty_id: 7), row("2026-07-08", 10.00, counterparty_id: 7), row("2026-07-09", -50.00)]
+    expect(described_class.paid_by_month(bill.merge(payee_key: "counterparty:7"), months, rows, {})).to eq([nil, 427_018, 303_559])
+
+    payments = {[1, "2026-06"] => {amount_cents: 18_240}}
+    expect(described_class.paid_by_month(bill.merge(id: 1), months, rows, payments)).to eq([nil, 18_240, nil])
+  end
+
   it "takes a known span or the default, and keeps it in a bill's link" do
     expect(%w[1 6 all].map { described_class.span(_1) }).to eq(%w[1 6 all])
     expect([nil, "3", "x"].map { described_class.span(_1) }).to eq(%w[2 2 2])

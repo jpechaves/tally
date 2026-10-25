@@ -33,6 +33,14 @@ module Tally
           insight_repo.rows(from: shown[1], to: shown[-2]).reject { ids.include?(_1[:id]) }
         end
 
+        # Paid toward the bill each month, against what it is expected to cost.
+        expose :chart, decorate: false do |bill|
+          months = Tally::HomeBills.chart_months(Date.today, first: transaction_repo.months.last)
+          rows = insight_repo.rows(from: months.first, to: months.last)
+          paid = Tally::HomeBills.paid_by_month(bill, months, rows, home_bill_repo.payments([bill[:id]], months))
+          {months:, paid:, expected: bill[:expected_cents].to_i}
+        end
+
         # Who could have paid by hand; with only you, nobody to pick.
         expose :people, decorate: false do
           person_repo.all

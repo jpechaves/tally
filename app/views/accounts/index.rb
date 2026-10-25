@@ -4,10 +4,10 @@ module Tally
   module Views
     module Accounts
       class Index < Tally::View
-        include Deps["settings", "repos.account_repo", "repos.bill_check_repo", "repos.import_repo", "repos.person_repo"]
+        include Deps["settings", "repos.account_repo", "repos.balance_check_repo", "repos.bill_check_repo", "repos.import_repo", "repos.person_repo"]
 
         expose :accounts do
-          account_repo.with_balances
+          account_repo.with_balances(balance_check_repo.by_account)
         end
 
         expose :tolerance_cents do

@@ -1,0 +1,30 @@
+<%# What was paid each month against the expected amount, with the numbers in a table below. %>
+<% if chart[:paid].compact.any? %>
+  <section class="chart">
+    <h2><%= title %></h2>
+    <ul class="legend">
+      <li><span class="swatch s-spending" aria-hidden="true"></span><%= t("home_bills.chart.paid") %></li>
+      <% if chart[:expected].positive? %><li><span class="swatch s-expected" aria-hidden="true"></span><%= t("home_bills.index.expected") %></li><% end %>
+    </ul>
+    <%= lines_chart(
+      title: title,
+      labels: chart[:months].map { month_label(_1) },
+      highlight: chart[:months].size - 1,
+      series: [
+        {name: t("home_bills.chart.paid"), css: "s-spending", values: chart[:paid]},
+        *([{name: t("home_bills.index.expected"), css: "s-expected", dashed: true, values: chart[:months].map { chart[:expected] }}] if chart[:expected].positive?)
+      ]
+    ) %>
+    <details>
+      <summary><%= t("home_bills.chart.numbers") %></summary>
+      <table class="rows">
+        <thead><tr><th><%= t("home_bills.chart.month") %></th><th class="num"><%= t("home_bills.chart.paid") %></th></tr></thead>
+        <tbody>
+          <% chart[:months].zip(chart[:paid]).reverse_each do |month, cents| %>
+            <tr><td><%= month_label(month) %></td><td class="num"><%= cents ? money(cents) : "—" %></td></tr>
+          <% end %>
+        </tbody>
+      </table>
+    </details>
+  </section>
+<% end %>

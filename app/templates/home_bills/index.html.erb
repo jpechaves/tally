@@ -9,6 +9,7 @@
       <div><%= t("home_bills.index.expected") %><strong><%= t("home_bills.index.a_month", amount: money(bills.sum { |bill, _| bill[:expected_cents].to_i })) %></strong></div>
       <div><%= t("home_bills.index.late_title") %><strong><%= t("home_bills.index.late", count: bills.sum { |_, entries| entries.count { _1.status == :late } }) %></strong></div>
     </div>
+    <%= render "home_bills/chart", chart: chart, title: t("home_bills.chart.total") %>
     <div class="scroll"><table class="rows">
       <thead><tr>
         <th><%= t("home_bills.index.name") %></th><th><%= t("report.show.category") %></th><th><%= t("home_bills.index.due_day") %></th>
