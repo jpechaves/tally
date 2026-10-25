@@ -795,6 +795,7 @@ en:
 
   installments:
     index:
+      all_cards: All cards
       banks: What the banks say
       banks_note: Itaú prints what is already committed to its next bills, a check on the projection above.
       card: Card

@@ -1,5 +1,12 @@
 <main>
   <h1><%= t("installments.index.title") %></h1>
+  <% if cards.size > 1 %>
+    <nav class="switch" aria-label="<%= t("installments.index.card") %>">
+      <% [[nil, t("installments.index.all_cards")], *cards].each do |id, name| %>
+        <a href="<%= path_with_query("/installments", account: id) %>"<%= ' aria-current="page"'.html_safe if id == card %>><%= name %></a>
+      <% end %>
+    </nav>
+  <% end %>
   <% if calendar.purchases.empty? %>
     <p><%= t("installments.index.empty") %></p>
   <% else %>
