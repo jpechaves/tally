@@ -474,7 +474,7 @@ Each purchase on the installments page, and each installment in the report, link
 
 ### 8.8 Trips
 
-`/trips` (issue #75, `Tally::Trip`) adds up a trip as one total across accounts. A trip has a name, a first and last day, and the accounts to look in (`trip_accounts`; none means all).
+`/trips` (issue #75, `Tally::Trip`) adds up a trip as one total across accounts. A trip has a name, a first and last day, and the accounts to look in (`trip_accounts`; none means all). The new and edit forms (`trips/_form`, issue #169) list the accounts by person, check cards and accounts in another currency on a new trip, and store an explicit **Todas as contas** as no accounts; picking nothing is refused. Editing (`POST /trips/:id`) replaces the name, dates and `trip_accounts` and keeps `trip_rows`.
 
 - Its rows are the spending rows bought between its dates (an installment's purchase date, else the posting date) in those accounts, plus the rows you added from any date, minus the ones you took out (`trip_rows`, `included` 1 or 0, kept apart from the rows so re-imports keep them). Rows are added or taken out from a row's page, and taken out or put back on the trip's page.
 - A card purchase in installments is in or out as a whole: in when any installment is, out when you took any out. Installments not on a bill yet count too, at the latest one's amount (`InstallmentCalendar::Purchase`).

@@ -98,6 +98,7 @@ en:
     invalid_receipt: A receipt is a JPEG, PNG or PDF of up to 10 MB.
     invalid_target: Enter how much to save each month, like 1500.00.
     invalid_trip: A trip needs a name, and a first day on or before its last.
+    trip_accounts: Pick the accounts the trip looks in, or All accounts.
     missing_key: Missing suggestion key.
     month_and_category: Pick a month and a spending category.
     name_taken: There is already a category with that name there.
@@ -755,12 +756,14 @@ en:
 
   trips:
     index:
-      accounts: Accounts to look in (none for all)
+      accounts: Accounts to look in
+      accounts_note: Cards and accounts in another currency, where trip spending usually is, come checked. Rows you add by hand count whatever their account.
+      all_accounts: All accounts
       dates: Dates
       empty: No trips yet.
       ends_on: Last day
       intro: >-
-        A trip adds up everything bought between its dates, in every account, as one total.
+        A trip adds up everything bought between its dates, in the accounts you pick, as one total.
         Add rows from other dates (a flight bought weeks before) from the row's page.
       name: Name
       new: New trip
@@ -775,6 +778,7 @@ en:
       all_accounts: all accounts
       by_account: By account
       confirm_delete: Delete this trip? Its rows stay as they are.
+      edit: Edit trip
       delete: Delete trip
       foreign: In another currency
       future:

@@ -110,6 +110,7 @@ pt-BR:
     invalid_receipt: O comprovante é um JPEG, PNG ou PDF de até 10 MB.
     invalid_target: Informe quanto guardar por mês, como 1.500,00.
     invalid_trip: Uma viagem precisa de um nome, e de um primeiro dia igual ou anterior ao último.
+    trip_accounts: Escolha as contas onde a viagem procura, ou Todas as contas.
     missing_key: Falta a chave da sugestão.
     month_and_category: Escolha um mês e uma categoria de despesa.
     name_taken: Já existe uma categoria com esse nome aí.
@@ -767,12 +768,14 @@ pt-BR:
 
   trips:
     index:
-      accounts: Contas onde procurar (nenhuma para todas)
+      accounts: Contas onde procurar
+      accounts_note: Cartões e contas em outra moeda, onde costumam estar os gastos de viagem, já vêm marcados. Lançamentos adicionados à mão contam seja qual for a conta.
+      all_accounts: Todas as contas
       dates: Datas
       empty: Nenhuma viagem ainda.
       ends_on: Último dia
       intro: >-
-        Uma viagem soma tudo o que foi comprado entre as suas datas, em todas as contas, num
+        Uma viagem soma tudo o que foi comprado entre as suas datas, nas contas escolhidas, num
         total só. Adicione lançamentos de outras datas (uma passagem comprada semanas antes)
         pela página do lançamento.
       name: Nome
@@ -788,6 +791,7 @@ pt-BR:
       all_accounts: todas as contas
       by_account: Por conta
       confirm_delete: Excluir esta viagem? Os lançamentos continuam como estão.
+      edit: Editar viagem
       delete: Excluir viagem
       foreign: Em outra moeda
       future:

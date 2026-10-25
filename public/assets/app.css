@@ -337,3 +337,9 @@ main form input[size] { max-width: 100%; }
 .spinner { width: 32px; height: 32px; border: 3px solid var(--hairline-strong); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(1turn); } }
 @media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
+/* A group of checkboxes, one per line, in nested groups (trips/_form). */
+fieldset.checks { border: 1px solid var(--hairline); border-radius: var(--radius-lg); padding: 8px 16px 12px; margin: 0 0 16px; max-width: 32em; }
+fieldset.checks legend { color: var(--ink-muted); padding: 0 4px; }
+fieldset.checks fieldset { border: 0; padding: 0; margin: 0 0 8px; }
+fieldset.checks fieldset legend { padding: 0; font-weight: 500; color: var(--ink); }
+fieldset.checks label { display: block; padding: 2px 0; }

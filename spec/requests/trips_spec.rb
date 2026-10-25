@@ -33,7 +33,7 @@ RSpec.describe "Trips", :db, type: :request do
   end
 
   def create_trip(**params)
-    post "/trips", {name: "Chile, mar/2026", starts_on: "2026-03-10", ends_on: "2026-03-18"}.merge(params)
+    post "/trips", {name: "Chile, mar/2026", starts_on: "2026-03-10", ends_on: "2026-03-18", all_accounts: "1"}.merge(params)
     db[:trips].order(:id).last
   end
 
@@ -61,8 +61,50 @@ RSpec.describe "Trips", :db, type: :request do
     expect(last_response.body).to include("Chile, mar/2026", "R$ 8,099.15")
   end
 
+  it "checks cards and accounts in another currency by default, grouped by person, and asks for at least one" do
+    db[:people].where(id: Hanami.app["repos.person_repo"].first.id).update(name: "Maria Souza")
+    db[:accounts].where(id: itau).update(person_id: db[:people].insert(name: "Bruno Exemplo"))
+
+    get "/trips"
+    body = last_response.body
+    expect(body).to include(%(<input type="checkbox" name="account_ids[]" value="#{nubank}" checked>),
+      %(<input type="checkbox" name="account_ids[]" value="#{global}" checked>),
+      %(<input type="checkbox" name="account_ids[]" value="#{conta}">), %(<input type="checkbox" name="all_accounts" value="1">),
+      "<legend>Maria Souza</legend>", "<legend>Bruno Exemplo</legend>")
+
+    create_trip(all_accounts: nil)
+    expect(last_response.status).to eq(422)
+    expect(last_response.body).to include("Pick the accounts")
+    expect(create_trip[:id]).to be_positive
+    expect(db[:trip_accounts].count).to eq(0)
+  end
+
+  it "edits a trip's name, dates and accounts, keeping the rows chosen by hand" do
+    trip = create_trip
+    post "/trips/rows", trip_id: trip[:id], transaction_id: flight, included: "1"
+    get "/trips/#{trip[:id]}"
+    expect(last_response.body).to include(%(action="/trips/#{trip[:id]}"), %(value="Chile, mar/2026"), %(<input type="checkbox" name="all_accounts" value="1" checked>),
+      %(<input type="checkbox" name="account_ids[]" value="#{nubank}">))
+
+    post "/trips/#{trip[:id]}", name: "Chile", starts_on: "2026-03-11", ends_on: "2026-03-12", account_ids: [nubank.to_s, "999"]
+    expect(last_response.location).to end_with("/trips/#{trip[:id]}")
+    expect(db[:trips].where(id: trip[:id]).get(%i[name starts_on ends_on])).to eq(["Chile", "2026-03-11", "2026-03-12"])
+    expect(db[:trip_accounts].select_map(:account_id)).to eq([nubank])
+    expect(db[:trip_rows].count).to eq(1)
+
+    get "/trips/#{trip[:id]}"
+    expect(last_response.body).to include("Nubank cartão", "LATAM AIR", %(<input type="checkbox" name="account_ids[]" value="#{nubank}" checked>),
+      %(<input type="checkbox" name="account_ids[]" value="#{global}">))
+    expect(last_response.body).not_to include("HOTEL EXEMPLO")
+
+    post "/trips/#{trip[:id]}", name: "Chile", starts_on: "2026-03-11", ends_on: "2026-03-12"
+    expect(last_response.status).to eq(422)
+    post "/trips/999", name: "Chile", starts_on: "2026-03-11", ends_on: "2026-03-12", all_accounts: "1"
+    expect(last_response.status).to eq(404)
+  end
+
   it "keeps to the trip's accounts, takes rows out and puts them back" do
-    trip = create_trip(account_ids: [nubank.to_s])
+    trip = create_trip(account_ids: [nubank.to_s], all_accounts: nil)
     get "/trips/#{trip[:id]}"
     expect(last_response.body).to include("R$ 939.15")
     expect(last_response.body).not_to include("HOTEL EXEMPLO")
@@ -96,7 +138,7 @@ RSpec.describe "Trips", :db, type: :request do
     body = last_response.body
     expect(body).to include(%(<svg class="map"), "<title>Santiago</title>", "<title>Buenos Aires</title>", "Not on the map: HOTEL EXEMPLO, VILA EXEMPLO")
 
-    post "/trips", name: "Lisboa, jan/2026", starts_on: "2026-01-01", ends_on: "2026-01-05"
+    post "/trips", name: "Lisboa, jan/2026", starts_on: "2026-01-01", ends_on: "2026-01-05", all_accounts: "1"
     get "/trips"
     expect(last_response.body).to include(%(<svg class="map"), "<title>Santiago</title>", "Not on the map: HOTEL EXEMPLO, VILA EXEMPLO")
 

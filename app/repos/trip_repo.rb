@@ -14,11 +14,21 @@ module Tally
         with_choices(trip) if trip
       end
 
+      # @param account_ids [Array<Integer>] empty for all accounts
       def create(name:, starts_on:, ends_on:, account_ids:)
         trips.transaction do
           id = trips.dataset.insert(name:, starts_on:, ends_on:)
           trip_accounts.dataset.import(%i[trip_id account_id], account_ids.map { [id, _1] })
           id
+        end
+      end
+
+      # New name, dates and accounts; your choices of rows (trip_rows) stay.
+      def update(id, name:, starts_on:, ends_on:, account_ids:)
+        trips.transaction do
+          trips.dataset.where(id:).update(name:, starts_on:, ends_on:)
+          trip_accounts.dataset.where(trip_id: id).delete
+          trip_accounts.dataset.import(%i[trip_id account_id], account_ids.map { [id, _1] })
         end
       end
 
