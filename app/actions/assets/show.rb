@@ -7,7 +7,7 @@ module Tally
       # Content Security Policy's 'self' sources instead of inline. There is no asset
       # pipeline (nothing to build on the Pi); the list is fixed.
       class Show < Tally::Action
-        TYPES = {"app.css" => "text/css", "busy.js" => "text/javascript", "confirm.js" => "text/javascript", "picker.js" => "text/javascript", "plan.js" => "text/javascript",
+        TYPES = {"app.css" => "text/css", "busy.js" => "text/javascript", "confirm.js" => "text/javascript", "fields.js" => "text/javascript", "picker.js" => "text/javascript", "plan.js" => "text/javascript",
                  "sidebar.js" => "text/javascript", "table.js" => "text/javascript", "world.svg" => "image/svg+xml"}.freeze
 
         def handle(request, response)

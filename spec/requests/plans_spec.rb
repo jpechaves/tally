@@ -139,12 +139,14 @@ RSpec.describe "Savings plan and budgets", :db, type: :request do
     expect(last_response.headers["Content-Security-Policy"]).to include("script-src 'self'")
     expect(last_response.body).to include(%(<script src="/assets/plan.js"></script>), %(data-target="100000"), %(data-decimal="."), %(data-reaches="reaches the target"))
     expect(last_response.body.scan(/<script[^>]*>/)).to eq([%(<script src="/assets/confirm.js" defer>), %(<script src="/assets/picker.js" defer>), %(<script src="/assets/sidebar.js" defer>),
-      %(<script src="/assets/busy.js" defer>), %(<script src="/assets/plan.js">)])
+      %(<script src="/assets/busy.js" defer>), %(<script src="/assets/fields.js" defer>), %(<script src="/assets/plan.js">)])
 
     get "/assets/plan.js"
     expect(last_response.status).to eq(200)
     expect(last_response.headers["Content-Type"]).to start_with("text/javascript")
     expect(last_response.body).to include("new-saved", "confirmShort")
+    get "/assets/fields.js"
+    expect(last_response.headers["Content-Type"]).to start_with("text/javascript")
 
     get "/assets/confirm.js"
     expect(last_response.headers["Content-Type"]).to start_with("text/javascript")
