@@ -85,4 +85,21 @@ RSpec.describe "Report, cuts and installments", :db, type: :request do
     expect(body).to match(%r{<td>Feb 2027</td>\s*<td class="num">R\$ 120\.00</td>})
     expect(body).to match(%r{<td>Itaú cartão</td>\s*<td>Jan 9, 2027</td>\s*<td class="num">R\$ 120\.00</td>\s*<td class="num">R\$ 840\.00</td>})
   end
+
+  it "shows one card's installments, from a switch over every card" do
+    allow(Date).to receive(:today).and_return(Date.new(2026, 10, 15))
+    get "/installments"
+    everything = last_response.body
+    nubank = db[:accounts].where(name: "Nubank cartão").get(:id)
+    expect(everything).to include(%(<a href="/installments" aria-current="page">All cards</a>), %(<a href="/installments?account=#{nubank}">Nubank cartão</a>))
+
+    get "/installments", account: nubank
+    body = last_response.body
+    expect(body).to include(%(<a href="/installments?account=#{nubank}" aria-current="page">Nubank cartão</a>), "from 1 purchase.")
+    expect(body).to include("Hotel Exemplo").and include("<title>Nov 2026 · Committed: R$ 1,050.00</title>")
+    expect(body).not_to include("<td>Itaú cartão</td>")
+
+    get "/installments", account: "999"
+    expect(last_response.body).to include(%(<a href="/installments" aria-current="page">All cards</a>), "<td>Itaú cartão</td>")
+  end
 end

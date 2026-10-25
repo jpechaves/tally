@@ -8,13 +8,14 @@ module Tally
   # too, to list one purchase's installments (Tally::TransactionFilter).
   class InstallmentCalendar
     # One purchase, as its latest imported installment (id) tells it.
-    Purchase = Data.define(:id, :key, :description, :account_name, :cents, :number, :total, :last_month, :ends) do
+    Purchase = Data.define(:id, :key, :description, :account_id, :account_name, :cents, :number, :total, :last_month, :ends) do
       # @param series [Array<Hash>] a purchase's installment rows, in bill order (InstallmentCalendar.series)
       def self.of(series)
         row = series.last
         month = Insights.month_of(row)
         left = row[:installment_total] - row[:installment_number]
-        new(id: row[:id], key: row[:purchase_key], description: row[:description], account_name: row[:account_name],
+        new(id: row[:id], key: row[:purchase_key], description: row[:description], account_id: row[:account_id],
+          account_name: row[:account_name],
           cents: -row[:amount_cents], number: row[:installment_number], total: row[:installment_total],
           last_month: month, ends: left.zero? ? month : Insights.next_months(month, left).last)
       end

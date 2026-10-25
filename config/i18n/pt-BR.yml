@@ -808,6 +808,7 @@ pt-BR:
 
   installments:
     index:
+      all_cards: Todos
       banks: O que os bancos dizem
       banks_note: O Itaú imprime o que já está comprometido nas próximas faturas, uma conferência da projeção acima.
       card: Cartão
