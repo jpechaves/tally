@@ -6,7 +6,7 @@ Menu: **Dados › Lançamentos**.
 
 **Filtrar.** Escolha conta, mês, categoria ou tipo e aperte **Mostrar**. **Limpar filtros** volta tudo. Links do relatório e de outras páginas abrem esta lista já filtrada.
 
-**Totais.** **Saídas**, **Entradas** e o **Saldo** entre elas somam todos os resultados, não só esta página. Transferências entram nos dois lados e aparecem embaixo de cada um; por isso a fatura paga pela conta aparece como entrada no cartão.
+**Totais.** Os cartões somam todos os resultados, não só esta página. **Saídas** e **Entradas** deixam as transferências de fora (fatura paga pela conta, dinheiro entre suas contas ou entre as pessoas da casa): elas contam uma vez de cada lado, por isso têm o cartão **Transferências**. O **Saldo** é a soma dos três.
 
 **Buscar.** Digite em **Buscar descrição, nota ou valor**. O texto ignora acentos e maiúsculas. Um número como `45,90` acha esse valor exato, gasto ou recebido.
 

@@ -27,14 +27,28 @@ RSpec.describe "Filtering transactions", :db, type: :request do
     expect(body).to include(%(<option value="#{category_id("Supermercado")}" selected>Groceries</option>))
   end
 
-  it "splits the total into money out, money in and the balance, showing the transfers in each" do
+  it "splits the total into money out, money in, transfers on their own and the balance they add up to" do
     get "/transactions", account: db[:accounts].where(name: "Nubank cartão").get(:id).to_s, month: "2026-07"
 
     body = last_response.body
     expect(body).to include("5 rows.")
-    expect(body).to include("Money out<strong>-R$ 1,658.00</strong>", "Money in<strong>R$ 1,765.75</strong>",
-      %(<span class="note">R$ 1,765.75 in transfers</span>), "Balance<strong>R$ 107.75</strong>")
-    expect(body).not_to include("-R$ 0.00 in transfers")
+    expect(body).to include("Money out<strong>-R$ 1,658.00</strong>", "Money in<strong>R$ 0.00</strong>",
+      "Transfers<strong>R$ 1,765.75</strong>", "Balance<strong>R$ 107.75</strong>",
+      %(<span class="note">Money in + money out + transfers</span>))
+    expect(body).to include(%(<span class="note">not counting transfers</span>))
+    expect(body).not_to include(" came in<")
+  end
+
+  it "shows both sides of the transfers when money moved both ways" do
+    get "/transactions", month: "2026-07"
+
+    expect(last_response.body).to match(%r{Transfers<strong>[^<]+</strong>\s*<span class="note">R\$ [\d,.]+ came in</span>\s*<span class="note">-R\$ [\d,.]+ went out})
+  end
+
+  it "leaves the transfers card out when nothing was transferred" do
+    get "/transactions", category: category_id("Supermercado").to_s, month: "2026-09"
+
+    expect(last_response.body).not_to include("Transfers<strong>", "Money in + money out", "not counting transfers")
   end
 
   it "takes in a parent category's children" do

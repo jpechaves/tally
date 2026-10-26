@@ -56,26 +56,28 @@ module Tally
       end
 
       # How many rows match the filter and, in each currency, across all pages, as the rows
-      # count after your adjustments: what went out and came in, the transfers among them
-      # (a card bill's payment, money between your accounts), and the net.
-      # @return [Hash] rows:, out:, in:, transfers_out:, transfers_in:, net:, each sum a
-      #   {"BRL" => cents, "USD" => cents} hash, reais first
+      # count after your adjustments: what went out and came in apart from transfers, the
+      # transfers (a card bill's payment, money between your accounts: each one counts once
+      # on each side) out, in and together, and the net of everything.
+      # @return [Hash] rows:, out:, in:, transfers_out:, transfers_in:, transfers:, net:, each
+      #   sum a {"BRL" => cents, "USD" => cents} hash, reais first
       def totals(filter = Tally::TransactionFilter.new)
         scope = filtered(transactions.dataset.unordered, filter)
         amount = Tally::Adjustments.counted_amount
         transfer = {TRANSACTIONS[:kind] => "transfer"}
         sums = {
-          out: [amount < 0], in: [amount > 0],
+          out: [amount < 0, Sequel.~(transfer)], in: [amount > 0, Sequel.~(transfer)],
           transfers_out: [amount < 0, transfer], transfers_in: [amount > 0, transfer]
         }.transform_values { |conditions| Sequel.function(:sum, Sequel.case([[Sequel.&(*conditions), amount]], 0)) }
         groups = Tally::Adjustments.join(scope.join(:accounts, id: TRANSACTIONS[:account_id]))
           .group(ACCOUNTS[:currency])
           .select(ACCOUNTS[:currency], *sums.map { |name, sum| sum.as(name) })
           .all.sort_by { (_1[:currency] == Tally::Money::DEFAULT_CURRENCY) ? "" : _1[:currency] }
-        totals = (sums.keys + [:net]).to_h { |name| [name, {}] }
+        totals = (sums.keys + %i[transfers net]).to_h { |name| [name, {}] }
         groups.each do |group|
           sums.each_key { |name| totals[name][group[:currency]] = group[name] }
-          totals[:net][group[:currency]] = group[:out] + group[:in]
+          totals[:transfers][group[:currency]] = group[:transfers_out] + group[:transfers_in]
+          totals[:net][group[:currency]] = group[:out] + group[:in] + totals[:transfers][group[:currency]]
         end
         {rows: scope.count, **totals}
       end

@@ -59,14 +59,21 @@
     <p><%= t("transactions.index.summary", rows: count) %><% if filter.q %>
       <a href="<%= filter.with(q: nil).path %>"><%= t("transactions.index.clear_search") %></a><% end %></p>
     <div class="cards">
+      <% transfers = totals[:transfers_out].values.any?(&:nonzero?) || totals[:transfers_in].values.any?(&:nonzero?) %>
       <% %i[out in].each do |side| %>
-        <div><%= t("transactions.index.money_#{side}") %><strong><%= money_each(totals[side]) %></strong><% if totals[:"transfers_#{side}"].values.any?(&:nonzero?) %>
-          <span class="note"><%= t("transactions.index.in_transfers", amount: money_each(totals[:"transfers_#{side}"])) %></span><% end %></div>
+        <div><%= t("transactions.index.money_#{side}") %><strong><%= money_each(totals[side]) %></strong><% if transfers %>
+          <span class="note"><%= t("transactions.index.without_transfers") %></span><% end %></div>
+      <% end %>
+      <% if transfers %>
+        <div><%= t("transactions.index.transfers") %><strong><%= money_each(totals[:transfers]) %></strong><% if totals[:transfers_out].values.any?(&:nonzero?) && totals[:transfers_in].values.any?(&:nonzero?) %>
+          <span class="note"><%= t("transactions.index.transfers_in", amount: money_each(totals[:transfers_in])) %></span>
+          <span class="note"><%= t("transactions.index.transfers_out", amount: money_each(totals[:transfers_out])) %></span><% end %></div>
       <% end %>
       <% if filter.spending? %>
         <div><%= t("transactions.index.spent") %><strong><%= money_each(totals[:net].transform_values(&:-@)) %></strong></div>
       <% else %>
-        <div><%= t("transactions.index.balance") %><strong><%= money_each(totals[:net]) %></strong></div>
+        <div><%= t("transactions.index.balance") %><strong><%= money_each(totals[:net]) %></strong><% if transfers %>
+          <span class="note"><%= t("transactions.index.balance_sum") %></span><% end %></div>
       <% end %>
     </div>
     <%= render "shared/pages", page: pagination, path: filter.pages(back: return_to) %>

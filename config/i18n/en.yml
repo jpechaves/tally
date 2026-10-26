@@ -477,13 +477,13 @@ en:
         trip: "Trip: %{value}"
       ask: "Change the category of %{rows} to %{category}?"
       balance: Balance
+      balance_sum: Money in + money out + transfers
       change_category: Change category
       changed: "Changed the category of %{rows}."
       clear: Clear filters
       clear_search: Clear search
       drop: Remove this filter
       empty: No transactions.
-      in_transfers: "%{amount} in transfers"
       money_in: Money in
       money_out: Money out
       no_match: No transactions match these filters.
@@ -505,6 +505,10 @@ en:
       summary: "%{rows}."
       spent: Spent
       title: Transactions
+      transfers: Transfers
+      transfers_in: "%{amount} came in"
+      transfers_out: "%{amount} went out"
+      without_transfers: not counting transfers
       uncategorized: No category
     show:
       add_to_trip: Add to trip
