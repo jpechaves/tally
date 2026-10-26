@@ -95,11 +95,13 @@ module Tally
       # The categories for a <select>, as [[parent label, [[id, name], ...]], ...]: each
       # parent first in its own group, then its children. Archived ones are left out.
       def category_groups(tree)
-        active = tree.reject { _1[:archived_at] }
-        active.reject { _1[:parent_id] }.map do |parent|
-          children = active.select { _1[:parent_id] == parent[:id] }
-          name = category_name(parent[:name])
-          [name, [[parent[:id], t("categories.all", name:)]] + children.map { [_1[:id], category_name(_1[:name])] }]
+        _context.remember(:category_groups, tree) do
+          active = tree.reject { _1[:archived_at] }
+          active.reject { _1[:parent_id] }.map do |parent|
+            children = active.select { _1[:parent_id] == parent[:id] }
+            name = category_name(parent[:name])
+            [name, [[parent[:id], t("categories.all", name:)]] + children.map { [_1[:id], category_name(_1[:name])] }]
+          end
         end
       end
 

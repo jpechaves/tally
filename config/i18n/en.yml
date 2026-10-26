@@ -536,6 +536,7 @@ en:
         suggestion, in %{groups} groups, biggest first. Pick a category for a group: with
         "always", the payee's other rows, past and future, get it too.
       saved: "Saved %{rows}."
+      see_all: "See all %{count} in Transactions"
       title: Review
 
   categories:

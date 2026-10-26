@@ -1,0 +1,94 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Times the main pages against this machine's database, without a browser or a running
+# server: each page is rendered inside this process a few times, and the table shows a
+# typical run, how many SQL queries it ran and how long they took. Run it on the Pi to see
+# which pages are slow there (#174):
+#
+#   ssh pi@pihole.local
+#   cd ~/tally/current && set -a && . ../ruby.env && . ../tally.env && set +a && bundle exec bin/time-pages
+#
+# On the laptop, `bin/time-pages` is enough. It's a second Ruby process next to the
+# service (about 100 MB), so on the Pi run it when nobody is importing.
+#
+# Options:
+#   --runs N    timed renders per page (default 3), after one untimed render that warms
+#               the caches; the table shows the middle one
+#   --sql       also lists each page's slowest queries
+#   PATH...     time only these pages, e.g. bin/time-pages "/transactions?q=mercado"
+#
+# It only reads: every page here is a GET.
+
+require "bundler/setup"
+require "hanami"
+require "rack/mock"
+
+PAGES = %w[
+  / /transactions /transactions?page=5 /transactions?q=mercado /report /accounts
+  /installments /subscriptions /cuts /trips /counterparties /review /budgets /plan
+  /home-bills /categories /rules /imports
+].freeze
+
+# Collects the queries Sequel logs while a page renders.
+class QueryLog
+  attr_reader :queries
+
+  def initialize = @queries = []
+
+  def info(message)
+    seconds = message[/\A\((\d+\.\d+)s\)/, 1] or return
+    @queries << [seconds.to_f, message.sub(/\A\(\d+\.\d+s\) (\(source: .*?'\) )?/, "")]
+  end
+
+  def debug(*) = nil
+
+  def warn(*) = nil
+
+  def error(*) = nil
+end
+
+runs = 3
+show_sql = false
+paths = []
+until ARGV.empty?
+  case (arg = ARGV.shift)
+  when "--runs" then runs = Integer(ARGV.shift)
+  when "--sql" then show_sql = true
+  else paths << arg
+  end
+end
+paths = PAGES if paths.empty?
+
+Hanami.setup
+# Keep the request log out of the table.
+Hanami.app.config.logger.stream = File::NULL
+Hanami.boot
+app = Hanami.app
+settings = app["settings"]
+headers = {}
+if Tally::BasicAuth.on?(settings)
+  headers["HTTP_AUTHORIZATION"] = "Basic " + ["#{settings.basic_auth_username}:#{settings.basic_auth_password}"].pack("m0")
+end
+connection = app["db.rom"].gateways[:default].connection
+request = Rack::MockRequest.new(app)
+
+LINE = "%-32s %6s %8s %8s %6s"
+puts format(LINE, "page", "status", "ms", "sql ms", "sql")
+paths.each do |path|
+  timed = (runs + 1).times.map do
+    log = QueryLog.new
+    connection.loggers << log
+    started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    response = request.get(path, headers)
+    ms = (Process.clock_gettime(Process::CLOCK_MONOTONIC) - started) * 1000
+    connection.loggers.delete(log)
+    {status: response.status, ms:, queries: log.queries}
+  end.drop(1).sort_by { _1[:ms] }
+  typical = timed[timed.size / 2]
+  queries = typical[:queries]
+  puts format(LINE, path, typical[:status], typical[:ms].round, (queries.sum(&:first) * 1000).round, queries.size)
+  next unless show_sql
+
+  queries.max_by(5, &:first).each { |seconds, sql| puts format("    %6.1f ms  %s", seconds * 1000, sql[0, 160]) }
+end

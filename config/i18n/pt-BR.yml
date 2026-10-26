@@ -548,6 +548,7 @@ pt-BR:
         um grupo: com "sempre", os outros lançamentos do mesmo favorecido, passados e futuros,
         também ficam com ela.
       saved: "%{rows} salvos."
+      see_all: "Ver todos os %{count} em Lançamentos"
       title: Revisar
 
   categories:

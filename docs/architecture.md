@@ -545,6 +545,8 @@ The Pi is headless and reached only over SSH. Deploys go from the laptop with pl
 | `bin/deploy [user@host]` | Each release. Sends the committed HEAD with `git archive` (uncommitted changes and gitignored files never leave the laptop) and runs `deploy/pi/release.sh` from it: `bundle install`, a pre-deploy backup, `hanami db migrate` (or `db prepare` the first time, which seeds), switches `current`, restarts the service and waits for it to answer. |
 | `bin/pull-backup [user@host]` | Copies `shared/backups/` and `shared/storage/` off the SD card into `data/pi/` (gitignored). Nothing is deleted on either side. |
 
+To see how fast the pages are on the Pi (issue #174), `bin/time-pages` renders the main ones inside its own process, against the live database, and prints each one's time and SQL count and time (`--sql` lists the slowest queries). On the Pi, after `ssh`: `cd ~/tally/current && set -a && . ../ruby.env && . ../tally.env && set +a && bundle exec bin/time-pages`. It only sends GETs.
+
 The host defaults to `$TALLY_HOST`, else `pi@pihole.local`. The Pi user needs passwordless sudo (Pi OS's first user has it) and the laptop's SSH key (`ssh-copy-id`).
 
 ### 10.3 Backups
@@ -660,7 +662,7 @@ Only after version 1 is correct and in daily use. Each one only **suggests**; no
 - **Trips** (issue #75): done. See §8.8.
 - **Home bills** (issue #113): done. See §8.9.
 - **Household** (issue #21): people, accounts by owner, Pix between people paired or shown as unmatched, and the household / person switch (§6.1).
-- **Milestone 8 (Pi deployment)**: in progress (issue #23). `bin/pi-setup`, `bin/deploy`, `bin/pull-backup`, the `tally` service and the nightly backup with an integrity check, a database download on the Debug info page (#136), and a Backups section there with a home warning for a failed or old backup (#137) (§10). Left: measuring memory and response times on the Zero 2 W with real-sized data.
+- **Milestone 8 (Pi deployment)**: in progress (issue #23). `bin/pi-setup`, `bin/deploy`, `bin/pull-backup`, the `tally` service and the nightly backup with an integrity check, a database download on the Debug info page (#136), and a Backups section there with a home warning for a failed or old backup (#137) (§10). Speed (#174): `bin/time-pages` times the main pages; on fake data shaped like two years of two people (about 4,000 rows) the slow spots were Ruby work per row, not missing indexes (the query plans only scan small tables or whole-history aggregates): the accent-folding SQL functions (`tally_fold`, `tally_payee_key`, `tally_merchant_key`) now remember their answers (`Tally::SqlFunction`), the category picker on every Lançamentos row is built once per page, Revisar lists 10 rows per group with a link to the rest, and the Lançamentos count comes from the totals query. Left: measuring memory and response times on the Zero 2 W with real-sized data.
 
 ## 17. Public repository: keeping personal data out
 

@@ -43,9 +43,7 @@ module Tally
 
     # Adds KEY_FUNCTION to a new SQLite connection (config/providers/db.rb).
     def register(connection)
-      connection.create_function(KEY_FUNCTION, 1) do |function, name|
-        function.result = key(name.to_s)
-      end
+      SqlFunction.define(connection, KEY_FUNCTION, 1) { key(_1.to_s) }
     end
   end
 end

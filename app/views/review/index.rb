@@ -9,7 +9,15 @@ module Tally
         # Groups per page: a group's rows always stay together.
         PER_PAGE = Tally::Pagination::PER_PAGE
 
+        # Rows listed under a group, newest first; a payee may have hundreds, and rendering
+        # them all made this page slow on the Pi (#174). The rest are a link away.
+        ROWS_SHOWN = 10
+
         expose :saved
+
+        expose :rows_shown, decorate: false do
+          ROWS_SHOWN
+        end
 
         # Every group, so the counts at the top cover all pages.
         expose :all_groups, decorate: false do
