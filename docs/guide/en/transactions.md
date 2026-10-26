@@ -6,7 +6,7 @@ Sidebar: **Data › Transactions**.
 
 **Filter.** Pick an account, month, category or kind and press **Show**. **Clear filters** resets them. Links from the report and other pages open this list already filtered.
 
-**Totals.** **Money out**, **Money in** and the **Balance** between them cover every result, not just this page. Transfers are counted in both and shown under each, so a card bill paid from your account shows up as money in on the card.
+**Totals.** The cards cover every result, not just this page. **Money out** and **Money in** leave transfers out (a card bill paid from your account, money between your accounts or between people at home): those count once on each side, so they get their own **Transfers** card. The **Balance** is the three added up.
 
 **Search.** Type in **Search description, note or amount**. Text ignores accents and case. A number like `45.90` finds that exact amount, spent or received.
 

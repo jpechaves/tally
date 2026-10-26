@@ -488,13 +488,13 @@ pt-BR:
         trip: "Viagem: %{value}"
       ask: "Mudar a categoria de %{rows} para %{category}?"
       balance: Saldo
+      balance_sum: Entradas + saídas + transferências
       change_category: Mudar categoria
       changed: "Categoria mudada em %{rows}."
       clear: Limpar filtros
       clear_search: Limpar busca
       drop: Tirar este filtro
       empty: Nenhum lançamento.
-      in_transfers: "%{amount} em transferências"
       money_in: Entradas
       money_out: Saídas
       no_match: Nenhum lançamento com estes filtros.
@@ -516,6 +516,10 @@ pt-BR:
       summary: "%{rows}."
       spent: Gasto
       title: Lançamentos
+      transfers: Transferências
+      transfers_in: "%{amount} entraram"
+      transfers_out: "%{amount} saíram"
+      without_transfers: sem as transferências
       uncategorized: Sem categoria
     show:
       add_to_trip: Adicionar à viagem
