@@ -545,7 +545,7 @@ The Pi is headless and reached only over SSH. Deploys go from the laptop with pl
 | `bin/deploy [user@host]` | Each release. Sends the committed HEAD with `git archive` (uncommitted changes and gitignored files never leave the laptop) and runs `deploy/pi/release.sh` from it: `bundle install`, a pre-deploy backup, `hanami db migrate` (or `db prepare` the first time, which seeds), switches `current`, restarts the service and waits for it to answer. |
 | `bin/pull-backup [user@host]` | Copies `shared/backups/` and `shared/storage/` off the SD card into `data/pi/` (gitignored). Nothing is deleted on either side. |
 
-To see how fast the pages are on the Pi (issue #174), `bin/time-pages` renders the main ones inside its own process, against the live database, and prints each one's time and SQL count and time (`--sql` lists the slowest queries). On the Pi, after `ssh`: `cd ~/tally/current && set -a && . ../ruby.env && . ../tally.env && set +a && bundle exec bin/time-pages`. It only sends GETs.
+To see how fast the pages are on the Pi (issue #174), `bin/time-pages` renders the main ones inside its own process, against the live database, and prints each one's time and SQL count and time (`--sql` lists the slowest queries). On the Pi, after `ssh`: `cd ~/tally/current && set -a && . ~/tally/ruby.env && . ~/tally/tally.env && set +a && bundle exec bin/time-pages`. It only sends GETs.
 
 The host defaults to `$TALLY_HOST`, else `pi@pihole.local`. The Pi user needs passwordless sudo (Pi OS's first user has it) and the laptop's SSH key (`ssh-copy-id`).
 
