@@ -61,6 +61,7 @@ ssh-copy-id pi@pihole.local   # once, so the scripts log in with your key
 bin/pi-setup                  # once: packages, Ruby through mise, the service and nightly backups
 bin/deploy                    # each release: sends the committed HEAD, migrates, restarts
 bin/pull-backup               # copies the Pi's backups and stored files into data/pi/
+bin/time-pages                # times the main pages against a database (on the Pi too, see §10.2)
 ```
 
 Set `TALLY_HOST=user@host` (or pass it as the first argument) for another Pi. Tally then opens at `http://tally.local:2300` (also `http://pihole.local:2300`); its settings are in `~/tally/tally.env` on the Pi. `TALLY_NAME=finance bin/pi-setup` picks another name, and `TALLY_NAME= bin/pi-setup` stops announcing one. `.local` names work on Macs and iPhones, but not always on Android or Windows: use the Pi's IP address there.

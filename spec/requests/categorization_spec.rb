@@ -27,6 +27,18 @@ RSpec.describe "Categorizing", :db, type: :request do
     expect(last_response.body).not_to include("Pagamento de fatura")
   end
 
+  it "shows a group's first rows only, with a link to all of them" do
+    stub_const("Tally::Views::Review::Index::ROWS_SHOWN", 1)
+    Hanami.app["operations.import_statement"].call(file_name: "Nubank_2026-07-09.csv", content: fixture("Nubank_2026-07-09.csv"))
+    group = Tally::Review.groups(Hanami.app["repos.transaction_repo"].to_review).find { _1.rows.size > 1 }
+
+    get "/review"
+
+    section = last_response.body[%r{<section class="group">\s*<h2>#{Regexp.escape(group.label)} ·.*?</section>}m]
+    expect(section.scan("<tr class=").size).to eq(1)
+    expect(section).to include(%(href="/transactions?payee=#{URI.encode_www_form_component(group.key)}&amp;back=%2Freview">See all #{group.rows.size} in Transactions</a>))
+  end
+
   it "saves a group's category and takes it off the list" do
     energy = db[:counterparties].where(name: "ENERGIA EXEMPLO S.A.").get(:id)
     post "/review", ids: row("ENERGIA EXEMPLO S.A.")[:id].to_s, counterparty_id: energy.to_s,

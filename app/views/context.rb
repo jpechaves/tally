@@ -4,7 +4,12 @@
 module Tally
   module Views
     class Context < Hanami::View::Context
-      # Define your view context here. See https://hanakai.org/learn/hanami/views/context/ for details.
+      # What one page works out once however many partials ask, by name and the object it
+      # was worked out from: the category picker's options on every row of a table (#174).
+      def remember(name, object)
+        remembered = ((@remembered ||= {})[name] ||= {}.compare_by_identity)
+        remembered.fetch(object) { remembered[object] = yield }
+      end
     end
   end
 end

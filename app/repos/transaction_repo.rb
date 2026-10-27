@@ -71,7 +71,7 @@ module Tally
         }.transform_values { |conditions| Sequel.function(:sum, Sequel.case([[Sequel.&(*conditions), amount]], 0)) }
         groups = Tally::Adjustments.join(scope.join(:accounts, id: TRANSACTIONS[:account_id]))
           .group(ACCOUNTS[:currency])
-          .select(ACCOUNTS[:currency], *sums.map { |name, sum| sum.as(name) })
+          .select(ACCOUNTS[:currency], Sequel.function(:count).*.as(:rows), *sums.map { |name, sum| sum.as(name) })
           .all.sort_by { (_1[:currency] == Tally::Money::DEFAULT_CURRENCY) ? "" : _1[:currency] }
         totals = (sums.keys + %i[transfers net]).to_h { |name| [name, {}] }
         groups.each do |group|
@@ -79,7 +79,7 @@ module Tally
           totals[:transfers][group[:currency]] = group[:transfers_out] + group[:transfers_in]
           totals[:net][group[:currency]] = group[:out] + group[:in] + totals[:transfers][group[:currency]]
         end
-        {rows: scope.count, **totals}
+        {rows: groups.sum { _1[:rows] }, **totals}
       end
 
       # Months that have rows, newest first ("2026-09", ...), in one account if given.

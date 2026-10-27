@@ -42,7 +42,7 @@ module Tally
 
     # Adds FUNCTION to a new SQLite connection (config/providers/db.rb).
     def register(connection)
-      connection.create_function(FUNCTION, 1) { |function, text| function.result = fold(text) }
+      SqlFunction.define(connection, FUNCTION, 1) { fold(_1) }
     end
   end
 end
