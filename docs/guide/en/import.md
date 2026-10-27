@@ -14,6 +14,7 @@ Sidebar: **Data › Import**.
 | Nubank card CSV | the bill's due date: `Nubank_2026-09-09.csv` |
 | Itaú card bill PDF | anything |
 | Conta Global CSV (US$) | anything |
+| XP card CSV | the bill's due date: `Fatura2026-10-15.csv` (as exported) |
 
 From the command line: `bundle exec rake "tally:import[data/statements/*]"`, or `"tally:import[files,Name]"` for someone else's files.
 

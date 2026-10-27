@@ -132,6 +132,7 @@ en:
     itau_card_pdf: Itaú card (PDF)
     nubank_account_csv: Nubank account (CSV)
     nubank_card_csv: Nubank card (CSV)
+    xp_card_csv: XP card (CSV)
 
   statuses:
     account:
@@ -231,6 +232,8 @@ en:
     nubank_account_header: "not a Nubank account CSV: expected the header %{header}"
     nubank_card_file_name: "can't tell which bill this is: name the file after its due date, like Nubank_2026-09-09.csv"
     nubank_card_header: "not a Nubank card CSV: expected the header %{header}"
+    xp_card_file_name: "can't tell which bill this is: name the file after its due date, like Fatura2026-10-15.csv"
+    xp_card_header: "not an XP card CSV: expected the header %{header}"
     opening_balance: "the file starts with a balance of %{balance}: rows before it are not in this file"
     pdf_no_text: the PDF has no text pages
     pdftotext_failed: "pdftotext could not read the PDF: %{details}"

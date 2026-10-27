@@ -14,7 +14,9 @@ module Tally
       end
 
       # Sources whose files are card bills: one file per bill (account and due date).
-      CARD_SOURCES = [Tally::Importers::NubankCardCSV::SOURCE, Tally::Importers::ItauCardPdf::SOURCE].freeze
+      CARD_SOURCES = [
+        Tally::Importers::NubankCardCSV::SOURCE, Tally::Importers::ItauCardPdf::SOURCE, Tally::Importers::XpCardCSV::SOURCE
+      ].freeze
 
       # Whether the version of the statement in effect now came from these bytes (an
       # applied import's), so importing them again would change nothing.

@@ -53,7 +53,8 @@ module Tally
 
     # What a parser returns.
     #
-    # - source: "nubank_account_csv" | "nubank_card_csv" | "itau_card_pdf" | "conta_global_csv"
+    # - source: "nubank_account_csv" | "nubank_card_csv" | "itau_card_pdf" | "conta_global_csv" |
+    #   "xp_card_csv"
     # - account_name: the account the rows belong to (one of {ACCOUNTS})
     # - period_start, period_end: the dates the file covers; on re-import, rows of this
     #   account in that range (or on this bill) that are missing from the file get flagged
@@ -110,14 +111,18 @@ module Tally
       "Itaú conta" => {kind: "checking", institution: "itau", mirror_transfers: 1},
       "Nubank RDB" => {kind: "investment", institution: "nubank", mirror_transfers: 1},
       # A dollar account: the conversion leaves BRL, so there is nothing to mirror in BRL.
-      "Nubank Conta Global" => {kind: "checking", institution: "nubank", currency: "USD"}
+      "Nubank Conta Global" => {kind: "checking", institution: "nubank", currency: "USD"},
+      "XP cartão" => {kind: "credit_card", institution: "xp"},
+      # Pays the XP card; its statement isn't imported (issue #157).
+      "XP conta" => {kind: "checking", institution: "xp", mirror_transfers: 1}
     }.freeze
 
     SOURCES = {
       "nubank_account_csv" => "Nubank conta (CSV)",
       "nubank_card_csv" => "Nubank cartão (CSV)",
       "itau_card_pdf" => "Itaú cartão (PDF)",
-      "conta_global_csv" => "Nubank Conta Global (CSV)"
+      "conta_global_csv" => "Nubank Conta Global (CSV)",
+      "xp_card_csv" => "XP cartão (CSV)"
     }.freeze
 
     # Picks the parser for a file from its first bytes.
@@ -135,6 +140,8 @@ module Tally
         NubankCardCSV.new
       elsif head.start_with?(ContaGlobalCSV::HEADER_START.b)
         ContaGlobalCSV.new
+      elsif head.start_with?(XpCardCSV::HEADER.b)
+        XpCardCSV.new
       else
         raise Error.new(:unknown_format)
       end
@@ -151,6 +158,8 @@ module Tally
         "Itaú conta"
       elsif raw_description.match?(/\(0260\)|\bNU PAGAMENTOS\b/i)
         "Nubank conta"
+      elsif raw_description.match?(/\(0348\)|\bBANCO XP\b/i)
+        "XP conta"
       end
     end
 
@@ -194,7 +203,7 @@ module Tally
       end
 
       # The file as a CSV table with headers.
-      def table(content) = CSV.parse(utf8(content), headers: true, skip_blanks: true)
+      def table(content, col_sep: ",") = CSV.parse(utf8(content), headers: true, skip_blanks: true, col_sep:)
 
       # A record's fields, or an error naming its line when it doesn't have `count`.
       def fields(record, line, count)
