@@ -693,6 +693,8 @@ pt-BR:
   home_bills:
     chart:
       bill: Pago por mês
+      by_bill: Pago por mês da conta
+      by_date: Pago no mês (pela data)
       month: Mês
       numbers: Ver os números
       paid: Pago

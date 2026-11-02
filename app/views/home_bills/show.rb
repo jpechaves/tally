@@ -41,8 +41,9 @@ module Tally
         expose :chart, decorate: false do |bill|
           months = Tally::HomeBills.chart_months(Date.today, first: transaction_repo.months.last)
           rows = insight_repo.rows(from: months.first, to: months.last)
-          paid = Tally::HomeBills.paid_by_month(bill, months, rows, home_bill_repo.payments([bill[:id]], months))
-          {months:, paid:, expected: bill[:expected_cents].to_i}
+          payments = home_bill_repo.payments([bill[:id]], months)
+          paid = Tally::HomeBills.paid_by_month(bill, months, rows, payments, home_bill_repo.linked(payments.values))
+          {months:, **paid, expected: bill[:expected_cents].to_i}
         end
 
         # Who could have paid by hand; with only you, nobody to pick.

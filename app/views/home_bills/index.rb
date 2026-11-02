@@ -29,8 +29,10 @@ module Tally
           months = Tally::HomeBills.chart_months(Date.today, first: transaction_repo.months.last)
           rows = insight_repo.rows(from: months.first, to: months.last)
           payments = home_bill_repo.payments(bills.map { _1[:id] }, months)
-          paid = bills.map { Tally::HomeBills.paid_by_month(_1, months, rows, payments) }.transpose
-          {months:, paid: paid.map { _1.compact.sum if _1.any? }, expected: bills.sum { _1[:expected_cents].to_i }}
+          linked = home_bill_repo.linked(payments.values)
+          paid = bills.map { Tally::HomeBills.paid_by_month(_1, months, rows, payments, linked) }
+          totals = %i[bill_month by_date].to_h { |key| [key, paid.map { _1[key] }.transpose.map { _1.compact.sum if _1.any? }] }
+          {months:, **totals, expected: bills.sum { _1[:expected_cents].to_i }}
         end
 
         expose :categories do
