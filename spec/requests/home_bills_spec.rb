@@ -65,9 +65,12 @@ RSpec.describe "Home bills", :db, type: :request do
 
     get "/home-bills/#{energy[:id]}"
     body = last_response.body
-    expect(body).to include("Energia Exemplo", "late since Oct 10, 2026")
+    expect(body).to include("Energia Exemplo", "paid on Oct 8, 2026 · R$ 182.40 · Nubank conta", "Found in the statement")
+    expect(body).not_to include("late since")
     expect(body).to include(%(<option value="#{october}" selected>), %(<option value="#{september}" selected>), "MERCADO EXEMPLO")
     expect(body).not_to include("Pick the row")
+    get "/home-bills"
+    expect(last_response.body).to include("paid on Oct 8, 2026", "none late")
 
     post "/home-bills/#{energy[:id]}/payments", month: "2026-10", transaction_id: october.to_s
     expect(last_response.location).to end_with("/home-bills/#{energy[:id]}")
@@ -134,6 +137,15 @@ RSpec.describe "Home bills", :db, type: :request do
 
     get "/home-bills/#{energy[:id]}"
     expect(last_response.body).not_to include(%(<option value="#{early}"))
+  end
+
+  it "counts a month paid by a row of exactly the expected amount, for a bill without a payee" do
+    internet = create_bill(name: "Internet", expected: "99.90", due_day: "5", category_id: category.to_s)
+    rows = [pay("2026-10-04", 9_990, "PIX INTERNET EXEMPLO"), pay("2026-09-04", 9_000, "PIX INTERNET EXEMPLO")]
+    db[:transactions].where(id: rows).update(category_id: category)
+
+    get "/home-bills/#{internet[:id]}"
+    expect(last_response.body).to include("paid on Oct 4, 2026 · R$ 99.90 · Nubank conta", "late since Sep 5, 2026")
   end
 
   it "marks a month paid by hand, by you or whoever of the household paid" do

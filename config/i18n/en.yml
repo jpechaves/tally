@@ -720,6 +720,7 @@ en:
       confirm_delete_receipt: Delete this receipt?
       delete: Delete bill
       delete_receipt: Delete
+      found: Found in the statement, not linked yet. Save to link it, or pick another row.
       link: Save
       mark_paid: Mark paid
       no_rows: No spending near the due day to link.

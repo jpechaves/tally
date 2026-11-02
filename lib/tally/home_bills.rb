@@ -73,6 +73,22 @@ module Tally
       end
     end
 
+    # The payments, plus the months nothing is linked to yet that a row surely paid: its
+    # payee's (the chart counts them too) or, without a payee, one of exactly the expected
+    # amount. Found, not saved: the bill's page asks to save it. A row pays one month only.
+    # @param rows [Array<Hash>] InsightRepo#rows, without the rows payments link
+    def with_found(bill, months, rows, payments)
+      months.each_with_object(payments.dup) do |month, all|
+        next if all[[bill[:id], month]]
+
+        row = suggest(bill, month, rows)
+        next if row.nil? || (!bill[:payee_key] && -row[:amount_cents] != bill[:expected_cents])
+
+        rows -= [row]
+        all[[bill[:id], month]] = {paid_on: row[:occurred_on], amount_cents: -row[:amount_cents], account_name: row[:account_name], found: true}
+      end
+    end
+
     # Spending rows of the bill's own month or near its due day, to pick the payment from:
     # the month's own first, then nearest the due day. A bill due on the 31st and paid on
     # the 8th is still that month's.

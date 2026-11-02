@@ -13,10 +13,14 @@ module Tally
           Tally::HomeBills.months(Date.today, span, first: transaction_repo.months.last)
         end
 
+        # A month a row surely paid counts as paid (Tally::HomeBills.with_found).
         expose :bills, decorate: false do |months|
-          bills = home_bill_repo.all
+          bills = home_bill_repo.all.map { _1.merge(payee_key: home_bill_repo.payee_key(_1)) }
           payments = home_bill_repo.payments(bills.map { _1[:id] }, months)
-          bills.map { |bill| [bill, Tally::HomeBills.status_by_month(bill, months, payments, today: Date.today)] }
+          linked = home_bill_repo.linked(payments.values).values
+          rows = insight_repo.rows(from: Tally::Insights.previous_months(months.first, 1).first, to: Tally::Insights.next_months(months.last, 1).first)
+            .reject { linked.include?(_1[:id]) }
+          bills.map { |bill| [bill, Tally::HomeBills.status_by_month(bill, months, Tally::HomeBills.with_found(bill, months, rows, payments), today: Date.today)] }
         end
 
         # Paid toward all the bills each month, against what they are expected to cost.
