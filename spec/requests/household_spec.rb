@@ -89,6 +89,7 @@ RSpec.describe "The household", :db, type: :request do
     let(:bruno) { db[:people].where(name: "Bruno").get(:id) }
 
     before do
+      allow(Date).to receive(:today).and_return(Date.new(2026, 10, 15))
       upload("NU_12345678_01JUL2026_31JUL2026.csv")
       post "/people", name: "Bruno"
       upload("NU_87654321_01JUL2026_31JUL2026.csv", person: bruno.to_s)
