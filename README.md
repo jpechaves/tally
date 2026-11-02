@@ -40,6 +40,7 @@ The home page shows the SQLite settings in effect (WAL, foreign keys, full sync)
 | `bundle exec rubycritic app lib` | Grades the code (Flay duplication, Flog complexity, Reek smells, settings in `.reek.yml`) and opens the report from `tmp/rubycritic`. CI fails below its `--minimum-score` and uploads the report as the `rubycritic-report` artifact. |
 | `bundle exec bundler-audit check --update` | Checks `Gemfile.lock` for gems with known advisories; CI runs it on every push and weekly. |
 | `bundle exec rake "tally:import[data/statements/*]"` | Imports statement files from disk (see [Importing statements](#importing-statements)). |
+| `bundle exec rake tally:regroup_merchants` | Regroups card merchants after a grouping fix (imports do this on their own, but skip files already imported). |
 | `bin/hanami db migrate` | Applies new migrations to the dev and test databases (`bin/setup` does it too). |
 | `bin/hanami db seed` | Adds the starting categories and generic rules that are missing, updates starting rules a new version rewrote, loads `data/seeds.rb`, and categorizes the rows again. It never changes or brings back what you edited, archived or switched off. |
 | `bin/hanami db version` | Prints the database's schema version. |

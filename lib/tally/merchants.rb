@@ -6,8 +6,9 @@ module Tally
   # long names at its own length ("PADARIA EXEMPLO CENT" and "Padaria Exemplo Centro").
   # These reduce a name to the part that stays the same, so the variants are one counterparty.
   module Merchants
-    # Payment processors that put their own prefix before the merchant ("PAG*LOJA EXEMPLO").
-    FACILITATORS = %w[PAG PG PAGS MP MERCADOPAGO EC IFD DL EBN EBANX PAYPAL PICPAY SUMUP ZP HTM].freeze
+    # Payment processors that put their own prefix before the merchant ("PAG*LOJA EXEMPLO",
+    # "DM*LOJA EXEMPLO" for digital stores and streaming).
+    FACILITATORS = %w[PAG PG PAGS MP MERCADOPAGO EC IFD DL DM EBN EBANX PAYPAL PICPAY SUMUP ZP HTM].freeze
 
     # Shortest key that may match a longer one cut by another bank, so short generic names
     # ("PADARIA") don't swallow others.
