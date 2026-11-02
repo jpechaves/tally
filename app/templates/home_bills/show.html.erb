@@ -12,7 +12,7 @@
       <h2><%= month_label(entry.month) %></h2>
       <p><%= home_bill_status(entry) %></p>
       <% payment = entry.payment %>
-      <% if payment %>
+      <% if payment && !payment[:found] %>
         <% id = linked[[payment[:account_name], payment[:external_id]]] %>
         <form action="<%= path_with_query("/home-bills/#{bill[:id]}/payments/remove", months: kept) %>" method="post">
           <input type="hidden" name="month" value="<%= entry.month %>">
@@ -20,6 +20,7 @@
           <button type="submit"><%= t("home_bills.show.unpay") %></button>
         </form>
       <% else %>
+        <% if payment %><p class="note"><%= t("home_bills.show.found") %></p><% end %>
         <% candidates = Tally::HomeBills.candidates(bill, entry.month, rows) %>
         <% if candidates.empty? %>
           <p class="note"><%= t("home_bills.show.no_rows") %></p>

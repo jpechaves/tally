@@ -14,10 +14,14 @@ module Tally
           home_bill.merge(payee_key: home_bill_repo.payee_key(home_bill))
         end
 
-        # This month first.
-        expose :months, decorate: false do |bill, span|
-          months = Tally::HomeBills.months(Date.today, span, first: transaction_repo.months.last)
-          Tally::HomeBills.status_by_month(bill, months, home_bill_repo.payments([bill[:id]], months), today: Date.today).reverse
+        private_expose :shown, decorate: false do |span|
+          Tally::HomeBills.months(Date.today, span, first: transaction_repo.months.last)
+        end
+
+        # This month first, a month a row surely paid counted as paid (Tally::HomeBills.with_found).
+        expose :months, decorate: false do |bill, shown, rows|
+          payments = Tally::HomeBills.with_found(bill, shown, rows, home_bill_repo.payments([bill[:id]], shown))
+          Tally::HomeBills.status_by_month(bill, shown, payments, today: Date.today).reverse
         end
 
         # [account name, external id] => the row's id today.
@@ -26,11 +30,11 @@ module Tally
         end
 
         # Rows from a month either side, minus those a payment of any nearby month already uses.
-        expose :rows, decorate: false do |bill, months|
-          from, to = months.map(&:month).minmax
-          shown = Tally::Insights.previous_months(from, 2) + [from, to].uniq + Tally::Insights.next_months(to, 2)
-          ids = home_bill_repo.linked(home_bill_repo.payments([bill[:id]], shown).values).values
-          insight_repo.rows(from: shown[1], to: shown[-2]).reject { ids.include?(_1[:id]) }
+        expose :rows, decorate: false do |bill, shown|
+          from, to = shown.minmax
+          around = Tally::Insights.previous_months(from, 2) + [from, to].uniq + Tally::Insights.next_months(to, 2)
+          ids = home_bill_repo.linked(home_bill_repo.payments([bill[:id]], around).values).values
+          insight_repo.rows(from: around[1], to: around[-2]).reject { ids.include?(_1[:id]) }
         end
 
         # Paid toward the bill each month, against what it is expected to cost.
