@@ -30,17 +30,47 @@ module Tally
     # imported row on.
     def chart_months(today, first:) = months(today, "12").select { first.nil? || _1 >= first }
 
-    # What was paid toward a bill each month: everything spent with its payee that month
-    # (an early or extra installment too), or, without a payee, the payment linked to it.
-    # @param rows [Array<Hash>] InsightRepo#rows over the months
+    # What was paid toward a bill each month, two ways. By the bill's month: its payment
+    # (linked, by hand or found, see with_found), whatever day it was made. By date: what
+    # was paid in each month, so a month with two payments shows both. Either way, plus any
+    # other spending with its payee in the month it was made (an extra or early installment).
+    # @param rows [Array<Hash>] InsightRepo#rows over the months, without the rows payments link
     # @param payments [Hash] [bill id, month] => payment (HomeBillRepo#payments)
-    # @return [Array<Integer, nil>] cents for each month, nil when nothing was paid
+    # @return [Hash] :bill_month and :by_date, cents for each month, nil when nothing was paid
     def paid_by_month(bill, months, rows, payments)
-      return months.map { payments[[bill[:id], _1]]&.dig(:amount_cents) } unless bill[:payee_key]
+      paid = with_found(bill, months, rows, payments).filter_map { |(id, month), payment| [month, payment] if id == bill[:id] }
+      extra = extra_spending(bill, rows, paid.filter_map { _2[:row_id] })
+      {bill_month: sums(months, paid.map { [_1, _2[:amount_cents]] } + extra),
+       by_date: gapless(sums(months, paid.map { [_2[:paid_on][0, 7], _2[:amount_cents]] } + extra))}
+    end
 
-      spent = rows.select { _1[:amount_cents].negative? && Insights.payee_key(_1) == bill[:payee_key] }
-        .group_by { _1[:occurred_on][0, 7] }
-      months.map { spent[_1]&.sum { |row| -row[:amount_cents] } }
+    # [[month, cents]] spent with the payee besides the payments' rows (ids).
+    def extra_spending(bill, rows, ids)
+      payee_spending(bill, rows).reject { ids.include?(_1[:id]) }.map { [_1[:occurred_on][0, 7], -_1[:amount_cents]] }
+    end
+
+    # paid_by_month for all the bills together.
+    def chart(bills, months, rows, payments)
+      paid = bills.map { paid_by_month(_1, months, rows, payments) }
+      %i[bill_month by_date].to_h { |key| [key, paid.map { _1[key] }.transpose.map { _1.compact.sum if _1.any? }] }
+    end
+
+    # The spending rows with the bill's payee; none without one.
+    def payee_spending(bill, rows)
+      key = bill[:payee_key]
+      key ? rows.select { _1[:amount_cents].negative? && Insights.payee_key(_1) == key } : []
+    end
+
+    # [[month, cents]] -> cents for each month, nil when none
+    def sums(months, amounts)
+      totals = amounts.group_by(&:first).transform_values { _1.sum(&:last) }
+      months.map { totals[_1] }
+    end
+
+    # A month between two payments with none made in it paid nothing: 0, so the line goes on.
+    def gapless(cents)
+      first, last = cents.index { _1 }, cents.rindex { _1 }
+      cents.each_with_index.map { |value, index| (first && index.between?(first, last)) ? value.to_i : value }
     end
 
     # A bill's page, keeping a span other than the default.
@@ -85,7 +115,7 @@ module Tally
         next if row.nil? || (!bill[:payee_key] && -row[:amount_cents] != bill[:expected_cents])
 
         rows -= [row]
-        all[[bill[:id], month]] = {paid_on: row[:occurred_on], amount_cents: -row[:amount_cents], account_name: row[:account_name], found: true}
+        all[[bill[:id], month]] = {paid_on: row[:occurred_on], amount_cents: -row[:amount_cents], account_name: row[:account_name], row_id: row[:id], found: true}
       end
     end
 
