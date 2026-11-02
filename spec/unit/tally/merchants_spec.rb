@@ -7,6 +7,8 @@ RSpec.describe Tally::Merchants do
       "AEREA EXEMPLO * HX99" => "AEREA EXEMPLO",
       "PAG*Loja Exemplo" => "Loja Exemplo",
       "MP *LOJA EXEMPLO" => "LOJA EXEMPLO",
+      "Dm*Lojaexemplo" => "Lojaexemplo",
+      "Dm *Lojaexemplobr" => "Lojaexemplobr",
       "FARMACIA EXEMPLO 0123" => "FARMACIA EXEMPLO",
       "FARMACIA EXEMPLO 0123S" => "FARMACIA EXEMPLO",
       "PADARIA 24 HORAS" => "PADARIA 24 HORAS",

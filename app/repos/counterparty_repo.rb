@@ -63,9 +63,11 @@ module Tally
       # their default category when the company has none. You and your own accounts are
       # left alone.
       #
+      # Runs #split_processors first.
+      #
       # @return [Array<Integer>] the ids of the rows that moved
       def link_merchants
-        moved = []
+        moved = split_processors
         counterparties.dataset.where(document: nil, is_self: 0).order(:id).all.each do |merchant|
           target = company(merchant[:match_key]) or next
 
@@ -77,7 +79,26 @@ module Tally
           counterparties.dataset.where(id: merchant[:id]).delete
           moved.concat(ids)
         end
-        moved
+        moved.uniq
+      end
+
+      # A merchant named after a payment processor alone ("Dm", from "Dm*Loja Um" and
+      # "Dm*Loja Dois", grouped before Merchants::FACILITATORS knew it): each row moves to the
+      # merchant its description names, and the processor goes, with its default category,
+      # which belonged to only some of them.
+      #
+      # @return [Array<Integer>] the ids of the rows that moved
+      def split_processors
+        keys = Tally::Merchants::FACILITATORS.map { "|#{_1}" }
+        counterparties.dataset.where(document: nil, is_self: 0, match_key: keys).select_map(:id).flat_map do |id|
+          rows = transactions.dataset.where(counterparty_id: id).select_hash(:id, :description)
+          counterparties.dataset.where(id:).update(match_key: "|#{id}")
+          rows.each do |row, description|
+            transactions.dataset.where(id: row).update(counterparty_id: upsert(name: description).id, updated_at: Repos.now)
+          end
+          counterparties.dataset.where(id:).delete
+          rows.keys
+        end
       end
 
       # How many counterparties the search finds.

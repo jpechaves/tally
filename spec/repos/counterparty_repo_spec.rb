@@ -59,6 +59,22 @@ RSpec.describe Tally::Repos::CounterpartyRepo, :db do
       expect(repo.link_merchants).to eq([])
     end
 
+    it "splits a merchant named after a payment processor into the merchants behind it" do
+      processor = db[:counterparties].insert(name: "Dm", match_key: "|DM")
+      category = db[:categories].insert(name: "Streaming", kind: "expense")
+      repo.set_default_category(processor, category)
+      games = [charge(repo.find(processor), "Dm*Jogosexemplo"), charge(repo.find(processor), "Dm *Jogosexemplo")]
+      video = charge(repo.find(processor), "Dm*Videoexemplo")
+
+      expect(repo.link_merchants).to match_array(games + [video])
+
+      names = db[:transactions].join(:counterparties, id: :counterparty_id)
+        .select_hash(Sequel[:transactions][:id], Sequel[:counterparties][:name])
+      expect(names).to eq(games[0] => "Jogosexemplo", games[1] => "Jogosexemplo", video => "Videoexemplo")
+      expect(db[:counterparties].select_map(:default_category_id)).to eq([nil, nil])
+      expect(repo.link_merchants).to eq([])
+    end
+
     it "keeps the company's own default category" do
       merchant = repo.upsert(name: "TELEFONIA EXEMPLO")
       company = repo.upsert(name: "TELEFONIA EXEMPLO", **cnpj)
