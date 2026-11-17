@@ -308,7 +308,7 @@ Design choices:
 
 Tally keeps a second person's statements beside yours (issue #21). The accounts page lists the `people` of the household and adds one; the import form (and `rake 'tally:import[files,Name]'`) asks whose statements a file holds, and that person's accounts are their own rows in `accounts`, named after them ("Nubank conta (Bruno)") and found by `(template, person_id)`. Your accounts keep their plain names, so nothing changes for a household of one.
 
-- **Marking people.** The counterparties page marks a name as someone of the household: "This is me" with one person, a choice of who with more (`counterparties.person_id`). A Pix to or from them becomes a transfer, as a Pix to yourself always has. Its other side is that person's account at the bank the row names (`Importers.account_at`: Itaú or Nubank), when it is imported; an Itaú conta has no statement, so it is created and mirrored, as yours is (`AccountRepo#counter_account_id`).
+- **Marking people.** The counterparties page marks a name as someone of the household: "This is me" with one person, a choice of who with more (`counterparties.person_id`). A Pix to or from them becomes a transfer, as a Pix to yourself always has. Its other side is that person's account at the bank the row names (`Importers.account_at`: Itaú, Nubank or XP), when it is imported; an Itaú or XP conta has no statement, so it is created and mirrored, as yours is (`AccountRepo#counter_account_id`).
 - **Pairing.** Both sides imported, the Pix pairs like a card payment (`PairTransfers`), whatever order the files and marks came in: a transfer that pointed at no account finds it once the other person's statement is in. A name-only Pix (no CPF or bank, issue #164) can be marked too, in Contrapartes or Revisar; it names no bank, so it pairs with an unpaired transfer in one of that person's accounts with the opposite amount within 5 days (`TransactionRepo#household_partner`). A Pix to Nubank's CNPJ (`Importers::NUBANK_CNPJ`) with the same amount as an unpaired payment on another person's Nubank card, within 5 days, is that bill paid: it becomes a transfer to the card and pairs with the payment (issue #158). A transfer between two people with no pair is **unmatched** (`/transactions?kind=unmatched`): the other person's statement for that month is missing, or their account isn't imported. It still never counts as spending.
 - **The person switch.** Home, Report, Cuts and Budgets add up the whole household by default, and a switch above them (`shared/_person_switch`, shown with more than one person) narrows them to one person's accounts (`?person=`, `InsightRepo#rows(person:)`). Every link from those pages to the rows behind a number keeps the person (`TransactionFilter#person`). Transfers between the two count in no view, so the household's figures are the sum of each person's, and a shared payee (both pay the same supermarket) is one line in the household view, as counterparties are shared. Budgets and the plan are the household's: one person's view shows their spending against the same limits, without the plan's target. Home and Report warn while any transfer between people is unmatched.
 - **The default until then.** Until you add someone and mark their name, a Pix to your partner is a Pix to a person: spending, in Transferências (Pix), as before. Marking them is the switch: from then on it is a transfer in every view, yours included, so your own spending no longer has money you only moved to them (in the issue's example, your view shows R$ 3.800, not R$ 4.000).
@@ -571,7 +571,7 @@ app/
 lib/tally/
   money.rb
   basic_auth.rb
-  importers/    nubank_account_csv.rb, nubank_card_csv.rb, conta_global_csv.rb,
+  importers/    nubank_account_csv.rb, card_bill_csv.rb (+ nubank_card_csv.rb, xp_card_csv.rb), conta_global_csv.rb,
                 itau_card_pdf.rb + itau_card_pdf/ (layout.rb, reader.rb, bill.rb)
   categorizer.rb
   insights/     baseline.rb, cut_signals.rb, recurring.rb, planner.rb   (pure: data in, numbers out)
@@ -616,7 +616,7 @@ Version 1 has **no AI running inside it**. Its "intelligent" parts are plain rul
 
 | Feature | How it works (deterministic) | Where | Milestone |
 |---|---|---|---|
-| Parsing 4 sources | CSV reader; poppler `pdftotext -bbox` for Itaú, totals checked to the cent; Conta Global's running balance checked row by row | Ruby importers, golden-file tests | 2 |
+| Parsing 5 sources | CSV reader; poppler `pdftotext -bbox` for Itaú, totals checked to the cent; Conta Global's running balance checked row by row | Ruby importers, golden-file tests | 2 |
 | Transfers | Fixed patterns: RDB, Pagamento de fatura, Pix to your own accounts, Conta Global top-ups (matched through the printed rate), Pix no Crédito pair (same ID) | `pair_transfers` operation, `Tally::Exchange` | 2 |
 | Categorization | Ordered list of rules on payee/description, then Itaú's printed category mapped, then "Pix to a CPF" → Transferências (Pix) | `category_rules` table, cascade in §7 | 3 |
 | Payee clean-up | Strip installment suffix (`\s?\d\d/\d\d$`), merge names that only differ in spaces/punctuation | `counterparties` normalizer | 3 |
@@ -662,6 +662,7 @@ Only after version 1 is correct and in daily use. Each one only **suggests**; no
 - **Trips** (issue #75): done. See §8.8.
 - **Home bills** (issue #113): done. See §8.9.
 - **Household** (issue #21): people, accounts by owner, Pix between people paired or shown as unmatched, and the household / person switch (§6.1).
+- **XP card import** (issue #157): done. The XP card bill CSV (`Importers::XpCardCSV`, sharing `Importers::CardBillCSV` with the Nubank card), its payments as transfers from a mirrored XP conta, and the bill check matching them by date (statement-import.md §2d).
 - **Milestone 8 (Pi deployment)**: in progress (issue #23). `bin/pi-setup`, `bin/deploy`, `bin/pull-backup`, the `tally` service and the nightly backup with an integrity check, a database download on the Debug info page (#136), and a Backups section there with a home warning for a failed or old backup (#137) (§10). Speed (#174): `bin/time-pages` times the main pages; on fake data shaped like two years of two people (about 4,000 rows) the slow spots were Ruby work per row, not missing indexes (the query plans only scan small tables or whole-history aggregates): the accent-folding SQL functions (`tally_fold`, `tally_payee_key`, `tally_merchant_key`) now remember their answers (`Tally::SqlFunction`), the category picker on every Lançamentos row is built once per page, Revisar lists 10 rows per group with a link to the rest, and the Lançamentos count comes from the totals query. Left: measuring memory and response times on the Zero 2 W with real-sized data.
 
 ## 17. Public repository: keeping personal data out

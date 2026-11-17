@@ -14,6 +14,7 @@ Menu: **Dados › Importar**.
 | CSV do cartão Nubank | o vencimento da fatura: `Nubank_2026-09-09.csv` |
 | PDF da fatura Itaú | qualquer um |
 | CSV da Conta Global (US$) | qualquer um |
+| CSV do cartão XP | o vencimento da fatura: `Fatura2026-10-15.csv` (como vem) |
 
 Pela linha de comando: `bundle exec rake "tally:import[data/statements/*]"`, ou `"tally:import[arquivos,Nome]"` para os arquivos de outra pessoa.
 

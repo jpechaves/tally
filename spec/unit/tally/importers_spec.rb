@@ -5,6 +5,7 @@ RSpec.describe Tally::Importers do
     expect(described_class.for(fixture("NU_12345678_01JUL2026_31JUL2026.csv"))).to be_a(Tally::Importers::NubankAccountCSV)
     expect(described_class.for(fixture("Nubank_2026-07-09.csv"))).to be_a(Tally::Importers::NubankCardCSV)
     expect(described_class.for(fixture("itau_2026-10.pdf"))).to be_a(Tally::Importers::ItauCardPdf)
+    expect(described_class.for(fixture("Fatura2026-10-15.csv"))).to be_a(Tally::Importers::XpCardCSV)
   end
 
   it "refuses anything else" do
@@ -15,6 +16,7 @@ RSpec.describe Tally::Importers do
     expect(described_class.account_at("Pix - ANA - BANCO (0341) Agência: 1 Conta: 2")).to eq("Itaú conta")
     expect(described_class.account_at("Pix - ANA - ITAÚ UNIBANCO S.A. Agência: 1 Conta: 2")).to eq("Itaú conta")
     expect(described_class.account_at("Pix - ANA - NU PAGAMENTOS - IP (0260) Agência: 1 Conta: 2")).to eq("Nubank conta")
+    expect(described_class.account_at("Pix - ANA - BANCO XP S.A. (0348) Agência: 1 Conta: 2")).to eq("XP conta")
     expect(described_class.account_at("Pix - ANA - PICPAY (0380) Agência: 1 Conta: 2")).to be_nil
   end
 

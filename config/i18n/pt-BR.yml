@@ -144,6 +144,7 @@ pt-BR:
     itau_card_pdf: Itaú cartão (PDF)
     nubank_account_csv: Nubank conta (CSV)
     nubank_card_csv: Nubank cartão (CSV)
+    xp_card_csv: XP cartão (CSV)
 
   statuses:
     account:
@@ -243,6 +244,8 @@ pt-BR:
     nubank_account_header: "não é um CSV da conta Nubank: esperava o cabeçalho %{header}"
     nubank_card_file_name: "não dá para saber qual fatura é esta: dê ao arquivo o nome da data de vencimento, como Nubank_2026-09-09.csv"
     nubank_card_header: "não é um CSV do cartão Nubank: esperava o cabeçalho %{header}"
+    xp_card_file_name: "não dá para saber qual fatura é esta: dê ao arquivo o nome da data de vencimento, como Fatura2026-10-15.csv"
+    xp_card_header: "não é um CSV do cartão XP: esperava o cabeçalho %{header}"
     opening_balance: "o arquivo começa com saldo de %{balance}: lançamentos anteriores não estão neste arquivo"
     pdf_no_text: o PDF não tem páginas com texto
     pdftotext_failed: "o pdftotext não conseguiu ler o PDF: %{details}"

@@ -156,4 +156,20 @@ RSpec.describe Tally::Repos::BillCheckRepo, :db do
       ["Itaú cartão", "2026-10-09", nil, nil, "unknown", nil]
     ])
   end
+
+  it "matches an XP bill to the payments its own bills list, by date" do
+    xp = db[:accounts].insert(name: "XP cartão", template: "XP cartão", kind: "credit_card")
+    db[:card_statements].insert(account_id: xp, due_on: "2026-09-15", total_cents: 45_678, import_id:)
+    db[:card_statements].insert(account_id: xp, due_on: "2026-10-15", total_cents: 123_456, import_id:)
+    # The October bill lists both payments; the September one lists none.
+    {"2026-09-09" => 45_678, "2026-10-06" => 123_456}.each do |occurred_on, cents|
+      db[:transactions].insert(account_id: xp, occurred_on:, amount_cents: cents, kind: "transfer",
+        description: "Pagamento de fatura", raw_description: "Pagamento de fatura", external_id: occurred_on)
+    end
+
+    expect(checks.map { _1.values_at(:due_on, :paid_by, :paid_cents, :status) }).to eq([
+      ["2026-09-15", "XP conta", 45_678, "ok"],
+      ["2026-10-15", "XP conta", 123_456, "ok"]
+    ])
+  end
 end

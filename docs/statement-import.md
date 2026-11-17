@@ -12,6 +12,7 @@ How Tally reads bank statements, re-imports them safely and categorizes the rows
 | Nubank credit card | CSV bill export, named like `Nubank_2026-07-09.csv` (the due date) | one bill |
 | Itaú credit card | PDF bill (fatura), a cover page with the summary and boleto, then transactions in columns | one bill |
 | Nubank Conta Global (dollars) | CSV export with Wise's columns (`"TransferWise ID",Date,...`), any file name | a date range, often the whole history |
+| XP credit card | CSV bill export, named like `Fatura2026-10-15.csv` (the due date) | one bill |
 
 How the money moves: the salary arrives in the Nubank account; a Pix sends the Itaú bill amount to the Itaú account, which pays the Itaú card; the Nubank account also pays the Nubank card bill.
 
@@ -23,6 +24,8 @@ How the money moves: the salary arrives in the Nubank account; a Pix sends the I
 | Nubank RDB | savings | no file needed | balance built from "Aplicação/Resgate RDB" rows |
 | Nubank cartão | credit card | yes, CSV bill export (§2b) | every purchase, installment, IOF, refund and discount |
 | Nubank Conta Global | checking in USD, with a debit card used abroad | yes, CSV (§2c) | every card purchase and refund, in dollars, and each top-up from Nubank conta |
+| XP cartão | credit card | yes, CSV bill export (§2d) | every purchase, installment and refund |
+| XP conta | checking, pays the XP card | no | the bill payments out and Pix in from the household, all transfers |
 
 **The Itaú account is a pass-through.** The Pix sent to it matches the bill it pays within cents, give or take a small amount already sitting in the account. So the importer marks the Pix to the Itaú account as a transfer to "Itaú conta", and the card's "Pagamento via conta" as a transfer from it. The Itaú account's balance is just the running sum of the two, which stays close to zero. A difference above a threshold (a setting, default R$ 50) shows up as a warning on the import page rather than as spending.
 
@@ -122,6 +125,33 @@ TRANSFER-9000000002,20-07-2026,"20-07-2026 09:15:30.120",178.74,USD,"Dinheiro ad
 - Every column of the row, the card holder and card digits included, stays in `raw_json` for audit.
 
 The account's spending is in dollars, so it stays out of the report, cut suggestions, budgets and the category and counterparty totals, which are in reais. The transactions page lists it with its own currency (`US$ 52,84`, and `GBP 41,20 · tarifa US$ 0,19` under details), and a total over several currencies shows each one (`R$ 1.234,56 + US$ 45,10`). Its own report comes later (issue #22).
+
+## 2d. XP credit card CSV
+
+Format (fake data):
+
+```
+Data;Estabelecimento;Portador;Valor;Parcela
+06/10/2026;Pagamento de fatura;MARIA SOUZA;R$ -1.234,56; de 1
+10/09/2026;MERCADO EXEMPLO LTDA;MARIA SOUZA;R$ 123,45;-
+11/09/2026;IFD*RESTAURANTE EXEMPLO;MARIA SOUZA;R$ 37,20;-
+05/08/2026;ELETRO EXEMPLO;MARIA SOUZA;R$ 200,00;2 de 4
+```
+
+- UTF-8 **with a BOM**, **CRLF** line ends, `;` between fields. `Data` is `DD/MM/YYYY`, the purchase date.
+- `Valor` is `R$ 1.234,56`, **positive = charge**, `R$ -…` = credit. Charges are stored negative, like every other outflow.
+- **The due date comes from the file name** (`Fatura2026-10-15.csv`); a file without it is rejected.
+- **No row ID**: the key is derived like the Nubank card's (§2b), `sha256(card | bill due date | date | merchant | amount | k)`. The newest file is the open bill: importing it again after it closes updates its rows, and rows that dropped out are flagged (§4).
+- `Portador` (cardholder) is kept in `raw_json` only: the bill belongs to the person picked at import.
+- No total is printed, so the bill's total is the sum of its charges.
+
+| Row | kind | Notes |
+|---|---|---|
+| `Pagamento de fatura` | transfer ← XP conta | XP conta has no statement, so it is mirrored there (like Itaú conta). A bill can list the previous bill's payment too, so the bill check matches payments to bills by date, like the Nubank card's |
+| `Parcela` = `N de M` | purchase, installment N of M | XP prints the purchase date on every installment, so installment N is dated N − 1 months later (the date printed stays when that would pass the due date). `purchase_key` = merchant + count + installment amount, like the Nubank card |
+| `Parcela` = `-` | purchase, or refund if negative | the merchant becomes the counterparty; names cut at different lengths (`…EXEMPLO` / `…EXEMPL`) merge by prefix (§3) |
+
+A Pix from the household to `Banco XP (0348)` is a transfer to that person's XP conta (`Importers.account_at`).
 
 ## 3. Itaú credit card PDF
 

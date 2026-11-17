@@ -36,6 +36,14 @@ RSpec.describe Tally::Operations::ImportStatement, :db do
       expect(storage.join("#{result.value!.file_sha256}.csv")).to exist
     end
 
+    it "imports an XP card bill, mirroring its payments into XP conta" do
+      expect(import("Fatura2026-10-15.csv").value!).to have_attributes(source: "xp_card_csv", rows_inserted: 10)
+
+      expect(rows("XP cartão").count).to eq(10)
+      expect(rows("XP conta").select_map(:amount_cents)).to contain_exactly(-123_456, -45_678)
+      expect(db[:card_statements].get(:total_cents)).to eq(162_755)
+    end
+
     it "creates the accounts it needs" do
       import("NU_12345678_01JUL2026_31JUL2026.csv")
 

@@ -11,10 +11,13 @@ module Tally
     # ISO dates, comma-decimal amounts with "- " negatives, positive = charge. There is no
     # row ID, so the key is derived, numbering identical rows. See
     # docs/statement-import.md, section 2b.
-    class NubankCardCSV
+    class NubankCardCSV < CardBillCSV
       HEADER = "date,title,amount"
       SOURCE = "nubank_card_csv"
       ACCOUNT = "Nubank cartão"
+      COL_SEP = ","
+      HEADER_ERROR = :nubank_card_header
+      FILE_NAME_ERROR = :nubank_card_file_name
 
       DUE_DATE = /Nubank_(\d{4}-\d{2}-\d{2})/
       PAYMENT = "Pagamento recebido"
@@ -27,52 +30,14 @@ module Tally
       IOF_REFUND = /\AIOF de volta de (.+)\z/
       REFUND = /\A(?:Estorno de "?(.+?)"?|Desconto Antecipação (.+))\z/
 
-      def call(file_name, content)
-        table = Text.table(content)
-        unless table.headers == HEADER.split(",")
-          raise Error.new(:nubank_card_header, header: HEADER.inspect)
-        end
-
-        due_on = due_date(file_name)
-        repeats = Repeats.new
-        warnings = []
-
-        rows = table.each.with_index(2).filter_map do |record, line|
-          row(record, line, due_on, repeats, warnings)
-        end
-        raise Error.new(:bill_no_rows) if rows.empty?
-
-        dates = rows.map(&:occurred_on)
-        Statement.new(
-          source: SOURCE, account_name: ACCOUNT,
-          period_start: dates.min, period_end: dates.max,
-          rows:, card_statement: summary(rows, due_on), warnings:
-        )
-      end
-
       private
-
-      def due_date(file_name)
-        match = DUE_DATE.match(File.basename(file_name.to_s))
-        unless match
-          raise Error.new(:nubank_card_file_name)
-        end
-
-        Date.iso8601(match[1])
-      rescue Date::Error
-        raise Error.new(:invalid_due_date)
-      end
 
       def row(record, line, due_on, repeats, warnings)
         date_text, title, value = Text.fields(record, line, 3)
 
         date = Text.date(date_text, "%Y-%m-%d", line)
         title = title.strip
-        charge = Text.amount(value, line, decimal: ",")
-        if charge.zero?
-          warnings << Notice[:zero_amount_skipped, line:, text: title]
-          return nil
-        end
+        charge = charge(value, line, title, warnings) or return
 
         # A charge is money leaving the card account, so it is stored negative.
         amount = -charge
