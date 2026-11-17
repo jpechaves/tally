@@ -5,6 +5,7 @@ module Tally
     module HomeBills
       # One bill: each month with its payment, the rows that could be it, and its receipts.
       class Show < Tally::View
+        include Tally::Views::HomeBillChart
         include Deps["repos.home_bill_repo", "repos.insight_repo", "repos.person_repo", "repos.transaction_repo"]
 
         expose :span, decorate: false
@@ -39,10 +40,7 @@ module Tally
 
         # Paid toward the bill each month, against what it is expected to cost.
         expose :chart, decorate: false do |bill|
-          months = Tally::HomeBills.chart_months(Date.today, first: transaction_repo.months.last)
-          rows = insight_repo.rows(from: months.first, to: months.last)
-          paid = Tally::HomeBills.paid_by_month(bill, months, rows, home_bill_repo.payments([bill[:id]], months))
-          {months:, paid:, expected: bill[:expected_cents].to_i}
+          home_bill_chart([bill])
         end
 
         # Who could have paid by hand; with only you, nobody to pick.

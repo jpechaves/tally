@@ -125,9 +125,24 @@ RSpec.describe "Home bills", :db, type: :request do
 
     get "/home-bills/#{energy[:id]}"
     expect(last_response.body).to include("Paid each month", "<title>Sep 2026 · Paid: R$ 185.10</title>", %(class="line s-expected dashed"))
+    expect(last_response.body).not_to include("by date")
     get "/home-bills"
     expect(last_response.body).to include("Paid for all bills each month", "<title>Sep 2026 · Paid: R$ 185.10</title>",
       "<title>Oct 2026 · Paid: R$ 99.90</title>", "<td class=\"num\">R$ 99.90</td>")
+  end
+
+  it "charts a payment in the month it paid, not the day it was made" do
+    energy = create_bill(payee_key: "counterparty:#{energy_company}", payee_label: "Energia Exemplo")
+    pay("2026-09-07", 80_000, "ENERGIA EXEMPLO", counterparty_id: energy_company)
+    early = pay("2026-09-29", 64_000, "ENERGIA EXEMPLO", counterparty_id: energy_company)
+    post "/home-bills/#{energy[:id]}/payments", month: "2026-10", transaction_id: early.to_s
+
+    get "/home-bills/#{energy[:id]}"
+    expect(last_response.body).to include("<title>Sep 2026 · Paid by bill month: R$ 800.00</title>", "<title>Oct 2026 · Paid by bill month: R$ 640.00</title>",
+      "<title>Sep 2026 · Paid in the month (by date): R$ 1,440.00</title>")
+    get "/home-bills"
+    expect(last_response.body).to include("<title>Sep 2026 · Paid by bill month: R$ 800.00</title>", "<title>Oct 2026 · Paid by bill month: R$ 640.00</title>",
+      "<title>Sep 2026 · Paid in the month (by date): R$ 1,440.00</title>", %(<td class="num">R$ 1,440.00</td>))
   end
 
   it "doesn't offer a row again once it paid another month" do
