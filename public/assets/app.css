@@ -275,6 +275,7 @@ form.inline { margin-bottom: 0; }
 .chart svg.map g:hover circle { fill: var(--accent-hover); }
 .chart svg .line { fill: none; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
 .chart svg .line.s-spending { stroke: var(--series-spending); }
+.chart svg .line.s-income { stroke: var(--series-income); }
 .chart svg .line.dashed { stroke: var(--ink-subtle); stroke-width: 1.5; stroke-dasharray: 4 4; }
 .chart svg .dot { stroke: var(--surface-1); stroke-width: 2; }
 .chart svg g:hover > .dot { opacity: 0.8; }

@@ -681,6 +681,8 @@ en:
   home_bills:
     chart:
       bill: Paid each month
+      by_bill: Paid by bill month
+      by_date: Paid in the month (by date)
       month: Month
       numbers: The numbers
       paid: Paid

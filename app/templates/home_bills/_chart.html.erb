@@ -1,9 +1,13 @@
-<%# What was paid each month against the expected amount, with the numbers in a table below. %>
-<% if chart[:paid].compact.any? %>
+<%# What was paid each month against the expected amount, with the numbers in a table below:
+    by the bill's month, and by date too when that differs (a month with two payments). %>
+<% if chart[:bill_month].compact.any? %>
+  <% by_date = chart[:by_date] unless chart[:by_date] == chart[:bill_month] %>
+  <% paid = t(by_date ? "home_bills.chart.by_bill" : "home_bills.chart.paid") %>
   <section class="chart">
     <h2><%= title %></h2>
     <ul class="legend">
-      <li><span class="swatch s-spending" aria-hidden="true"></span><%= t("home_bills.chart.paid") %></li>
+      <li><span class="swatch s-spending" aria-hidden="true"></span><%= paid %></li>
+      <% if by_date %><li><span class="swatch s-income" aria-hidden="true"></span><%= t("home_bills.chart.by_date") %></li><% end %>
       <% if chart[:expected].positive? %><li><span class="swatch s-expected" aria-hidden="true"></span><%= t("home_bills.index.expected") %></li><% end %>
     </ul>
     <%= lines_chart(
@@ -11,17 +15,18 @@
       labels: chart[:months].map { month_label(_1) },
       highlight: chart[:months].size - 1,
       series: [
-        {name: t("home_bills.chart.paid"), css: "s-spending", values: chart[:paid]},
+        *([{name: t("home_bills.chart.by_date"), css: "s-income", values: by_date}] if by_date),
+        {name: paid, css: "s-spending", values: chart[:bill_month]},
         *([{name: t("home_bills.index.expected"), css: "s-expected", dashed: true, values: chart[:months].map { chart[:expected] }}] if chart[:expected].positive?)
       ]
     ) %>
     <details>
       <summary><%= t("home_bills.chart.numbers") %></summary>
       <table class="rows">
-        <thead><tr><th><%= t("home_bills.chart.month") %></th><th class="num"><%= t("home_bills.chart.paid") %></th></tr></thead>
+        <thead><tr><th><%= t("home_bills.chart.month") %></th><th class="num"><%= paid %></th><% if by_date %><th class="num"><%= t("home_bills.chart.by_date") %></th><% end %></tr></thead>
         <tbody>
-          <% chart[:months].zip(chart[:paid]).reverse_each do |month, cents| %>
-            <tr><td><%= month_label(month) %></td><td class="num"><%= cents ? money(cents) : "—" %></td></tr>
+          <% chart[:months].each_with_index.reverse_each do |month, index| %>
+            <tr><td><%= month_label(month) %></td><td class="num"><%= chart[:bill_month][index]&.then { money(_1) } || "—" %></td><% if by_date %><td class="num"><%= by_date[index]&.then { money(_1) } || "—" %></td><% end %></tr>
           <% end %>
         </tbody>
       </table>

@@ -30,10 +30,12 @@ RSpec.describe Tally::HomeBills do
     months = %w[2026-05 2026-06 2026-07]
     rows = [row("2026-06-12", -3_048.23, counterparty_id: 7), row("2026-06-17", -1_221.95, counterparty_id: 7),
       row("2026-07-06", -3_035.59, counterparty_id: 7), row("2026-07-08", 10.00, counterparty_id: 7), row("2026-07-09", -50.00)]
-    expect(described_class.paid_by_month(bill.merge(payee_key: "counterparty:7"), months, rows, {})).to eq([nil, 427_018, 303_559])
+    paid = described_class.paid_by_month(bill.merge(payee_key: "counterparty:7"), months, rows, {})
+    expect(paid[:by_date]).to eq([nil, 427_018, 303_559])
 
-    payments = {[1, "2026-06"] => {amount_cents: 18_240}}
-    expect(described_class.paid_by_month(bill.merge(id: 1), months, rows, payments)).to eq([nil, 18_240, nil])
+    payments = {[1, "2026-06"] => {amount_cents: 18_240, paid_on: "2026-05-30"}}
+    expect(described_class.paid_by_month(bill.merge(id: 1), months, rows, payments)).to eq(bill_month: [nil, 18_240, nil], by_date: [18_240, nil, nil])
+    expect(described_class.gapless([nil, 5, nil, nil, 7, nil])).to eq([nil, 5, 0, 0, 7, nil])
   end
 
   it "takes a known span or the default, and keeps it in a bill's link" do
