@@ -15,10 +15,10 @@ module Tally
     # - Otherwise the row stays a one-leg transfer: still never spending or income. A Pix
     #   to someone of the household whose account wasn't imported yet finds it once it is
     #   (issue #21), and a name-only one finds the other person's side (issue #164).
-    # - A Pix to Nubank that paid another household person's Nubank card bill pairs with
-    #   the payment on that card (issue #158).
+    # - A Pix to the card issuer that paid a card bill pairs with the payment on that card
+    #   (PairCardBillPix).
     class PairTransfers < Tally::Operation
-      include Deps["repos.account_repo", "repos.transaction_repo", "operations.pair_household_bills"]
+      include Deps["repos.account_repo", "repos.transaction_repo", "operations.pair_card_bill_pix"]
 
       # @param touched_ids [Array<Integer>] rows whose amount, date or kind may have
       #   changed since they were paired; their transfers are checked first
@@ -27,7 +27,7 @@ module Tally
         currencies = account_repo.all.to_h { [_1.id, _1.currency] }
         find_counter_accounts
         touched_ids.each_slice(500) { |ids| transaction_repo.rows(ids).each { reconcile(_1, currencies) } }
-        pair_all(currencies) + step(pair_household_bills.call)
+        pair_all(currencies) + step(pair_card_bill_pix.call)
       end
 
       private
@@ -41,16 +41,16 @@ module Tally
         still_transfer = row[:kind] == "transfer" && row[:counter_account_id]
 
         if !still_transfer || (other && other[:account_id] != row[:counter_account_id])
-          unlink(row[:transfer_id], legs)
+          transaction_repo.unlink_transfer(row[:transfer_id])
         elsif exchange
-          unlink(row[:transfer_id], legs) unless legs?(row, other, currencies)
+          transaction_repo.unlink_transfer(row[:transfer_id]) unless legs?(row, other, currencies)
         elsif other && transaction_repo.mirror?(other)
           if other[:amount_cents] != -row[:amount_cents] || other[:occurred_on] != row[:occurred_on]
             transaction_repo.update(other[:id], amount_cents: -row[:amount_cents], occurred_on: row[:occurred_on],
               description: row[:description], raw_description: row[:raw_description], last_import_id: row[:last_import_id])
           end
         elsif other && other[:amount_cents] != -row[:amount_cents]
-          unlink(row[:transfer_id], legs)
+          transaction_repo.unlink_transfer(row[:transfer_id])
         end
       end
 
@@ -68,11 +68,6 @@ module Tally
             transaction_repo.update(partner[:id], counter_account_id: row[:account_id])
           end
         end
-      end
-
-      def unlink(transfer_id, legs)
-        legs.each { transaction_repo.delete_mirror(_1[:id]) if transaction_repo.mirror?(_1) }
-        transaction_repo.delete_transfer(transfer_id)
       end
 
       def pair_all(currencies)

@@ -61,6 +61,12 @@ module Tally
           transfers.dataset.where(id: transfer_id).delete
         end
 
+        # Splits a transfer and drops its mirrored leg, if any.
+        def unlink_transfer(transfer_id)
+          transfer_legs(transfer_id).each { delete_mirror(_1[:id]) if mirror?(_1) }
+          delete_transfer(transfer_id)
+        end
+
         def delete_mirror(id)
           transactions.dataset.where(id:).where(Sequel.like(:external_id, "#{MIRROR_PREFIX}%")).delete
         end

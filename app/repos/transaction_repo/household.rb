@@ -5,8 +5,8 @@ module Tally
   module Repos
     class TransactionRepo < Tally::DB::Repo
       # Transfers between people of the household (issue #21) that the statements don't
-      # pair by themselves: a name-only Pix (issue #164), a Pix paying the other person's
-      # Nubank card bill (issue #158).
+      # pair by themselves: a name-only Pix (issue #164), a Pix paying a card bill (issue
+      # #158, Operations::PairCardBillPix).
       module Household
         # Transfers to or from someone of the household that point at no account yet, with
         # the counterparty's person (person_id).
@@ -27,13 +27,26 @@ module Tally
             .order(TRANSACTIONS[:id]).all
         end
 
-        # The Pix to Nubank's CNPJ that someone else of the household sent to pay this card
-        # payment (issue #158): same amount, within a few days, still a purchase or already
-        # pointing at the card. Closest date first.
-        def bill_pix(payment, days: 5)
-          transactions.dataset.join(:accounts, id: :account_id).join(:counterparties, id: TRANSACTIONS[:counterparty_id])
-            .where(COUNTERPARTIES[:document] => Importers::NUBANK_CNPJ, TRANSACTIONS[:transfer_id] => nil)
-            .exclude(ACCOUNTS[:person_id] => payment[:person_id])
+        # Payments of an Itaú card bill not paired with a Pix yet: they still point at Itaú
+        # conta (mirrored, or about to be).
+        def itau_card_payments
+          transactions.dataset.join(:accounts, id: :account_id)
+            .where(ACCOUNTS[:template] => "Itaú cartão", TRANSACTIONS[:kind] => "transfer")
+            .where(TRANSACTIONS[:amount_cents] > 0)
+            .where(TRANSACTIONS[:counter_account_id] => accounts.dataset.unordered.where(mirror_transfers: 1).select(:id))
+            .select_all(:transactions)
+            .order(TRANSACTIONS[:id]).all
+        end
+
+        # The Pix to the card issuer's CNPJ (documents) that paid this card payment: same
+        # amount, within a few days, still a purchase or already pointing at the card. With
+        # other_person, only one sent by someone else of the household (issue #158). Closest
+        # date first.
+        def bill_pix(payment, documents: Importers::NUBANK_CNPJ, other_person: true, days: 5)
+          scope = transactions.dataset.join(:accounts, id: :account_id).join(:counterparties, id: TRANSACTIONS[:counterparty_id])
+            .where(COUNTERPARTIES[:document] => documents, TRANSACTIONS[:transfer_id] => nil)
+          scope = scope.exclude(ACCOUNTS[:person_id] => payment[:person_id]) if other_person
+          scope
             .where(TRANSACTIONS[:amount_cents] => -payment[:amount_cents], TRANSACTIONS[:occurred_on] => around(payment, -days..days))
             .where(Sequel.|({TRANSACTIONS[:kind] => "purchase"},
               Sequel.&({TRANSACTIONS[:kind] => "transfer"}, {TRANSACTIONS[:counter_account_id] => payment[:account_id]})))
