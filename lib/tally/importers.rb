@@ -99,6 +99,10 @@ module Tally
     # (issue #158).
     NUBANK_CNPJ = "18.236.120/0001-58"
 
+    # Itaú's CNPJs (Itaú Unibanco Holding, Itaú Unibanco S.A.): a Pix to one of them can
+    # pay an Itaú card bill.
+    ITAU_CNPJS = ["60.872.504/0001-23", "60.701.190/0001-04"].freeze
+
     # The accounts the importers know, created on first use.
     #
     # mirror_transfers: the account has no statement of its own, so each transfer into or
